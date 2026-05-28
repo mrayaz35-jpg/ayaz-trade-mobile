@@ -195,15 +195,15 @@ canvas{
 <div class="wrap">
 
 <h1>Ayaz Trade Crypto Pro</h1>
-<div class="small">Sadece kripto. Çoklu Binance veri kapısı. Liste seçimden sonra kapanır; seçilen coin ve analiz kalır.</div>
+<div class="small">Sadece kripto. Veri sırası: KuCoin → OKX → CryptoCompare. Liste seçimden sonra kapanır.</div>
 
 <div class="card">
   <button id="selectedBox" class="selectedBox" onclick="toggleList()">
     BTCUSDT
-    <small>Liste açık - seçim yapınca kapanır</small>
+    <small>Liste kapalı - açmak için dokun</small>
   </button>
 
-  <div id="listPanel">
+  <div id="listPanel" class="hidden">
     <input id="search" class="search" placeholder="Ara: BTC, ETH, SOL, AVAX..." oninput="renderList()">
     <div id="chips" class="chips"></div>
   </div>
@@ -222,7 +222,7 @@ canvas{
 </div>
 
 <div id="out" class="card">
-  <p>Kripto listesi yükleniyor...</p>
+  <p>Kripto analiz yükleniyor...</p>
 </div>
 
 <div class="card">
@@ -234,91 +234,33 @@ canvas{
 <script>
 let selected="BTCUSDT";
 let tf="4h";
-let items=[];
-let listOpen=true;
+let listOpen=false;
 
-const FALLBACK=[
-["BTCUSDT","Bitcoin"],
-["ETHUSDT","Ethereum"],
-["BNBUSDT","BNB"],
-["SOLUSDT","Solana"],
-["XRPUSDT","XRP"],
-["DOGEUSDT","Dogecoin"],
-["ADAUSDT","Cardano"],
-["AVAXUSDT","Avalanche"],
-["LINKUSDT","Chainlink"],
-["DOTUSDT","Polkadot"],
-["TRXUSDT","Tron"],
-["MATICUSDT","Polygon"],
-["LTCUSDT","Litecoin"],
-["BCHUSDT","Bitcoin Cash"],
-["ATOMUSDT","Cosmos"],
-["NEARUSDT","Near"],
-["APTUSDT","Aptos"],
-["OPUSDT","Optimism"],
-["ARBUSDT","Arbitrum"],
-["INJUSDT","Injective"],
-["FILUSDT","Filecoin"],
-["ETCUSDT","Ethereum Classic"],
-["SUIUSDT","Sui"],
-["SEIUSDT","Sei"],
-["TIAUSDT","Celestia"],
-["RUNEUSDT","Thorchain"],
-["AAVEUSDT","Aave"],
-["UNIUSDT","Uniswap"],
-["MKRUSDT","Maker"],
-["FETUSDT","Fetch AI"],
-["RNDRUSDT","Render"],
-["GRTUSDT","Graph"],
-["PEPEUSDT","Pepe"]
+const CRYPTOS=[
+"BTC","ETH","BNB","SOL","XRP","DOGE","ADA","AVAX","LINK","DOT","TRX","MATIC","LTC","BCH","ATOM",
+"NEAR","APT","OP","ARB","INJ","FIL","ETC","SUI","SEI","TIA","RUNE","AAVE","UNI","MKR","FET",
+"RENDER","RNDR","GRT","PEPE","SHIB","WIF","BONK","FLOKI","TON","HBAR","ICP","XLM","VET","ALGO",
+"EGLD","FTM","SAND","MANA","AXS","GALA","IMX","LDO","CRV","SUSHI","COMP","SNX","DYDX","JUP",
+"PYTH","WLD","AR","STX","KAS","ORDI","ENA","PENDLE","JASMY","STRK","ZK","ZRO","TAO","THETA",
+"QNT","KAVA","ROSE","MINA","FLOW","CHZ","APE","BLUR","GMT","WOO","1INCH","ENS","ZIL","IOTA",
+"KSM","CELO","BAT","QTUM","DASH","ZEC","XMR","WAVES","HOT","ANKR","SKL","LRC","API3","MASK",
+"YFI","BAL","KNC","BAND","RLC","CTSI","STORJ","CFX","CKB","ONE","ONT","ICX","RVN","IOST",
+"CELR","CHR","COTI","ALICE","TLM","BAKE","CAKE","RAY","LPT","GMX","FXS","CVX","TWT","SFP",
+"HOOK","MAGIC","HIGH","ID","EDU","CYBER","NTRN","MEME","ALT","AEVO","ETHFI","W"
 ];
 
-const TOP=FALLBACK.map(x=>x[0]);
+const items=CRYPTOS.map(s=>[s+"USDT",s]);
 
-const API_BASES=[
-  "https://data-api.binance.vision",
-  "https://api.binance.com",
-  "https://api1.binance.com",
-  "https://api2.binance.com",
-  "https://api3.binance.com",
-  "https://api4.binance.com"
-];
-
-function el(id){
-  return document.getElementById(id);
-}
-
-function show(x){
-  el("out").innerHTML=x;
-}
-
-function last(a){
-  return a[a.length-1];
-}
-
-function avg(a){
-  return a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
-}
-
-function std(a){
-  let m=avg(a);
-  return Math.sqrt(avg(a.map(x=>(x-m)*(x-m))))||0;
-}
-
-function fmt(v,d=4){
-  return Number(v).toLocaleString("tr-TR",{maximumFractionDigits:d});
-}
+function el(id){return document.getElementById(id)}
+function show(x){el("out").innerHTML=x}
+function last(a){return a[a.length-1]}
+function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}
+function std(a){let m=avg(a);return Math.sqrt(avg(a.map(x=>(x-m)*(x-m))))||0}
+function fmt(v,d=4){return Number(v).toLocaleString("tr-TR",{maximumFractionDigits:d})}
 
 function ema(a,n){
-  let k=2/(n+1);
-  let r=[];
-  let e=a[0];
-
-  for(let v of a){
-    e=v*k+e*(1-k);
-    r.push(e);
-  }
-
+  let k=2/(n+1),r=[],e=a[0];
+  for(let v of a){e=v*k+e*(1-k);r.push(e)}
   return r;
 }
 
@@ -328,19 +270,12 @@ function sma(a,n){
 
 function rsi(a,n=14){
   if(a.length<n+2)return 50;
-
-  let g=0;
-  let l=0;
-
+  let g=0,l=0;
   for(let i=a.length-n;i<a.length;i++){
     let d=a[i]-a[i-1];
-
-    if(d>0)g+=d;
-    else l-=d;
+    if(d>0)g+=d; else l-=d;
   }
-
   if(l===0)return 100;
-
   let rs=g/l;
   return 100-100/(1+rs);
 }
@@ -350,15 +285,11 @@ function macd(a){
   let e26=ema(a,26);
   let m=e12.map((v,i)=>v-e26[i]);
   let s=ema(m,9);
-
-  return {
-    hist:last(m)-last(s)
-  };
+  return {hist:last(m)-last(s)};
 }
 
 function atr(h,l,c,n=14){
   let tr=[];
-
   for(let i=1;i<c.length;i++){
     tr.push(Math.max(
       h[i]-l[i],
@@ -366,7 +297,6 @@ function atr(h,l,c,n=14){
       Math.abs(l[i]-c[i-1])
     ));
   }
-
   return avg(tr.slice(-n))||0;
 }
 
@@ -374,60 +304,47 @@ function stoch(c,h,l,n=14){
   let hi=Math.max(...h.slice(-n));
   let lo=Math.min(...l.slice(-n));
   let d=hi-lo;
-
-  return d ? ((last(c)-lo)/d)*100 : 50;
+  return d?((last(c)-lo)/d)*100:50;
 }
 
 function roc(c,n=10){
-  return c.length>n ? ((last(c)-c[c.length-1-n])/c[c.length-1-n])*100 : 0;
+  return c.length>n?((last(c)-c[c.length-1-n])/c[c.length-1-n])*100:0;
 }
 
 function boll(c,n=20,m=2){
   let s=c.slice(-n);
   let mid=avg(s);
   let sd=std(s);
-
   return {
     mid,
     up:mid+m*sd,
     lo:mid-m*sd,
-    width:mid ? ((m*sd*2)/mid)*100 : 0
+    width:mid?((m*sd*2)/mid)*100:0
   };
 }
 
-function highest(a,n){
-  return Math.max(...a.slice(-n));
-}
-
-function lowest(a,n){
-  return Math.min(...a.slice(-n));
-}
+function highest(a,n){return Math.max(...a.slice(-n))}
+function lowest(a,n){return Math.min(...a.slice(-n))}
 
 function obv(c,v){
   let o=[0];
-
   for(let i=1;i<c.length;i++){
     let p=o[i-1];
-
     if(c[i]>c[i-1])o.push(p+v[i]);
     else if(c[i]<c[i-1])o.push(p-v[i]);
     else o.push(p);
   }
-
   return o;
 }
 
 function vwapValue(h,l,c,v,n=80){
-  let pv=0;
-  let vv=0;
-
+  let pv=0,vv=0;
   for(let i=Math.max(0,c.length-n);i<c.length;i++){
     let t=(h[i]+l[i]+c[i])/3;
     pv+=t*v[i];
     vv+=v[i];
   }
-
-  return vv ? pv/vv : last(c);
+  return vv?pv/vv:last(c);
 }
 
 function cci(h,l,c,n=20){
@@ -435,178 +352,102 @@ function cci(h,l,c,n=20){
   let r=tp.slice(-n);
   let ma=avg(r);
   let md=avg(r.map(x=>Math.abs(x-ma)));
-
-  return md ? (last(tp)-ma)/(0.015*md) : 0;
+  return md?(last(tp)-ma)/(0.015*md):0;
 }
 
 function mfi(h,l,c,v,n=14){
-  let pos=0;
-  let neg=0;
-
+  let pos=0,neg=0;
   for(let i=c.length-n;i<c.length;i++){
     let tp=(h[i]+l[i]+c[i])/3;
     let pr=(h[i-1]+l[i-1]+c[i-1])/3;
     let flow=tp*v[i];
-
     if(tp>pr)pos+=flow;
     else if(tp<pr)neg+=flow;
   }
-
   if(neg===0)return 100;
-
   return 100-(100/(1+pos/neg));
 }
 
 function williamsR(c,h,l,n=14){
   let hh=highest(h,n);
   let ll=lowest(l,n);
-
-  return hh-ll ? ((hh-last(c))/(hh-ll))*-100 : -50;
+  return hh-ll?((hh-last(c))/(hh-ll))*-100:-50;
 }
 
 function adxValue(h,l,c,n=14){
-  let pd=[];
-  let md=[];
-  let tr=[];
-
+  let pd=[],md=[],tr=[];
   for(let i=1;i<c.length;i++){
     let up=h[i]-h[i-1];
     let dn=l[i-1]-l[i];
-
-    pd.push(up>dn && up>0 ? up : 0);
-    md.push(dn>up && dn>0 ? dn : 0);
-
+    pd.push(up>dn&&up>0?up:0);
+    md.push(dn>up&&dn>0?dn:0);
     tr.push(Math.max(
       h[i]-l[i],
       Math.abs(h[i]-c[i-1]),
       Math.abs(l[i]-c[i-1])
     ));
   }
-
   let t=avg(tr.slice(-n));
   if(!t)return 0;
-
   let p=100*(avg(pd.slice(-n))/t);
   let m=100*(avg(md.slice(-n))/t);
   let dx=Math.abs(p-m)/(p+m)*100;
-
   return isFinite(dx)?dx:0;
 }
 
 function donchian(h,l,n=20){
   let up=highest(h,n);
   let lo=lowest(l,n);
-
-  return {
-    up,
-    lo,
-    mid:(up+lo)/2
-  };
+  return {up,lo,mid:(up+lo)/2};
 }
 
 function keltner(c,at,n=20,m=1.5){
   let mid=last(ema(c,n));
-
-  return {
-    mid,
-    up:mid+at*m,
-    lo:mid-at*m
-  };
+  return {mid,up:mid+at*m,lo:mid-at*m};
 }
 
 function tfProfile(x){
-  const map={
-    "5m":  {binance:"5m",  limit:500, aggregate:1, sr:48, fib:120, atrMult:1.10, rr:1.40, label:"5 dakika"},
-    "15m": {binance:"15m", limit:500, aggregate:1, sr:48, fib:120, atrMult:1.20, rr:1.50, label:"15 dakika"},
-    "30m": {binance:"30m", limit:500, aggregate:1, sr:48, fib:120, atrMult:1.30, rr:1.60, label:"30 dakika"},
-    "1h":  {binance:"1h",  limit:500, aggregate:1, sr:48, fib:160, atrMult:1.40, rr:1.80, label:"1 saat"},
-    "2h":  {binance:"2h",  limit:500, aggregate:1, sr:48, fib:160, atrMult:1.50, rr:2.00, label:"2 saat"},
-    "4h":  {binance:"4h",  limit:500, aggregate:1, sr:50, fib:180, atrMult:1.60, rr:2.20, label:"4 saat"},
-    "8h":  {binance:"8h",  limit:500, aggregate:1, sr:60, fib:200, atrMult:1.80, rr:2.50, label:"8 saat"},
-    "16h": {binance:"8h",  limit:600, aggregate:2, sr:60, fib:200, atrMult:2.00, rr:2.80, label:"16 saat"},
-    "1d":  {binance:"1d",  limit:500, aggregate:1, sr:80, fib:240, atrMult:2.20, rr:3.00, label:"1 gün"}
+  const m={
+    "5m":{ku:"5min",ok:"5m",cc:"histominute",ccAgg:5,okAgg:1,sr:48,fib:120,am:1.1,rr:1.4,label:"5 dakika",ms:5*60*1000},
+    "15m":{ku:"15min",ok:"15m",cc:"histominute",ccAgg:15,okAgg:1,sr:48,fib:120,am:1.2,rr:1.5,label:"15 dakika",ms:15*60*1000},
+    "30m":{ku:"30min",ok:"30m",cc:"histominute",ccAgg:30,okAgg:1,sr:48,fib:120,am:1.3,rr:1.6,label:"30 dakika",ms:30*60*1000},
+    "1h":{ku:"1hour",ok:"1H",cc:"histohour",ccAgg:1,okAgg:1,sr:48,fib:160,am:1.4,rr:1.8,label:"1 saat",ms:60*60*1000},
+    "2h":{ku:"2hour",ok:"2H",cc:"histohour",ccAgg:2,okAgg:1,sr:48,fib:160,am:1.5,rr:2,label:"2 saat",ms:2*60*60*1000},
+    "4h":{ku:"4hour",ok:"4H",cc:"histohour",ccAgg:4,okAgg:1,sr:50,fib:180,am:1.6,rr:2.2,label:"4 saat",ms:4*60*60*1000},
+    "8h":{ku:"8hour",ok:"4H",cc:"histohour",ccAgg:8,okAgg:2,sr:60,fib:200,am:1.8,rr:2.5,label:"8 saat",ms:8*60*60*1000},
+    "16h":{ku:"8hour",ok:"4H",cc:"histohour",ccAgg:16,okAgg:4,sr:60,fib:200,am:2,rr:2.8,label:"16 saat",ms:16*60*60*1000},
+    "1d":{ku:"1day",ok:"1D",cc:"histoday",ccAgg:1,okAgg:1,sr:80,fib:240,am:2.2,rr:3,label:"1 gün",ms:24*60*60*1000}
   };
-
-  return map[x] || map["4h"];
-}
-
-function tfMs(x){
-  const map={
-    "5m":5*60*1000,
-    "15m":15*60*1000,
-    "30m":30*60*1000,
-    "1h":60*60*1000,
-    "2h":2*60*60*1000,
-    "4h":4*60*60*1000,
-    "8h":8*60*60*1000,
-    "16h":16*60*60*1000,
-    "1d":24*60*60*1000
-  };
-
-  return map[x] || map["4h"];
-}
-
-function aggregateBars(b,n){
-  if(n<=1)return b;
-
-  let o=[];
-
-  for(let i=0;i+n<=b.length;i+=n){
-    let g=b.slice(i,i+n);
-
-    o.push({
-      openTime:g[0].openTime,
-      open:g[0].open,
-      high:Math.max(...g.map(x=>x.high)),
-      low:Math.min(...g.map(x=>x.low)),
-      close:last(g).close,
-      volume:g.reduce((a,x)=>a+x.volume,0),
-      closeTime:last(g).closeTime
-    });
-  }
-
-  return o;
+  return m[x]||m["4h"];
 }
 
 function fvgContext(h,l,c){
   let i=c.length-1;
-
   if(i<2)return {side:"info",msg:"FVG için yeterli mum yok"};
-
   if(l[i]>h[i-2])return {side:"long",msg:"Bullish FVG boşluğu var"};
   if(h[i]<l[i-2])return {side:"short",msg:"Bearish FVG boşluğu var"};
-
   return {side:"info",msg:"Net FVG yok"};
 }
 
 function sweepContext(h,l,c,res,sup){
   let i=c.length-1;
-
-  if(l[i]<sup && c[i]>sup){
-    return {side:"long",msg:"Alt likidite süpürülüp destek üstü kapanış"};
-  }
-
-  if(h[i]>res && c[i]<res){
-    return {side:"short",msg:"Üst likidite süpürülüp direnç altı kapanış"};
-  }
-
+  if(l[i]<sup&&c[i]>sup)return {side:"long",msg:"Alt likidite süpürülüp destek üstü kapanış"};
+  if(h[i]>res&&c[i]<res)return {side:"short",msg:"Üst likidite süpürülüp direnç altı kapanış"};
   return {side:"info",msg:"Net sweep yok"};
 }
 
 function bosChoch(c,res,sup,e21,e55){
   let p=last(c);
-
-  if(p>res && e21>e55)return {side:"long",msg:"Direnç üstü BOS"};
-  if(p<sup && e21<e55)return {side:"short",msg:"Destek altı BOS"};
-  if(p>res && e21<e55)return {side:"long",msg:"Yukarı CHOCH ihtimali"};
-  if(p<sup && e21>e55)return {side:"short",msg:"Aşağı CHOCH ihtimali"};
-
+  if(p>res&&e21>e55)return {side:"long",msg:"Direnç üstü BOS"};
+  if(p<sup&&e21<e55)return {side:"short",msg:"Destek altı BOS"};
+  if(p>res&&e21<e55)return {side:"long",msg:"Yukarı CHOCH ihtimali"};
+  if(p<sup&&e21>e55)return {side:"short",msg:"Aşağı CHOCH ihtimali"};
   return {side:"info",msg:"BOS/CHOCH teyidi yok"};
 }
 
 function updateSelectedBox(){
   el("selectedBox").innerHTML=
-    `${selected}<small>${listOpen ? "Liste açık - seçim yapınca kapanır" : "Liste kapalı - açmak için dokun"}</small>`;
+    `${selected}<small>${listOpen?"Liste açık - seçim yapınca kapanır":"Liste kapalı - açmak için dokun"}</small>`;
 }
 
 function toggleList(){
@@ -616,7 +457,6 @@ function toggleList(){
 
 function renderList(){
   updateSelectedBox();
-
   el("listPanel").classList.toggle("hidden",!listOpen);
 
   if(!listOpen){
@@ -629,7 +469,7 @@ function renderList(){
   let arr=items.filter(x=>
     !q ||
     x[0].includes(q) ||
-    String(x[1]).toUpperCase().includes(q)
+    x[1].includes(q)
   );
 
   el("chips").innerHTML=arr.map(x=>
@@ -644,165 +484,243 @@ function pick(s){
   analyzeSelected();
 }
 
-async function fetchTimeout(url,ms=9000){
+function setTf(x){
+  tf=x;
+  document.querySelectorAll(".tf button").forEach(b=>{
+    b.classList.toggle("active",b.dataset.tf===tf);
+  });
+  analyzeSelected();
+}
+
+async function fetchJSON(url,ms=12000){
   let ctrl=new AbortController();
   let t=setTimeout(()=>ctrl.abort(),ms);
 
   try{
-    let r=await fetch(url,{
-      signal:ctrl.signal,
-      cache:"no-store"
-    });
-
+    let r=await fetch(url,{signal:ctrl.signal,cache:"no-store"});
     if(!r.ok)throw Error("HTTP "+r.status);
-
     return await r.json();
   }finally{
     clearTimeout(t);
   }
 }
 
-function hostName(url){
+function baseFromSymbol(s){
+  return s.replace(/USDT$/,"").replace(/USD$/,"");
+}
+
+function aggregateBars(b,n){
+  if(n<=1)return b;
+
+  let out=[];
+
+  for(let i=0;i+n<=b.length;i+=n){
+    let g=b.slice(i,i+n);
+
+    out.push({
+      openTime:g[0].openTime,
+      open:g[0].open,
+      high:Math.max(...g.map(x=>x.high)),
+      low:Math.min(...g.map(x=>x.low)),
+      close:last(g).close,
+      volume:g.reduce((a,x)=>a+x.volume,0),
+      closeTime:last(g).closeTime
+    });
+  }
+
+  return out;
+}
+
+async function barsKuCoin(base,p,attempts){
+  let sym=`${base}-USDT`;
+  let url=`https://api.kucoin.com/api/v1/market/candles?type=${p.ku}&symbol=${sym}&_=${Date.now()}`;
+
   try{
-    return new URL(url).hostname;
+    let j=await fetchJSON(url);
+
+    if(j.code!=="200000"){
+      throw Error(j.msg||"KuCoin hata");
+    }
+
+    let arr=j.data;
+
+    if(!Array.isArray(arr)||arr.length<80){
+      throw Error("Yetersiz veri");
+    }
+
+    let bars=arr.map(x=>({
+      openTime:+x[0]*1000,
+      open:+x[1],
+      close:+x[2],
+      high:+x[3],
+      low:+x[4],
+      volume:+x[5],
+      closeTime:+x[0]*1000+p.ms-1
+    }))
+    .sort((a,b)=>a.openTime-b.openTime)
+    .filter(x=>x.close>0&&x.high>0&&x.low>0)
+    .slice(-300);
+
+    if(bars.length<80){
+      throw Error("Temiz veri yetersiz");
+    }
+
+    attempts.push({source:"KuCoin",ok:true});
+
+    return {
+      bars,
+      source:"KuCoin",
+      attempts
+    };
   }catch(e){
-    return url;
+    attempts.push({source:"KuCoin",ok:false,error:e.message||String(e)});
+    throw e;
   }
 }
 
-function buildUrls(path){
-  let urls=API_BASES.map(base=>base+path);
+async function barsOKX(base,p,attempts){
+  let inst=`${base}-USDT`;
+  let url=`https://www.okx.com/api/v5/market/candles?instId=${inst}&bar=${p.ok}&limit=300&_=${Date.now()}`;
 
-  let core="https://data-api.binance.vision"+path;
+  try{
+    let j=await fetchJSON(url);
 
-  urls.push("https://api.allorigins.win/raw?url="+encodeURIComponent(core));
-  urls.push("https://corsproxy.io/?"+encodeURIComponent(core));
+    if(j.code!=="0"){
+      throw Error(j.msg||"OKX hata");
+    }
 
-  return urls;
+    let arr=j.data;
+
+    if(!Array.isArray(arr)||arr.length<80){
+      throw Error("Yetersiz veri");
+    }
+
+    let bars=arr.map(x=>({
+      openTime:+x[0],
+      open:+x[1],
+      high:+x[2],
+      low:+x[3],
+      close:+x[4],
+      volume:+x[5],
+      closeTime:+x[0]+p.ms-1
+    }))
+    .sort((a,b)=>a.openTime-b.openTime)
+    .filter(x=>x.close>0&&x.high>0&&x.low>0);
+
+    bars=aggregateBars(bars,p.okAgg).slice(-300);
+
+    if(bars.length<80){
+      throw Error("Temiz veri yetersiz");
+    }
+
+    attempts.push({
+      source:p.okAgg>1?`OKX ${p.ok} aggregate`:"OKX",
+      ok:true
+    });
+
+    return {
+      bars,
+      source:p.okAgg>1?`OKX ${p.ok} aggregate`:"OKX",
+      attempts
+    };
+  }catch(e){
+    attempts.push({source:"OKX",ok:false,error:e.message||String(e)});
+    throw e;
+  }
 }
 
-async function fetchFirst(path){
-  let attempts=[];
+async function barsCryptoCompare(base,p,attempts){
+  let urls=[
+    {
+      source:"CryptoCompare USDT",
+      url:`https://min-api.cryptocompare.com/data/v2/${p.cc}?fsym=${base}&tsym=USDT&limit=320&aggregate=${p.ccAgg}&_=${Date.now()}`
+    },
+    {
+      source:"CryptoCompare USD",
+      url:`https://min-api.cryptocompare.com/data/v2/${p.cc}?fsym=${base}&tsym=USD&limit=320&aggregate=${p.ccAgg}&_=${Date.now()}`
+    }
+  ];
 
-  for(let url of buildUrls(path)){
-    let name=hostName(url);
-
+  for(let u of urls){
     try{
-      let data=await fetchTimeout(url);
-      attempts.push({source:name,ok:true});
+      let j=await fetchJSON(u.url);
+
+      if(j.Response==="Error"){
+        throw Error(j.Message||"API error");
+      }
+
+      let arr=j.Data&&j.Data.Data;
+
+      if(!Array.isArray(arr)||arr.length<80){
+        throw Error("Yetersiz veri");
+      }
+
+      let bars=arr.map(x=>({
+        openTime:x.time*1000,
+        open:+x.open,
+        high:+x.high,
+        low:+x.low,
+        close:+x.close,
+        volume:+(x.volumefrom||x.volumeto||0),
+        closeTime:x.time*1000+p.ms-1
+      }))
+      .filter(x=>x.close>0&&x.high>0&&x.low>0)
+      .slice(-300);
+
+      if(bars.length<80){
+        throw Error("Temiz veri yetersiz");
+      }
+
+      attempts.push({source:u.source,ok:true});
 
       return {
-        data,
-        source:name,
+        bars,
+        source:u.source,
         attempts
       };
     }catch(e){
-      attempts.push({
-        source:name,
-        ok:false,
-        error:e.message || String(e)
-      });
+      attempts.push({source:u.source,ok:false,error:e.message||String(e)});
     }
   }
 
-  let err=new Error("Tüm veri kapıları çalışmadı");
-  err.attempts=attempts;
-  throw err;
-}
-
-async function loadList(){
-  show("<p>Binance kripto listesi yükleniyor...</p>");
-
-  try{
-    let r=await fetchFirst("/api/v3/exchangeInfo");
-    let j=r.data;
-
-    items=j.symbols
-      .filter(x=>x.status==="TRADING" && x.quoteAsset==="USDT")
-      .map(x=>[x.symbol,x.baseAsset])
-      .sort((a,b)=>{
-        let ia=TOP.indexOf(a[0]);
-        let ib=TOP.indexOf(b[0]);
-
-        if(ia<0)ia=9999;
-        if(ib<0)ib=9999;
-
-        return ia-ib || a[0].localeCompare(b[0]);
-      });
-
-    renderList();
-
-    show(`<p><b>${items.length}</b> adet Binance USDT kripto listelendi. Liste kaynağı: <b>${r.source}</b></p>`);
-
-    analyzeSelected();
-  }catch(e){
-    items=[...FALLBACK];
-    renderList();
-
-    show(`
-      <div class="result warn">LİSTE UYARISI</div>
-      <p>Canlı liste gelmedi, yedek liste açıldı.</p>
-      ${(e.attempts||[]).map(a=>
-        `<span class="badge bad">${a.source}: ${a.error || "çalışmadı"}</span>`
-      ).join("")}
-    `);
-
-    analyzeSelected();
-  }
-}
-
-function setTf(x){
-  tf=x;
-
-  document.querySelectorAll(".tf button").forEach(b=>{
-    b.classList.toggle("active",b.dataset.tf===tf);
-  });
-
-  analyzeSelected();
+  throw Error("CryptoCompare veri vermedi");
 }
 
 async function getBars(sym){
   let p=tfProfile(tf);
+  let base=baseFromSymbol(sym);
+  let attempts=[];
+  let r=null;
 
-  let path=`/api/v3/klines?symbol=${sym}&interval=${p.binance}&limit=${p.limit}&_=${Date.now()}`;
-  let r=await fetchFirst(path);
-  let j=r.data;
-
-  if(!Array.isArray(j)){
-    let err=new Error("Binance veri formatı hatalı");
-    err.attempts=r.attempts;
-    throw err;
+  try{
+    r=await barsKuCoin(base,p,attempts);
+  }catch(e1){
+    try{
+      r=await barsOKX(base,p,attempts);
+    }catch(e2){
+      try{
+        r=await barsCryptoCompare(base,p,attempts);
+      }catch(e3){
+        let err=new Error("KuCoin / OKX / CryptoCompare veri vermedi");
+        err.attempts=attempts;
+        throw err;
+      }
+    }
   }
 
-  let bars=j.map(x=>({
-    openTime:x[0],
-    open:+x[1],
-    high:+x[2],
-    low:+x[3],
-    close:+x[4],
-    volume:+x[5],
-    closeTime:x[6]
-  }));
-
-  if(p.aggregate>1){
-    bars=aggregateBars(bars,p.aggregate).slice(-300);
-  }else{
-    bars=bars.slice(-300);
-  }
-
-  let real=bars.length>2 ? bars[bars.length-1].openTime-bars[bars.length-2].openTime : 0;
+  let real=r.bars.length>2
+    ? r.bars[r.bars.length-1].openTime-r.bars[r.bars.length-2].openTime
+    : 0;
 
   return {
-    ok:true,
-    source:p.aggregate>1 ? `${r.source} ${p.binance} → Sentetik ${tf}` : r.source,
+    source:r.source,
     symbol:sym,
     tf,
     tfLabel:p.label,
-    expectedMs:tfMs(tf),
     realMs:real,
-    bars,
+    bars:r.bars,
     profile:p,
-    attempts:r.attempts
+    attempts
   };
 }
 
@@ -811,23 +729,17 @@ async function analyzeSelected(){
 
   try{
     let d=await getBars(selected);
-
-    if(!d.bars || d.bars.length<80){
-      let err=new Error("Yetersiz mum verisi: "+(d.bars?d.bars.length:0));
-      err.attempts=d.attempts;
-      throw err;
-    }
-
     calc(d);
   }catch(e){
-    let at=e.attempts || [{source:"Binance",ok:false,error:e.message || String(e)}];
+    let attempts=e.attempts||[];
 
     show(`
       <div class="result warn">VERİ HATASI</div>
-      <p><b>${selected}</b> için veri alınamadı. Tüm Binance kapıları denendi.</p>
-      ${at.map(a=>
-        `<span class="badge ${a.ok?'good':'bad'}">${a.source}: ${a.ok ? "ÇALIŞTI" : "ÇALIŞMADI "+(a.error||"")}</span>`
+      <p><b>${selected}</b> için KuCoin / OKX / CryptoCompare kanallarından veri alınamadı.</p>
+      ${attempts.map(a=>
+        `<span class="badge ${a.ok?'good':'bad'}">${a.source}: ${a.ok?"ÇALIŞTI":"ÇALIŞMADI "+(a.error||"")}</span>`
       ).join("")}
+      <p class="notice">Başka coin veya farklı zaman dilimi dene.</p>
     `);
   }
 }
@@ -839,8 +751,8 @@ function addContext(name,fn,ctx,long,short,info){
     ctx.push({
       name,
       ok:true,
-      side:r.side || "info",
-      msg:r.msg || ""
+      side:r.side||"info",
+      msg:r.msg||""
     });
 
     if(r.side==="long")long.push(`${name}: ${r.msg}`);
@@ -851,7 +763,7 @@ function addContext(name,fn,ctx,long,short,info){
       name,
       ok:false,
       side:"fail",
-      msg:e.message || String(e)
+      msg:e.message||String(e)
     });
   }
 }
@@ -882,7 +794,6 @@ function calc(data){
   let at=atr(h,l,c);
   let rc=roc(c);
   let bb=boll(c);
-
   let adx=adxValue(h,l,c);
   let cciVal=cci(h,l,c);
   let mfiVal=mfi(h,l,c,v);
@@ -1073,7 +984,7 @@ function calc(data){
   let failed=ctx.filter(x=>!x.ok).length;
 
   let directional=long.length+short.length;
-  let decision=long.length>=short.length ? "LONG" : "SHORT";
+  let decision=long.length>=short.length?"LONG":"SHORT";
 
   let confidence=directional
     ? Math.round(Math.max(long.length,short.length)/directional*100)
@@ -1084,14 +995,14 @@ function calc(data){
   let entry=price;
 
   let stop=decision==="LONG"
-    ? Math.max(entry-at*p.atrMult,sup-at*0.1)
-    : Math.min(entry+at*p.atrMult,res+at*0.1);
+    ? Math.max(entry-at*p.am,sup-at*0.1)
+    : Math.min(entry+at*p.am,res+at*0.1);
 
-  let risk=Math.abs(entry-stop)||at*p.atrMult;
+  let risk=Math.abs(entry-stop)||at*p.am;
 
-  let tp1=decision==="LONG" ? entry+risk : entry-risk;
-  let tp2=decision==="LONG" ? entry+risk*p.rr : entry-risk*p.rr;
-  let tp3=decision==="LONG" ? entry+risk*(p.rr+1) : entry-risk*(p.rr+1);
+  let tp1=decision==="LONG"?entry+risk:entry-risk;
+  let tp2=decision==="LONG"?entry+risk*p.rr:entry-risk*p.rr;
+  let tp3=decision==="LONG"?entry+risk*(p.rr+1):entry-risk*(p.rr+1);
 
   drawChart(c,entry,stop,tp2);
 
@@ -1122,7 +1033,7 @@ function calc(data){
     <p>
       <b>Veri bağı:</b>
       ${(data.attempts||[]).map(a=>
-        `<span class="badge ${a.ok?'good':'bad'}">${a.source}: ${a.ok ? "ÇALIŞTI" : "ÇALIŞMADI "+(a.error||"")}</span>`
+        `<span class="badge ${a.ok?'good':'bad'}">${a.source}: ${a.ok?"ÇALIŞTI":"ÇALIŞMADI "+(a.error||"")}</span>`
       ).join("")}
     </p>
 
@@ -1136,14 +1047,11 @@ function calc(data){
     <p class="notice">Her time frame kendi mum verisi, ATR, destek/direnç ve hedef katsayısıyla hesaplanır. Sistem emir göndermez; karar destek analizidir.</p>
 
     <p><b>LONG sebepleri:</b><br>${long.map(x=>`<span class="badge good">${x}</span>`).join("")}</p>
-
     <p><b>SHORT sebepleri:</b><br>${short.map(x=>`<span class="badge bad">${x}</span>`).join("")}</p>
-
     <p><b>Nötr / Bilgi:</b><br>${info.map(x=>`<span class="badge info">${x}</span>`).join("")}</p>
-
     <p><b>Çalışan analiz bağları:</b><br>${ctx.filter(x=>x.ok).map(x=>`<span class="badge info">${x.name}</span>`).join("")}</p>
 
-    ${failed ? `<p><b>Çalışmayan bağlar:</b><br>${ctx.filter(x=>!x.ok).map(x=>`<span class="badge bad">${x.name}: ${x.msg}</span>`).join("")}</p>` : ""}
+    ${failed?`<p><b>Çalışmayan bağlar:</b><br>${ctx.filter(x=>!x.ok).map(x=>`<span class="badge bad">${x.name}: ${x.msg}</span>`).join("")}</p>`:""}
   `);
 }
 
@@ -1198,7 +1106,8 @@ function drawChart(c,entry,stop,tp){
   line(tp,"#2cff9a","Hedef");
 }
 
-loadList();
+renderList();
+analyzeSelected();
 </script>
 
 </body>
