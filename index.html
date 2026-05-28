@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ayaz Trade Long Short</title>
+<style>
+body{margin:0;font-family:Arial;background:#0b1020;color:#fff}
+.wrap{max-width:720px;margin:auto;padding:18px}
+.card{background:#151b33;border:1px solid #263055;border-radius:18px;padding:16px;margin:12px 0}
+h1{font-size:25px;margin:6px 0 4px}
+p{color:#aeb8d8}
+input,select,button,textarea{width:100%;box-sizing:border-box;border-radius:13px;border:1px solid #344064;background:#0f1528;color:white;padding:13px;margin:7px 0;font-size:16px}
+button{background:#2f7cff;border:0;font-weight:bold}
+button:active{transform:scale(.98)}
+.result{font-size:38px;font-weight:900;text-align:center;padding:18px;border-radius:18px;margin-top:12px}
+.long{background:#073d2a;color:#2cff9a}
+.short{background:#47151d;color:#ff6b7a}
+.badge{display:inline-block;padding:6px 10px;border-radius:999px;background:#253055;margin:4px;font-size:13px}
+small{color:#9da8c9}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+pre{white-space:pre-wrap;color:#c8d1f2}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Ayaz Trade Long / Short</h1>
+<p>Crypto ve hisse için teknik analiz bağlamlı karar motoru. Çıktı sadece LONG veya SHORT üretir.</p>
+
+<div class="card">
+<label>Piyasa</label>
+<select id="market">
+<option value="crypto">Crypto - Binance</option>
+<option value="stock">Hisse - Yahoo/Proxy</option>
+<option value="manual">Manuel veri</option>
+</select>
+
+<label>Sembol</label>
+<input id="symbol" value="BTCUSDT" placeholder="BTCUSDT / ETHUSDT / THYAO.IS / AAPL">
+
+<div class="row">
+<div>
+<label>Periyot</label>
+<select id="interval">
+<option value="1h">1 Saat</option>
+<option value="4h" selected>4 Saat</option>
+<option value="1d">Günlük</option>
+</select>
+</div>
+<div>
+<label>Mum sayısı</label>
+<input id="limit" type="number" value="300">
+</div>
+</div>
+
+<button onclick="run()">Analiz Yap</button>
+<button onclick="demo()">Demo Veriyle Dene</button>
+</div>
+
+<div class="card">
+<label>Manuel kapanış verisi</label>
+<textarea id="manual" rows="5" placeholder="100,102,101,105,108,106,110"></textarea>
+<small>Canlı veri çalışmazsa buraya kapanış fiyatlarını virgülle yazıp Manuel veri seç.</small>
+</div>
+
+<div id="out" class="card">
+Sonuç burada görünecek.
+</div>
+</div>
+
+<script>
+function avg(a){return a.reduce((x,y)=>x+y,0)/a.length}
+function ema(a,n){let k=2/(n+1),r=[],e=a[0];for(let v of a){e=v*k+e*(1-k);r.push(e)}return r}
+function rsi(a,n=14){let g=0,l=0;for(let i=a.length-n;i<a.length;i++){let d=a[i]-a[i-1];if(d>0)g+=d;else l-=d}if(l===0)return 100;let rs=g/l;return 100-100/(1+rs)}
+function macd(a){let e12=ema(a,12),e26=ema(a,26);let m=e12.map((v,i)=>v-e26[i]);let s=ema(m,9);return {m:m.at(-1),s:s.at(-1),h:m.at(-1)-s.at(-1)}}
+function stoch(c,h,l,n=14){let hi=Math.max(...h.slice(-n)),lo=Math.min(...l.slice(-n));return ((c.at(-1)-lo)/(hi-lo))*100}
+function atr(h,l,c,n=14){let tr=[];for(let i=1;i<c.length;i++){tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])))}return avg(tr.slice(-n))}
+function analyze(data){
+let c=data.c,h=data.h||data.c,l=data.l||data.c,v=data.v||data.c.map(x=>1)
+let price=c.at(-1), e21=ema(c,21).at(-1), e55=ema(c,55).at(-1), e200=ema(c,200).at(-1)
+let rs=rsi(c,14), mc=macd(c), sto=stoch(c,h,l,14), at=atr(h,l,c,14)
+let high20=Math.max(...h.slice(-20)), low20=Math.min(...l.slice(-20))
+let volNow=v.at(-1), volAvg=avg(v.slice(-20))
+let slope=c.at(-1)-c.at(-10)
+let long=[], short=[]
+
+if(price>e21)long.push("Fiyat EMA21 üstünde");else short.push("Fiyat EMA21 altında")
+if(e21>e55)long.push("EMA21 > EMA55 trend pozitif");else short.push("EMA21 < EMA55 trend negatif")
+if(price>e200)long.push("Fiyat EMA200 üstünde ana yapı güçlü");else short.push("Fiyat EMA200 altında ana yapı zayıf")
+if(mc.h>0)long.push("MACD histogram pozitif");else short.push("MACD histogram negatif")
+if(rs>50)long.push("RSI 50 üstü momentum pozitif");else short.push("RSI 50 altı momentum negatif")
+if(sto>50)long.push("Stoch orta bölge üstü");else short.push("Stoch orta bölge altı")
+if(slope>0)long.push("Son 10 mum eğimi yukarı");else short.push("Son 10 mum eğimi aşağı")
+if(price>high20-at*.25)long.push("Direnç/kırılım bölgesi"); 
+if(price<low20+at*.25)short.push("Destek kırılım/tehlike bölgesi")
+if(volNow>volAvg)long.push("Hacim ortalama üstü hareketi destekliyor");else short.push("Hacim zayıf")
+if(c.at(-1)>c.at(-2)&&c.at(-2)>c.at(-3))long.push("3 mum yukarı tepki"); 
+if(c.at(-1)<c.at(-2)&&c.at(-2)<c.at(-3))short.push("3 mum aşağı baskı")
+
+let decision=long.length>=short.length?"LONG":"SHORT"
+let cls=decision==="LONG"?"long":"short"
+document.getElementById("out").innerHTML=
+`<div class="result ${cls}">${decision}</div>
+<p><b>Son fiyat:</b> ${price.toFixed(4)}</p>
+<p><b>LONG bağlamı:</b> ${long.length} madde<br>${long.map(x=>"<span class='badge'>"+x+"</span>").join("")}</p>
+<p><b>SHORT bağlamı:</b> ${short.length} madde<br>${short.map(x=>"<span class='badge'>"+x+"</span>").join("")}</p>
+<pre>RSI: ${rs.toFixed(2)}
+MACD Hist: ${mc.h.toFixed(4)}
+Stoch: ${sto.toFixed(2)}
+ATR: ${at.toFixed(4)}
+Destek 20: ${low20.toFixed(4)}
+Direnç 20: ${high20.toFixed(4)}</pre>`
+}
+async function run(){
+let market=document.getElementById("market").value
+let symbol=document.getElementById("symbol").value.trim().toUpperCase()
+let interval=document.getElementById("interval").value
+let limit=document.getElementById("limit").value
+document.getElementById("out").innerHTML="Veri çekiliyor..."
+try{
+if(market==="manual"){
+let arr=document.getElementById("manual").value.split(/[,\n ]+/).map(Number).filter(x=>!isNaN(x))
+if(arr.length<60)throw "Manuel veri en az 60 kapanış olmalı"
+analyze({c:arr});return
+}
+if(market==="crypto"){
+let url=`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`
+let j=await fetch(url).then(r=>r.json())
+let c=j.map(x=>+x[4]),h=j.map(x=>+x[2]),l=j.map(x=>+x[3]),v=j.map(x=>+x[5])
+analyze({c,h,l,v});return
+}
+if(market==="stock"){
+let intv=interval==="1d"?"1d":"1d"
+let u=`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=1y&interval=${intv}`
+let proxy=`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`
+let j=await fetch(proxy).then(r=>r.json())
+let q=j.chart.result[0].indicators.quote[0]
+let c=q.close.filter(x=>x),h=q.high.filter(x=>x),l=q.low.filter(x=>x),v=q.volume.filter(x=>x)
+analyze({c,h,l,v});return
+}
+}catch(e){
+document.getElementById("out").innerHTML="<div class='result short'>VERİ HATASI</div><p>Canlı veri gelmedi. Manuel veri seçip kapanış fiyatlarını yapıştır veya demo ile dene.</p><small>"+e+"</small>"
+}
+}
+function demo(){
+let c=[],h=[],l=[],v=[],p=100
+for(let i=0;i<260;i++){p+=Math.sin(i/9)*1.2+(Math.random()-.45)*2;c.push(p);h.push(p+Math.random()*2);l.push(p-Math.random()*2);v.push(1000+Math.random()*600)}
+analyze({c,h,l,v})
+}
+demo()
+</script>
+</body>
+</html>
