@@ -3,93 +3,255 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Ayaz Trade Pro V4 Long Short</title>
+<title>Ayaz Trade Pro - Basit Sekmeli</title>
+
 <style>
 :root{
-  --bg:#0b1020;--card:#151b33;--card2:#10172d;--line:#2b355f;--text:#f5f7ff;--muted:#aeb8d8;
-  --blue:#2f7cff;--green:#2cff9a;--red:#ff6b7a;--yellow:#ffd166;--purple:#a78bfa;
+  --bg:#0b1020;
+  --card:#151b33;
+  --card2:#10172d;
+  --line:#2b355f;
+  --text:#f5f7ff;
+  --muted:#aeb8d8;
+  --blue:#2f7cff;
+  --green:#2cff9a;
+  --red:#ff6b7a;
+  --yellow:#ffd166;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
-.wrap{max-width:820px;margin:auto;padding:16px 14px 80px}
-h1{font-size:25px;margin:10px 0 5px}
-h2{font-size:18px;margin:4px 0 10px}
-p{color:var(--muted);line-height:1.35}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;margin:12px 0;box-shadow:0 10px 30px rgba(0,0,0,.18)}
-.card2{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0}
-label{display:block;margin:8px 0 4px;color:#dce4ff}
-input,select,button,textarea{
-  width:100%;border-radius:13px;border:1px solid #344064;background:#0f1528;color:white;
-  padding:12px;margin:5px 0;font-size:16px
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:var(--bg);
+  color:var(--text)
 }
-button{background:var(--blue);border:0;font-weight:800;cursor:pointer}
-button.secondary{background:#253055}
-button.warn{background:#7c2d12}
-button:active{transform:scale(.985)}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.result{font-size:42px;font-weight:900;text-align:center;padding:20px;border-radius:18px;margin:10px 0}
-.long{background:#073d2a;color:var(--green)}
-.short{background:#47151d;color:var(--red)}
-.neutral{background:#3a2d09;color:var(--yellow)}
-.badge{display:inline-block;padding:7px 10px;border-radius:999px;background:#253055;margin:4px;font-size:13px;color:#dfe7ff}
-.badge.longb{background:#063922;color:#88ffc7}
-.badge.shortb{background:#451721;color:#ff9aa7}
-.badge.info{background:#24304f;color:#dce4ff}
-small{color:#9da8c9;line-height:1.35}
-pre{white-space:pre-wrap;color:#c8d1f2;overflow:auto;background:#0f1528;padding:10px;border-radius:12px}
-.listbox{height:210px}
-.kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.kpi div{background:#0f1528;border:1px solid #344064;border-radius:14px;padding:11px}
-.kpi b{display:block;font-size:18px;margin-top:4px}
-canvas{width:100%;height:180px;background:#0f1528;border:1px solid #344064;border-radius:14px}
-.sep{height:1px;background:#2b355f;margin:12px 0}
-.ok{color:var(--green)}.bad{color:var(--red)}.yel{color:var(--yellow)}
-.notice{border-left:4px solid var(--yellow);padding-left:10px;color:#dce4ff}
-@media(max-width:560px){.row,.row3,.kpi{grid-template-columns:1fr}.result{font-size:38px}}
+.wrap{
+  max-width:820px;
+  margin:auto;
+  padding:16px 14px 80px
+}
+h1{
+  font-size:25px;
+  margin:10px 0 5px
+}
+h2{
+  font-size:18px;
+  margin:4px 0 10px
+}
+p{
+  color:var(--muted);
+  line-height:1.35
+}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:15px;
+  margin:12px 0;
+  box-shadow:0 10px 30px rgba(0,0,0,.18)
+}
+label{
+  display:block;
+  margin:8px 0 4px;
+  color:#dce4ff
+}
+input,select,button,textarea{
+  width:100%;
+  border-radius:13px;
+  border:1px solid #344064;
+  background:#0f1528;
+  color:white;
+  padding:12px;
+  margin:5px 0;
+  font-size:16px
+}
+button{
+  background:var(--blue);
+  border:0;
+  font-weight:800;
+  cursor:pointer
+}
+button.secondary{
+  background:#253055
+}
+button:active{
+  transform:scale(.985)
+}
+.tabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:14px 0
+}
+.tab{
+  background:#10172d;
+  border:1px solid #344064;
+  border-radius:18px;
+  padding:17px 10px;
+  font-size:20px;
+  font-weight:900;
+  color:white
+}
+.tab.active{
+  background:var(--blue);
+  color:white
+}
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px
+}
+.row3{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:8px
+}
+.asset-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+  max-height:420px;
+  overflow:auto;
+  padding-right:4px
+}
+.asset-btn{
+  text-align:left;
+  background:#0f1528;
+  border:1px solid #344064;
+  border-radius:14px;
+  padding:12px;
+  font-size:16px;
+  font-weight:900;
+  color:white
+}
+.asset-btn small{
+  display:block;
+  color:#9da8c9;
+  font-weight:500;
+  margin-top:3px
+}
+.asset-btn.active{
+  border-color:var(--yellow);
+  box-shadow:0 0 0 2px rgba(255,209,102,.25)
+}
+.result{
+  font-size:42px;
+  font-weight:900;
+  text-align:center;
+  padding:20px;
+  border-radius:18px;
+  margin:10px 0
+}
+.long{
+  background:#073d2a;
+  color:var(--green)
+}
+.short{
+  background:#47151d;
+  color:var(--red)
+}
+.neutral{
+  background:#3a2d09;
+  color:var(--yellow)
+}
+.badge{
+  display:inline-block;
+  padding:7px 10px;
+  border-radius:999px;
+  background:#253055;
+  margin:4px;
+  font-size:13px;
+  color:#dfe7ff
+}
+.badge.longb{
+  background:#063922;
+  color:#88ffc7
+}
+.badge.shortb{
+  background:#451721;
+  color:#ff9aa7
+}
+.badge.info{
+  background:#24304f;
+  color:#dce4ff
+}
+small{
+  color:#9da8c9;
+  line-height:1.35
+}
+pre{
+  white-space:pre-wrap;
+  color:#c8d1f2;
+  overflow:auto;
+  background:#0f1528;
+  padding:10px;
+  border-radius:12px
+}
+.kpi{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px
+}
+.kpi div{
+  background:#0f1528;
+  border:1px solid #344064;
+  border-radius:14px;
+  padding:11px
+}
+.kpi b{
+  display:block;
+  font-size:18px;
+  margin-top:4px;
+  color:white
+}
+canvas{
+  width:100%;
+  height:180px;
+  background:#0f1528;
+  border:1px solid #344064;
+  border-radius:14px
+}
+.sep{
+  height:1px;
+  background:#2b355f;
+  margin:12px 0
+}
+.notice{
+  border-left:4px solid var(--yellow);
+  padding-left:10px;
+  color:#dce4ff
+}
+@media(max-width:560px){
+  .row,.row3,.kpi,.asset-grid{grid-template-columns:1fr}
+  .result{font-size:38px}
+}
 </style>
 </head>
 
 <body>
 <div class="wrap">
-<h1>Ayaz Trade Pro V4</h1>
-<p>Crypto + hisse seçilebilir liste, canlı veri, LONG/SHORT karar, güven uyumu, hedef/stop ve risk planı.</p>
 
-<div class="card">
-  <h2>1) Piyasa ve Liste</h2>
-  <div class="row">
-    <div>
-      <label>Piyasa</label>
-      <select id="market" onchange="onMarketChange()">
-        <option value="crypto">Crypto - Binance</option>
-        <option value="stock">Hisse - Yahoo/Stooq</option>
-        <option value="manual">Manuel veri</option>
-      </select>
-    </div>
-    <div>
-      <label>Liste</label>
-      <select id="listType">
-        <option value="auto">Otomatik / Önerilen</option>
-        <option value="crypto_usdt">Binance USDT listesi</option>
-        <option value="bist">BIST liste</option>
-        <option value="us">ABD hisse liste</option>
-        <option value="fav">Favorilerim</option>
-      </select>
-    </div>
-  </div>
+<h1>Ayaz Trade Pro</h1>
+<p>Üstte sadece iki sekme var: <b>Kripto</b> ve <b>Hisse Senedi</b>. Listeden sembole basınca analiz otomatik çalışır.</p>
 
-  <button onclick="loadList()">Listeyi Yükle / Bastır</button>
-  <input id="search" placeholder="Listede ara: BTC, ETH, THYAO, ASELS, AAPL..." oninput="renderList()">
-  <select id="assetList" class="listbox" size="8" onchange="pickSelected()"></select>
-  <small>Listeye dokununca sembol alanına otomatik gelir. Crypto listesi Binance’ten çekilir; hisse listesi hazır BIST/ABD listesinden gelir ve canlı veri Yahoo/Stooq üzerinden denenir.</small>
+<div class="tabs">
+  <button id="tabCrypto" class="tab active" onclick="setMarket('crypto')">KRİPTO</button>
+  <button id="tabStock" class="tab" onclick="setMarket('stock')">HİSSE SENEDİ</button>
 </div>
 
 <div class="card">
-  <h2>2) Analiz Ayarları</h2>
-  <label>Sembol</label>
-  <input id="symbol" value="BTCUSDT" placeholder="BTCUSDT / ETHUSDT / THYAO.IS / ASELS.IS / AAPL">
+  <h2 id="listTitle">Kripto Listesi</h2>
+  <input id="searchBox" placeholder="Ara: BTC, ETH, SOL, THYAO, ASELS..." oninput="renderAssetList()">
+  <div id="assetList" class="asset-grid"></div>
+</div>
 
-  <div class="row3">
+<div class="card">
+  <h2>Analiz Ayarları</h2>
+
+  <label>Seçilen Sembol</label>
+  <input id="symbol" value="BTCUSDT">
+
+  <div class="row">
     <div>
       <label>Periyot</label>
       <select id="interval">
@@ -100,36 +262,32 @@ canvas{width:100%;height:180px;background:#0f1528;border:1px solid #344064;borde
       </select>
     </div>
     <div>
-      <label>Mum sayısı</label>
+      <label>Mum Sayısı</label>
       <input id="limit" type="number" value="300" min="80" max="1000">
     </div>
-    <div>
-      <label>Veri kaynağı</label>
-      <select id="source">
-        <option value="auto">Otomatik</option>
-        <option value="binance">Binance</option>
-        <option value="yahoo">Yahoo Proxy</option>
-        <option value="stooq">Stooq Proxy</option>
-      </select>
-    </div>
   </div>
+
+  <button onclick="run()">Analiz Yap</button>
 </div>
 
 <div class="card">
-  <h2>3) Hedef / Stop / Risk Planı</h2>
+  <h2>Hedef / Stop / Risk Planı</h2>
+
   <div class="row3">
     <div>
-      <label>Stop yöntemi</label>
+      <label>Stop Yöntemi</label>
       <select id="stopMode">
-        <option value="atr">ATR stop</option>
-        <option value="sr">Destek/direnç stop</option>
-        <option value="hybrid" selected>Hibrit stop</option>
+        <option value="atr">ATR Stop</option>
+        <option value="sr">Destek / Direnç Stop</option>
+        <option value="hybrid" selected>Hibrit Stop</option>
       </select>
     </div>
+
     <div>
-      <label>ATR stop çarpanı</label>
+      <label>ATR Stop Çarpanı</label>
       <input id="atrMult" type="number" value="1.5" step="0.1">
     </div>
+
     <div>
       <label>Hedef R/R</label>
       <input id="rr" type="number" value="2" step="0.25">
@@ -141,55 +299,214 @@ canvas{width:100%;height:180px;background:#0f1528;border:1px solid #344064;borde
       <label>Sermaye</label>
       <input id="capital" type="number" value="10000" step="100">
     </div>
+
     <div>
-      <label>İşlem riski %</label>
+      <label>İşlem Riski %</label>
       <input id="riskPct" type="number" value="1" step="0.1">
     </div>
+
     <div>
-      <label>Giriş tamponu %</label>
+      <label>Giriş Tamponu %</label>
       <input id="entryBuf" type="number" value="0" step="0.05">
     </div>
   </div>
-  <small>Risk planı otomatik hesaplanır. BIST tarafında SHORT otomatik açığa satış değil; teknik zayıflık/çıkış/kâr alma/korunma uyarısı olarak düşün.</small>
+
+  <small>BIST tarafında SHORT; açığa satış değil, çıkış / kâr al / dikkat uyarısı olarak değerlendirilmelidir.</small>
+</div>
+
+<div id="out" class="card">
+  <p>Listeden bir sembol seç. Analiz burada görünecek.</p>
 </div>
 
 <div class="card">
-  <h2>4) Manuel Veri</h2>
-  <textarea id="manual" rows="5" placeholder="100,102,101,105,108,106,110 ... en az 80 kapanış fiyatı"></textarea>
-  <small>Canlı hisse kaynağı engellenirse kapanış verilerini buraya yapıştırıp “Manuel veri” seç.</small>
+  <canvas id="chart" width="760" height="230"></canvas>
 </div>
 
-<div class="card">
-  <button onclick="run()">Analiz Yap</button>
-  <button class="secondary" onclick="demo()">Demo Veriyle Dene</button>
-</div>
-
-<div id="out" class="card">Sonuç burada görünecek.</div>
-<div class="card"><canvas id="chart" width="760" height="230"></canvas></div>
 </div>
 
 <script>
-const BIST=[
-"AEFES.IS","AGHOL.IS","AKBNK.IS","AKSA.IS","AKSEN.IS","ALARK.IS","ARCLK.IS","ASELS.IS","ASTOR.IS","BIMAS.IS",
-"BRISA.IS","CCOLA.IS","CIMSA.IS","DOAS.IS","DOHOL.IS","ECILC.IS","EGEEN.IS","EKGYO.IS","ENJSA.IS","ENKAI.IS",
-"EREGL.IS","FROTO.IS","GARAN.IS","GUBRF.IS","HALKB.IS","HEKTS.IS","ISCTR.IS","KCHOL.IS","KONTR.IS","KOZAA.IS",
-"KOZAL.IS","KRDMD.IS","MGROS.IS","ODAS.IS","OYAKC.IS","PETKM.IS","PGSUS.IS","SAHOL.IS","SASA.IS","SISE.IS",
-"SOKM.IS","TAVHL.IS","TCELL.IS","THYAO.IS","TKFEN.IS","TOASO.IS","TSKB.IS","TTKOM.IS","TUPRS.IS","ULKER.IS",
-"VAKBN.IS","VESTL.IS","YKBNK.IS","ZOREN.IS"
+let currentMarket="crypto";
+let selectedSymbol="BTCUSDT";
+
+const CRYPTO=[
+["BTCUSDT","Bitcoin"],
+["ETHUSDT","Ethereum"],
+["BNBUSDT","BNB"],
+["SOLUSDT","Solana"],
+["XRPUSDT","XRP"],
+["DOGEUSDT","Dogecoin"],
+["ADAUSDT","Cardano"],
+["AVAXUSDT","Avalanche"],
+["LINKUSDT","Chainlink"],
+["DOTUSDT","Polkadot"],
+["TRXUSDT","Tron"],
+["MATICUSDT","Polygon"],
+["LTCUSDT","Litecoin"],
+["BCHUSDT","Bitcoin Cash"],
+["ATOMUSDT","Cosmos"],
+["NEARUSDT","Near"],
+["APTUSDT","Aptos"],
+["OPUSDT","Optimism"],
+["ARBUSDT","Arbitrum"],
+["INJUSDT","Injective"],
+["FILUSDT","Filecoin"],
+["ETCUSDT","Ethereum Classic"],
+["SUIUSDT","Sui"],
+["SEIUSDT","Sei"],
+["TIAUSDT","Celestia"],
+["RUNEUSDT","Thorchain"],
+["AAVEUSDT","Aave"],
+["UNIUSDT","Uniswap"],
+["MKRUSDT","Maker"],
+["COMPUSDT","Compound"],
+["FETUSDT","Fetch AI"],
+["RNDRUSDT","Render"],
+["GRTUSDT","Graph"],
+["SANDUSDT","Sandbox"],
+["MANAUSDT","Decentraland"],
+["CHZUSDT","Chiliz"],
+["XLMUSDT","Stellar"],
+["HBARUSDT","Hedera"],
+["ICPUSDT","Internet Computer"],
+["PEPEUSDT","Pepe"]
 ];
 
-const US=[
-"AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","NFLX","AMD","INTC","AVGO","ORCL","CRM","ADBE","PYPL",
-"JPM","BAC","GS","V","MA","KO","PEP","MCD","COST","WMT","NKE","DIS","BA","CAT","GE","XOM","CVX","JNJ","PFE",
-"MRNA","UNH","LLY","NVO","PLTR","COIN","MSTR","SOFI","UBER","SHOP","ARM","SMCI","QCOM","MU","IBM","T"
+const STOCKS=[
+["THYAO.IS","Türk Hava Yolları"],
+["ASELS.IS","Aselsan"],
+["GARAN.IS","Garanti Bankası"],
+["AKBNK.IS","Akbank"],
+["ISCTR.IS","İş Bankası C"],
+["YKBNK.IS","Yapı Kredi"],
+["KCHOL.IS","Koç Holding"],
+["SAHOL.IS","Sabancı Holding"],
+["TUPRS.IS","Tüpraş"],
+["EREGL.IS","Ereğli Demir Çelik"],
+["SISE.IS","Şişecam"],
+["BIMAS.IS","Bim"],
+["FROTO.IS","Ford Otosan"],
+["TOASO.IS","Tofaş"],
+["TAVHL.IS","TAV Havalimanları"],
+["PGSUS.IS","Pegasus"],
+["TCELL.IS","Turkcell"],
+["TTKOM.IS","Türk Telekom"],
+["PETKM.IS","Petkim"],
+["SASA.IS","Sasa"],
+["HEKTS.IS","Hektaş"],
+["KRDMD.IS","Kardemir D"],
+["ALARK.IS","Alarko Holding"],
+["DOHOL.IS","Doğan Holding"],
+["MGROS.IS","Migros"],
+["ENKAI.IS","Enka İnşaat"],
+["ENJSA.IS","Enerjisa"],
+["ARCLK.IS","Arçelik"],
+["ASTOR.IS","Astor Enerji"],
+["EKGYO.IS","Emlak Konut"],
+["KOZAL.IS","Koza Altın"],
+["KOZAA.IS","Koza Anadolu"],
+["GUBRF.IS","Gübre Fabrikaları"],
+["ODAS.IS","Odaş"],
+["ZOREN.IS","Zorlu Enerji"],
+["ULKER.IS","Ülker"],
+["CCOLA.IS","Coca Cola İçecek"],
+["AEFES.IS","Anadolu Efes"],
+["VESTL.IS","Vestel"],
+["TKFEN.IS","Tekfen"],
+["AGHOL.IS","Anadolu Grubu Holding"],
+["AKSA.IS","Aksa"],
+["AKSEN.IS","Aksa Enerji"],
+["BRSAN.IS","Borusan Mannesmann"],
+["BRISA.IS","Brisa"],
+["CIMSA.IS","Çimsa"],
+["DOAS.IS","Doğuş Otomotiv"],
+["ECILC.IS","Eczacıbaşı İlaç"],
+["EGEEN.IS","Ege Endüstri"],
+["HALKB.IS","Halkbank"],
+["KONTR.IS","Kontrolmatik"],
+["OYAKC.IS","Oyak Çimento"],
+["SOKM.IS","Şok Marketler"],
+["TSKB.IS","TSKB"],
+["VAKBN.IS","Vakıfbank"],
+["GESAN.IS","Girişim Elektrik"],
+["KMPUR.IS","Kimteks Poliüretan"],
+["QUAGR.IS","Qua Granite"],
+["SMRTG.IS","Smart Güneş"],
+["CWENE.IS","CW Enerji"],
+["REEDR.IS","Reeder"],
+["MIATK.IS","Mia Teknoloji"],
+["TTRAK.IS","Türk Traktör"],
+["AYGAZ.IS","Aygaz"],
+["MAVI.IS","Mavi"],
+["MPARK.IS","Medical Park"],
+["KCAER.IS","Kocaer Çelik"],
+["ALFAS.IS","Alfa Solar"],
+["BIOEN.IS","Biotrend"],
+["CANTE.IS","Çan2 Termik"],
+["ISGYO.IS","İş GYO"],
+["KERVT.IS","Kerevitaş"],
+["KLSER.IS","Kaleseramik"],
+["YEOTK.IS","Yeo Teknoloji"],
+["SKBNK.IS","Şekerbank"],
+["SNGYO.IS","Sinpaş GYO"],
+["VAKKO.IS","Vakko"],
+["TMSN.IS","Tümosan"],
+["TRGYO.IS","Torunlar GYO"],
+["IPEKE.IS","İpek Enerji"],
+["SELEC.IS","Selçuk Ecza"],
+["TUKAS.IS","Tukaş"],
+["LOGO.IS","Logo Yazılım"],
+["NETAS.IS","Netaş"],
+["KARSN.IS","Karsan"],
+["OTKAR.IS","Otokar"],
+["KORDS.IS","Kordsa"],
+["DEVA.IS","Deva Holding"],
+["TURSG.IS","Türkiye Sigorta"],
+["ANSGR.IS","Anadolu Sigorta"]
 ];
 
-const FAV=[
-"BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","AVAXUSDT","DOGEUSDT",
-"AAPL","NVDA","MSFT","THYAO.IS","ASELS.IS","GARAN.IS","TUPRS.IS"
-];
+function setMarket(m){
+  currentMarket=m;
 
-let loadedList=[];
+  document.getElementById("tabCrypto").classList.toggle("active",m==="crypto");
+  document.getElementById("tabStock").classList.toggle("active",m==="stock");
+
+  document.getElementById("listTitle").innerText=m==="crypto" ? "Kripto Listesi" : "Hisse Senedi Listesi";
+  document.getElementById("searchBox").value="";
+
+  if(m==="crypto"){
+    selectedSymbol="BTCUSDT";
+    document.getElementById("symbol").value="BTCUSDT";
+    document.getElementById("interval").value="4h";
+  }else{
+    selectedSymbol="THYAO.IS";
+    document.getElementById("symbol").value="THYAO.IS";
+    document.getElementById("interval").value="1d";
+  }
+
+  renderAssetList();
+
+  document.getElementById("out").innerHTML=
+    `<p>${m==="crypto" ? "Kripto" : "Hisse senedi"} sekmesi açıldı. Listeden sembole basınca analiz otomatik başlar.</p>`;
+}
+
+function renderAssetList(){
+  let q=document.getElementById("searchBox").value.trim().toUpperCase();
+  let arr=currentMarket==="crypto" ? CRYPTO : STOCKS;
+
+  arr=arr.filter(x=>!q || x[0].includes(q) || x[1].toUpperCase().includes(q));
+
+  document.getElementById("assetList").innerHTML=arr.map(x=>{
+    let active=x[0]===selectedSymbol ? "active" : "";
+    return `<button class="asset-btn ${active}" onclick="selectAsset('${x[0]}')">${x[0]}<small>${x[1]}</small></button>`;
+  }).join("");
+}
+
+function selectAsset(sym){
+  selectedSymbol=sym;
+  document.getElementById("symbol").value=sym;
+  renderAssetList();
+  run();
+}
 
 function last(a){return a[a.length-1]}
 function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}
@@ -212,147 +529,115 @@ function sma(a,n){
 
 function rsi(a,n=14){
   if(a.length<n+2)return 50;
+
   let g=0,l=0;
+
   for(let i=a.length-n;i<a.length;i++){
     let d=a[i]-a[i-1];
-    if(d>0)g+=d;else l-=d
+    if(d>0)g+=d;
+    else l-=d;
   }
+
   if(l===0)return 100;
+
   let rs=g/l;
   return 100-100/(1+rs)
 }
 
 function macd(a){
-  let e12=ema(a,12),e26=ema(a,26);
+  let e12=ema(a,12);
+  let e26=ema(a,26);
   let m=e12.map((v,i)=>v-e26[i]);
   let s=ema(m,9);
-  return{m:last(m),s:last(s),h:last(m)-last(s)}
+
+  return{
+    m:last(m),
+    s:last(s),
+    h:last(m)-last(s)
+  }
 }
 
 function stoch(c,h,l,n=14){
-  let hi=Math.max(...h.slice(-n)),lo=Math.min(...l.slice(-n)),d=hi-lo;
-  return d===0?50:((last(c)-lo)/d)*100
+  let hi=Math.max(...h.slice(-n));
+  let lo=Math.min(...l.slice(-n));
+  let d=hi-lo;
+
+  return d===0 ? 50 : ((last(c)-lo)/d)*100
 }
 
 function atr(h,l,c,n=14){
   let tr=[];
+
   for(let i=1;i<c.length;i++){
-    tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])))
+    tr.push(Math.max(
+      h[i]-l[i],
+      Math.abs(h[i]-c[i-1]),
+      Math.abs(l[i]-c[i-1])
+    ));
   }
+
   return avg(tr.slice(-n))||0
 }
 
 function roc(c,n=10){
-  return c.length>n?((last(c)-c[c.length-1-n])/c[c.length-1-n])*100:0
+  return c.length>n ? ((last(c)-c[c.length-1-n])/c[c.length-1-n])*100 : 0
 }
 
 function boll(c,n=20,m=2){
-  let s=c.slice(-n),mid=avg(s),sd=std(s);
-  return{mid,up:mid+m*sd,lo:mid-m*sd,width:mid?((m*sd*2)/mid)*100:0}
-}
+  let s=c.slice(-n);
+  let mid=avg(s);
+  let sd=std(s);
 
-function money(v){
-  let n=Number(v);
-  if(!isFinite(n))return "-";
-  return n.toLocaleString("tr-TR",{maximumFractionDigits:4})
+  return{
+    mid,
+    up:mid+m*sd,
+    lo:mid-m*sd,
+    width:mid?((m*sd*2)/mid)*100:0
+  }
 }
 
 function fmt(v,d=4){
-  return Number(v).toLocaleString("tr-TR",{minimumFractionDigits:0,maximumFractionDigits:d})
+  return Number(v).toLocaleString("tr-TR",{maximumFractionDigits:d})
 }
 
-function show(x){document.getElementById("out").innerHTML=x}
-
-function onMarketChange(){
-  let m=document.getElementById("market").value;
-  let list=document.getElementById("listType");
-  let src=document.getElementById("source");
-  let sym=document.getElementById("symbol");
-
-  if(m==="crypto"){
-    list.value="crypto_usdt";
-    src.value="binance";
-    if(sym.value.includes(".")||US.includes(sym.value))sym.value="BTCUSDT";
-    document.getElementById("interval").value="4h";
-  }
-
-  if(m==="stock"){
-    list.value="bist";
-    src.value="auto";
-    if(sym.value.endsWith("USDT"))sym.value="THYAO.IS";
-    document.getElementById("interval").value="1d";
-  }
-
-  if(m==="manual"){
-    list.value="fav";
-    src.value="auto";
-  }
-
-  loadList();
+function money(v){
+  return Number(v).toLocaleString("tr-TR",{maximumFractionDigits:2})
 }
 
-async function loadList(){
-  let type=document.getElementById("listType").value;
-  let m=document.getElementById("market").value;
-  show("Liste yükleniyor...");
-
-  if(type==="auto"){
-    type=m==="crypto"?"crypto_usdt":m==="stock"?"bist":"fav";
-  }
-
-  try{
-    if(type==="crypto_usdt"){
-      let j=await fetchTimeout("https://api.binance.com/api/v3/exchangeInfo","json",10000);
-      loadedList=j.symbols
-        .filter(x=>x.status==="TRADING"&&x.quoteAsset==="USDT")
-        .map(x=>x.symbol)
-        .sort((a,b)=>rankCrypto(a)-rankCrypto(b)||a.localeCompare(b));
-    }else if(type==="bist"){
-      loadedList=[...BIST];
-    }else if(type==="us"){
-      loadedList=[...US];
-    }else{
-      loadedList=[...FAV];
-    }
-  }catch(e){
-    loadedList=[...FAV,...BIST.slice(0,20),...US.slice(0,20)];
-    show(`<div class="result neutral">LİSTE UYARISI</div><p>Canlı liste gelmedi, hazır liste yüklendi.</p><small>${e.message||e}</small>`);
-  }
-
-  renderList();
-
-  if(!document.getElementById("out").innerText.includes("UYARISI")){
-    show(`<p><b>${loadedList.length}</b> sembol listeye basıldı. Listeden seçip analiz yapabilirsin.</p>`);
-  }
-}
-
-function rankCrypto(s){
-  let r=["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","AVAXUSDT","DOGEUSDT","ADAUSDT","LINKUSDT","DOTUSDT","TRXUSDT","MATICUSDT"];
-  let i=r.indexOf(s);
-  return i<0?999:i
-}
-
-function renderList(){
-  let q=document.getElementById("search").value.trim().toUpperCase();
-  let box=document.getElementById("assetList");
-  let arr=loadedList.filter(s=>!q||s.includes(q)).slice(0,500);
-  box.innerHTML=arr.map(s=>`<option value="${s}">${s}</option>`).join("");
-}
-
-function pickSelected(){
-  let v=document.getElementById("assetList").value;
-  if(v)document.getElementById("symbol").value=v
+function show(x){
+  document.getElementById("out").innerHTML=x
 }
 
 async function fetchTimeout(url,type="json",ms=12000){
-  let c=new AbortController(),t=setTimeout(()=>c.abort(),ms);
+  let c=new AbortController();
+  let t=setTimeout(()=>c.abort(),ms);
+
   try{
     let r=await fetch(url,{signal:c.signal,cache:"no-store"});
     if(!r.ok)throw Error("HTTP "+r.status);
-    return type==="text"?await r.text():await r.json()
+    return type==="text" ? await r.text() : await r.json();
   }finally{
     clearTimeout(t)
   }
+}
+
+async function fetchCrypto(symbol){
+  let interval=document.getElementById("interval").value;
+  let limit=Number(document.getElementById("limit").value)||300;
+
+  let url=`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+  let j=await fetchTimeout(url,"json");
+
+  if(!Array.isArray(j))throw Error(JSON.stringify(j));
+
+  return{
+    src:"Binance canlı",
+    o:j.map(x=>+x[1]),
+    h:j.map(x=>+x[2]),
+    l:j.map(x=>+x[3]),
+    c:j.map(x=>+x[4]),
+    v:j.map(x=>+x[5])
+  };
 }
 
 function yahooUrl(s){
@@ -360,10 +645,7 @@ function yahooUrl(s){
 }
 
 function stooqSymbol(s){
-  s=s.toLowerCase();
-  if(s.endsWith(".is"))return s.replace(".is",".tr");
-  if(!s.includes("."))return s+".us";
-  return s
+  return s.toLowerCase().replace(".is",".tr")
 }
 
 function stooqUrl(s){
@@ -379,79 +661,75 @@ function proxies(url){
 }
 
 function parseYahoo(j){
-  let r=j&&j.chart&&j.chart.result&&j.chart.result[0];
+  let r=j && j.chart && j.chart.result && j.chart.result[0];
+
   if(!r)throw Error("Yahoo boş sonuç");
-  let q=r.indicators.quote[0],c=[],h=[],l=[],o=[],v=[];
+
+  let q=r.indicators.quote[0];
+  let c=[],h=[],l=[],o=[],v=[];
+
   for(let i=0;i<q.close.length;i++){
-    if(q.close[i]!=null&&q.high[i]!=null&&q.low[i]!=null){
+    if(q.close[i]!=null && q.high[i]!=null && q.low[i]!=null){
       c.push(+q.close[i]);
       h.push(+q.high[i]);
       l.push(+q.low[i]);
-      o.push(q.open[i]==null?q.close[i]:+q.open[i]);
+      o.push(q.open[i]==null ? +q.close[i] : +q.open[i]);
       v.push(q.volume[i]||0);
     }
   }
-  return{c,h,l,o,v}
+
+  return{c,h,l,o,v,src:"Yahoo günlük"}
 }
 
 function parseCSV(t){
-  let lines=t.trim().split(/\r?\n/).slice(1),c=[],h=[],l=[],o=[],v=[];
+  let lines=t.trim().split(/\r?\n/).slice(1);
+  let c=[],h=[],l=[],o=[],v=[];
+
   for(let line of lines){
     let p=line.split(",");
-    let oo=+p[1],hh=+p[2],ll=+p[3],cc=+p[4],vv=+p[5]||0;
+    let oo=+p[1];
+    let hh=+p[2];
+    let ll=+p[3];
+    let cc=+p[4];
+    let vv=+p[5]||0;
+
     if(isFinite(cc)&&isFinite(hh)&&isFinite(ll)){
-      o.push(oo||cc);h.push(hh);l.push(ll);c.push(cc);v.push(vv)
+      o.push(oo||cc);
+      h.push(hh);
+      l.push(ll);
+      c.push(cc);
+      v.push(vv);
     }
   }
-  return{c,h,l,o,v}
+
+  return{c,h,l,o,v,src:"Stooq günlük"}
 }
 
 async function fetchStock(symbol){
-  let source=document.getElementById("source").value, errors=[];
+  let errors=[];
 
-  if(source==="yahoo"||source==="auto"){
-    for(let u of proxies(yahooUrl(symbol))){
-      try{
-        return{data:parseYahoo(await fetchTimeout(u,"json")),src:"Yahoo proxy"}
-      }catch(e){
-        errors.push("Yahoo:"+e.message)
-      }
+  for(let u of proxies(yahooUrl(symbol))){
+    try{
+      return parseYahoo(await fetchTimeout(u,"json"))
+    }catch(e){
+      errors.push("Yahoo: "+e.message)
     }
   }
 
-  if(source==="stooq"||source==="auto"){
-    for(let u of proxies(stooqUrl(symbol))){
-      try{
-        return{data:parseCSV(await fetchTimeout(u,"text")),src:"Stooq proxy"}
-      }catch(e){
-        errors.push("Stooq:"+e.message)
-      }
+  for(let u of proxies(stooqUrl(symbol))){
+    try{
+      return parseCSV(await fetchTimeout(u,"text"))
+    }catch(e){
+      errors.push("Stooq: "+e.message)
     }
   }
 
   throw Error(errors.slice(-5).join(" | "));
 }
 
-async function fetchCrypto(symbol,interval,limit){
-  let url=`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-  let j=await fetchTimeout(url,"json");
-
-  if(!Array.isArray(j))throw Error(JSON.stringify(j));
-
-  return{
-    data:{
-      o:j.map(x=>+x[1]),
-      h:j.map(x=>+x[2]),
-      l:j.map(x=>+x[3]),
-      c:j.map(x=>+x[4]),
-      v:j.map(x=>+x[5])
-    },
-    src:"Binance canlı"
-  };
-}
-
-function candleContext(o,h,l,c,long,short){
+function candleContext(o,h,l,c,long,short,info){
   let i=c.length-1;
+
   let body=Math.abs(c[i]-o[i]);
   let range=Math.max(h[i]-l[i],0.0000001);
   let upper=h[i]-Math.max(o[i],c[i]);
@@ -464,21 +742,24 @@ function candleContext(o,h,l,c,long,short){
 
   if(bull&&prevBear&&c[i]>o[i-1]&&o[i]<c[i-1])long.push("Bullish engulfing mum");
   if(bear&&prevBull&&c[i]<o[i-1]&&o[i]>c[i-1])short.push("Bearish engulfing mum");
+
   if(lower>body*2&&upper<body*1.2)long.push("Alt fitil / hammer tepki");
   if(upper>body*2&&lower<body*1.2)short.push("Üst fitil / shooting star baskı");
 
-  if(body/range<0.15){
-    long.push("Doji: karar bölgesi");
-    short.push("Doji: karar bölgesi");
-  }
+  if(body/range<0.15)info.push("Doji / kararsız mum");
 }
 
 function analyze(data,src,symbol){
-  let c=data.c,h=data.h,l=data.l,o=data.o||data.c,v=data.v||data.c.map(x=>1);
+  let c=data.c;
+  let h=data.h;
+  let l=data.l;
+  let o=data.o||data.c;
+  let v=data.v||data.c.map(x=>1);
 
   if(c.length<80)throw Error("Analiz için en az 80 mum gerekli. Gelen mum: "+c.length);
 
   let price=last(c);
+
   let e9=last(ema(c,9));
   let e21=last(ema(c,21));
   let e55=last(ema(c,55));
@@ -499,12 +780,21 @@ function analyze(data,src,symbol){
 
   let volNow=last(v)||0;
   let volAvg=avg(v.slice(-20))||1;
+
   let slope10=price-c[c.length-11];
   let slope20=price-c[c.length-21];
 
-  let long=[],short=[],info=[];
+  let fibHigh=res50;
+  let fibLow=sup50;
+  let fib382=fibHigh-(fibHigh-fibLow)*0.382;
+  let fib618=fibHigh-(fibHigh-fibLow)*0.618;
 
-  if(price>e21)long.push("Fiyat EMA21 üstünde");else short.push("Fiyat EMA21 altında");
+  let long=[];
+  let short=[];
+  let info=[];
+
+  if(price>e21)long.push("Fiyat EMA21 üstünde");
+  else short.push("Fiyat EMA21 altında");
 
   if(e9>e21&&e21>e55)long.push("EMA dizilimi pozitif");
   else if(e9<e21&&e21<e55)short.push("EMA dizilimi negatif");
@@ -524,6 +814,7 @@ function analyze(data,src,symbol){
 
   if(sto>60)long.push("Stoch güçlü bölge");
   else if(sto<40)short.push("Stoch zayıf bölge");
+  else info.push("Stoch nötr");
 
   if(rc>0)long.push("ROC pozitif");
   else short.push("ROC negatif");
@@ -541,82 +832,80 @@ function analyze(data,src,symbol){
   if(volNow>volAvg*1.2)info.push("Hacim ortalama üstü");
   else short.push("Hacim zayıf");
 
-  let fibHigh=res50;
-  let fibLow=sup50;
-  let fib382=fibHigh-(fibHigh-fibLow)*0.382;
-  let fib618=fibHigh-(fibHigh-fibLow)*0.618;
-
   if(price>fib382)long.push("Fibonacci 0.382 üstü");
   else if(price<fib618)short.push("Fibonacci 0.618 altı");
+  else info.push("Fibonacci orta bölge");
 
-  candleContext(o,h,l,c,long,short);
+  candleContext(o,h,l,c,long,short,info);
 
   let lcnt=long.length;
   let scnt=short.length;
 
-  let decision=lcnt>=scnt?"LONG":"SHORT";
+  let decision=lcnt>=scnt ? "LONG" : "SHORT";
 
   let total=lcnt+scnt||1;
-  let align=Math.max(lcnt,scnt)/total;
-  let confidence=Math.round(Math.min(95,Math.max(35,align*100)));
+  let confidence=Math.round(Math.min(95,Math.max(35,(Math.max(lcnt,scnt)/total)*100)));
 
   let stopMode=document.getElementById("stopMode").value;
   let atrMult=+document.getElementById("atrMult").value||1.5;
   let rr=+document.getElementById("rr").value||2;
   let entryBuf=(+document.getElementById("entryBuf").value||0)/100;
 
-  let entry=decision==="LONG"?price*(1+entryBuf):price*(1-entryBuf);
+  let entry=decision==="LONG" ? price*(1+entryBuf) : price*(1-entryBuf);
 
   let atrStopLong=entry-at*atrMult;
   let atrStopShort=entry+at*atrMult;
+
   let srStopLong=sup20-at*.10;
   let srStopShort=res20+at*.10;
 
   let stop;
 
   if(stopMode==="atr"){
-    stop=decision==="LONG"?atrStopLong:atrStopShort;
+    stop=decision==="LONG" ? atrStopLong : atrStopShort;
   }else if(stopMode==="sr"){
-    stop=decision==="LONG"?srStopLong:srStopShort;
+    stop=decision==="LONG" ? srStopLong : srStopShort;
   }else{
-    stop=decision==="LONG"?Math.max(atrStopLong,srStopLong):Math.min(atrStopShort,srStopShort);
+    stop=decision==="LONG" ? Math.max(atrStopLong,srStopLong) : Math.min(atrStopShort,srStopShort);
   }
 
   let risk=Math.abs(entry-stop);
   if(!isFinite(risk)||risk<=0)risk=at*atrMult;
 
-  let tp1=decision==="LONG"?entry+risk:entry-risk;
-  let tp2=decision==="LONG"?entry+risk*rr:entry-risk*rr;
-  let tp3=decision==="LONG"?entry+risk*(rr+1):entry-risk*(rr+1);
+  let tp1=decision==="LONG" ? entry+risk : entry-risk;
+  let tp2=decision==="LONG" ? entry+risk*rr : entry-risk*rr;
+  let tp3=decision==="LONG" ? entry+risk*(rr+1) : entry-risk*(rr+1);
 
   let capital=+document.getElementById("capital").value||0;
   let riskPct=(+document.getElementById("riskPct").value||1)/100;
   let maxLoss=capital*riskPct;
-  let qty=maxLoss>0&&risk>0?maxLoss/risk:0;
+  let qty=maxLoss>0&&risk>0 ? maxLoss/risk : 0;
 
-  let cls=decision==="LONG"?"long":"short";
+  drawChart(c,entry,stop,tp2);
 
-  drawChart(c,entry,stop,tp2,decision);
+  let cls=decision==="LONG" ? "long" : "short";
 
   show(`
   <div class="result ${cls}">${decision}</div>
 
   <div class="kpi">
-    <div>Güven uyumu<b>${confidence}%</b></div>
-    <div>Son fiyat<b>${fmt(price)}</b></div>
+    <div>Sembol<b>${symbol}</b></div>
+    <div>Kaynak<b>${src}</b></div>
+    <div>Güven Uyumu<b>%${confidence}</b></div>
+    <div>Son Fiyat<b>${fmt(price)}</b></div>
     <div>Giriş<b>${fmt(entry)}</b></div>
     <div>Stop<b>${fmt(stop)}</b></div>
     <div>Hedef 1R<b>${fmt(tp1)}</b></div>
     <div>Hedef ${rr}R<b>${fmt(tp2)}</b></div>
-    <div>Hedef ileri<b>${fmt(tp3)}</b></div>
-    <div>Pozisyon miktarı<b>${fmt(qty,6)}</b></div>
+    <div>Hedef İleri<b>${fmt(tp3)}</b></div>
+    <div>Pozisyon Miktarı<b>${fmt(qty,6)}</b></div>
   </div>
 
-  <p><b>Sembol:</b> ${symbol} | <b>Kaynak:</b> ${src} | <b>Maks. zarar:</b> ${money(maxLoss)}</p>
+  <p><b>Maksimum zarar:</b> ${money(maxLoss)}</p>
 
   <p class="notice">
-  ${symbol.endsWith(".IS")&&decision==="SHORT"
-    ?"BIST için SHORT; açığa satış değil, çıkış / kâr al / dikkat sinyali olarak okunmalı."
+  ${currentMarket==="stock"&&decision==="SHORT"
+    ?"Hisse tarafında SHORT; açığa satış değil, çıkış / kâr al / dikkat sinyali olarak okunmalı."
     :"Karar motoru LONG/SHORT üretir; emir göndermez."}
   </p>
 
@@ -644,32 +933,41 @@ Mum sayısı: ${c.length}</pre>
   `);
 }
 
-function drawChart(c,entry,stop,tp,decision){
+function drawChart(c,entry,stop,tp){
   let canvas=document.getElementById("chart");
   let ctx=canvas.getContext("2d");
-  let w=canvas.width,h=canvas.height;
+  let w=canvas.width;
+  let h=canvas.height;
 
   ctx.clearRect(0,0,w,h);
   ctx.fillStyle="#0f1528";
   ctx.fillRect(0,0,w,h);
 
   let arr=c.slice(-100);
+
   let min=Math.min(...arr,entry,stop,tp);
   let max=Math.max(...arr,entry,stop,tp);
-  let pad=(max-min)*.08||1;
 
+  let pad=(max-min)*.08||1;
   min-=pad;
   max+=pad;
 
-  function y(v){return h-20-(v-min)/(max-min)*(h-40)}
-  function x(i){return 20+i/(arr.length-1)*(w-40)}
+  function y(v){
+    return h-20-(v-min)/(max-min)*(h-40)
+  }
+
+  function x(i){
+    return 20+i/(arr.length-1)*(w-40)
+  }
 
   ctx.strokeStyle="#7aa2ff";
   ctx.lineWidth=2;
   ctx.beginPath();
 
   arr.forEach((v,i)=>{
-    let xx=x(i),yy=y(v);
+    let xx=x(i);
+    let yy=y(v);
+
     if(i===0)ctx.moveTo(xx,yy);
     else ctx.lineTo(xx,yy);
   });
@@ -683,6 +981,7 @@ function drawChart(c,entry,stop,tp,decision){
     ctx.moveTo(20,y(v));
     ctx.lineTo(w-20,y(v));
     ctx.stroke();
+
     ctx.fillStyle=color;
     ctx.font="13px Arial";
     ctx.fillText(name+" "+fmt(v),24,y(v)-4);
@@ -694,59 +993,35 @@ function drawChart(c,entry,stop,tp,decision){
 }
 
 async function run(){
-  let market=document.getElementById("market").value;
   let symbol=document.getElementById("symbol").value.trim().toUpperCase();
-  let interval=document.getElementById("interval").value;
-  let limit=+document.getElementById("limit").value||300;
 
-  show("Veri çekiliyor...");
+  selectedSymbol=symbol;
+  renderAssetList();
+
+  show(`<p>Veri çekiliyor: <b>${symbol}</b></p>`);
 
   try{
-    if(market==="manual"){
-      let arr=document.getElementById("manual").value.split(/[,\n ]+/).map(Number).filter(x=>!isNaN(x));
-      let h=arr.map(x=>x),l=arr.map(x=>x),o=arr.map(x=>x),v=arr.map(()=>1);
-      analyze({c:arr,h,l,o,v},"Manuel veri",symbol||"MANUEL");
-      return;
-    }
-
-    if(market==="crypto"){
-      let r=await fetchCrypto(symbol,interval,limit);
-      analyze(r.data,r.src,symbol);
-      return;
-    }
-
-    if(market==="stock"){
-      let r=await fetchStock(symbol);
-      analyze(r.data,r.src,symbol);
-      return;
+    if(currentMarket==="crypto"){
+      let d=await fetchCrypto(symbol);
+      analyze(d,d.src,symbol);
+    }else{
+      let d=await fetchStock(symbol);
+      analyze(d,d.src,symbol);
     }
   }catch(e){
     show(`
-    <div class="result short">VERİ HATASI</div>
-    <p>Canlı veri gelmedi. Crypto için Binance genelde çalışır. Hisse için önce AAPL / MSFT / NVDA, sonra THYAO.IS / ASELS.IS dene. Devam etmezse manuel veri modu kullan.</p>
+    <div class="result neutral">VERİ HATASI</div>
+    <p><b>${symbol}</b> için canlı veri gelmedi.</p>
+    <p>${currentMarket==="stock"
+      ?"Hisse tarafında Yahoo/Stooq proxy bazen engel yiyebilir. Başka hisse dene veya birkaç dakika sonra tekrar dene."
+      :"Binance verisi gelmedi. Sembolü kontrol et veya tekrar dene."}</p>
     <small>${e.message||e}</small>
     `);
   }
 }
 
-function demo(){
-  let c=[],h=[],l=[],o=[],v=[],p=100;
-
-  for(let i=0;i<260;i++){
-    let old=p;
-    p+=Math.sin(i/11)*1.1+(Math.random()-.45)*2.2;
-    o.push(old);
-    c.push(p);
-    h.push(Math.max(old,p)+Math.random()*2);
-    l.push(Math.min(old,p)-Math.random()*2);
-    v.push(1000+Math.random()*900);
-  }
-
-  analyze({c,h,l,o,v},"Demo","DEMO");
-}
-
-onMarketChange();
-demo();
+renderAssetList();
 </script>
+
 </body>
 </html>
