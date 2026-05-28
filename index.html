@@ -1,51 +1,1205 @@
-<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Ayaz Trade Crypto Pro</title><style>
-:root{--bg:#0b1020;--card:#151b33;--line:#2b355f;--mut:#aeb8d8;--blue:#2f7cff;--green:#2cff9a;--red:#ff6b7a;--yel:#ffd166}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:white;font-family:Arial}.wrap{max-width:880px;margin:auto;padding:14px 12px 70px}h1{font-size:24px;margin:8px 0 4px}p{color:var(--mut);line-height:1.35}.small{font-size:13px;color:#9da8c9}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin:10px 0}.selectedBox{width:100%;background:#0f1528;border:1px solid var(--yel);color:white;border-radius:16px;padding:14px;font-size:20px;font-weight:900;text-align:left;margin:6px 0 10px}.selectedBox small{display:block;color:#aeb8d8;font-size:13px;font-weight:500;margin-top:3px}.hidden{display:none}.search{width:100%;border-radius:13px;border:1px solid #344064;background:#0f1528;color:white;padding:12px;margin:8px 0;font-size:16px}.chips{display:flex;flex-wrap:wrap;gap:7px;max-height:170px;overflow:auto}.chip{white-space:nowrap;background:#0f1528;border:1px solid #344064;color:white;border-radius:999px;padding:8px 11px;font-size:14px;font-weight:800}.chip.active{background:#3a2d09;border-color:var(--yel)}.tf{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}.tf button{background:#0f1528;border:1px solid #344064;color:white;border-radius:999px;padding:8px 12px;font-weight:900}.tf button.active{background:var(--blue)}.result{font-size:42px;font-weight:900;text-align:center;padding:18px;border-radius:18px;margin:10px 0}.long{background:#073d2a;color:var(--green)}.short{background:#47151d;color:var(--red)}.warn{background:#3a2d09;color:var(--yel)}.kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px}.kpi div{background:#0f1528;border:1px solid #344064;border-radius:14px;padding:10px;color:#c8d1f2}.kpi b{display:block;color:white;font-size:17px;margin-top:4px}.badge{display:inline-block;padding:7px 10px;border-radius:999px;margin:4px;font-size:13px}.good{background:#063922;color:#88ffc7}.bad{background:#451721;color:#ff9aa7}.info{background:#24304f;color:#dce4ff}.notice{border-left:4px solid var(--yel);padding-left:10px;color:#dce4ff}canvas{width:100%;height:180px;background:#0f1528;border:1px solid #344064;border-radius:14px}@media(max-width:560px){.kpi{grid-template-columns:1fr}.result{font-size:36px}}
-</style></head><body><div class="wrap"><h1>Ayaz Trade Crypto Pro</h1><div class="small">Sadece kripto. Binance canlı veri. Liste seçimden sonra kapanır; seçilen coin ve analiz kalır.</div><div class="card"><button id="selectedBox" class="selectedBox" onclick="toggleList()">BTCUSDT<small>Liste açık - seçim yapınca kapanır</small></button><div id="listPanel"><input id="search" class="search" placeholder="Ara: BTC, ETH, SOL, AVAX..." oninput="renderList()"><div id="chips" class="chips"></div></div><div class="tf"><button onclick="setTf('5m')" data-tf="5m">5D</button><button onclick="setTf('15m')" data-tf="15m">15D</button><button onclick="setTf('30m')" data-tf="30m">30D</button><button onclick="setTf('1h')" data-tf="1h">1S</button><button onclick="setTf('2h')" data-tf="2h">2S</button><button onclick="setTf('4h')" data-tf="4h" class="active">4S</button><button onclick="setTf('8h')" data-tf="8h">8S</button><button onclick="setTf('16h')" data-tf="16h">16S</button><button onclick="setTf('1d')" data-tf="1d">1G</button></div></div><div id="out" class="card"><p>Kripto listesi yükleniyor...</p></div><div class="card"><canvas id="chart" width="760" height="230"></canvas></div></div>
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ayaz Trade Crypto Pro</title>
+
+<style>
+:root{
+  --bg:#0b1020;
+  --card:#151b33;
+  --line:#2b355f;
+  --mut:#aeb8d8;
+  --blue:#2f7cff;
+  --green:#2cff9a;
+  --red:#ff6b7a;
+  --yel:#ffd166;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:white;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.wrap{
+  max-width:880px;
+  margin:auto;
+  padding:14px 12px 70px;
+}
+h1{
+  font-size:24px;
+  margin:8px 0 4px;
+}
+p{
+  color:var(--mut);
+  line-height:1.35;
+}
+.small{
+  font-size:13px;
+  color:#9da8c9;
+}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:14px;
+  margin:10px 0;
+}
+.selectedBox{
+  width:100%;
+  background:#0f1528;
+  border:1px solid var(--yel);
+  color:white;
+  border-radius:16px;
+  padding:14px;
+  font-size:20px;
+  font-weight:900;
+  text-align:left;
+  margin:6px 0 10px;
+}
+.selectedBox small{
+  display:block;
+  color:#aeb8d8;
+  font-size:13px;
+  font-weight:500;
+  margin-top:3px;
+}
+.hidden{display:none}
+.search{
+  width:100%;
+  border-radius:13px;
+  border:1px solid #344064;
+  background:#0f1528;
+  color:white;
+  padding:12px;
+  margin:8px 0;
+  font-size:16px;
+}
+.chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  max-height:170px;
+  overflow:auto;
+}
+.chip{
+  white-space:nowrap;
+  background:#0f1528;
+  border:1px solid #344064;
+  color:white;
+  border-radius:999px;
+  padding:8px 11px;
+  font-size:14px;
+  font-weight:800;
+}
+.chip.active{
+  background:#3a2d09;
+  border-color:var(--yel);
+}
+.tf{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:8px 0;
+}
+.tf button{
+  background:#0f1528;
+  border:1px solid #344064;
+  color:white;
+  border-radius:999px;
+  padding:8px 12px;
+  font-weight:900;
+}
+.tf button.active{
+  background:var(--blue);
+}
+.result{
+  font-size:42px;
+  font-weight:900;
+  text-align:center;
+  padding:18px;
+  border-radius:18px;
+  margin:10px 0;
+}
+.long{
+  background:#073d2a;
+  color:var(--green);
+}
+.short{
+  background:#47151d;
+  color:var(--red);
+}
+.warn{
+  background:#3a2d09;
+  color:var(--yel);
+}
+.kpi{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.kpi div{
+  background:#0f1528;
+  border:1px solid #344064;
+  border-radius:14px;
+  padding:10px;
+  color:#c8d1f2;
+}
+.kpi b{
+  display:block;
+  color:white;
+  font-size:17px;
+  margin-top:4px;
+}
+.badge{
+  display:inline-block;
+  padding:7px 10px;
+  border-radius:999px;
+  margin:4px;
+  font-size:13px;
+}
+.good{
+  background:#063922;
+  color:#88ffc7;
+}
+.bad{
+  background:#451721;
+  color:#ff9aa7;
+}
+.info{
+  background:#24304f;
+  color:#dce4ff;
+}
+.notice{
+  border-left:4px solid var(--yel);
+  padding-left:10px;
+  color:#dce4ff;
+}
+canvas{
+  width:100%;
+  height:180px;
+  background:#0f1528;
+  border:1px solid #344064;
+  border-radius:14px;
+}
+@media(max-width:560px){
+  .kpi{grid-template-columns:1fr}
+  .result{font-size:36px}
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<h1>Ayaz Trade Crypto Pro</h1>
+<div class="small">Sadece kripto. Çoklu Binance veri kapısı. Liste seçimden sonra kapanır; seçilen coin ve analiz kalır.</div>
+
+<div class="card">
+  <button id="selectedBox" class="selectedBox" onclick="toggleList()">
+    BTCUSDT
+    <small>Liste açık - seçim yapınca kapanır</small>
+  </button>
+
+  <div id="listPanel">
+    <input id="search" class="search" placeholder="Ara: BTC, ETH, SOL, AVAX..." oninput="renderList()">
+    <div id="chips" class="chips"></div>
+  </div>
+
+  <div class="tf">
+    <button onclick="setTf('5m')" data-tf="5m">5D</button>
+    <button onclick="setTf('15m')" data-tf="15m">15D</button>
+    <button onclick="setTf('30m')" data-tf="30m">30D</button>
+    <button onclick="setTf('1h')" data-tf="1h">1S</button>
+    <button onclick="setTf('2h')" data-tf="2h">2S</button>
+    <button onclick="setTf('4h')" data-tf="4h" class="active">4S</button>
+    <button onclick="setTf('8h')" data-tf="8h">8S</button>
+    <button onclick="setTf('16h')" data-tf="16h">16S</button>
+    <button onclick="setTf('1d')" data-tf="1d">1G</button>
+  </div>
+</div>
+
+<div id="out" class="card">
+  <p>Kripto listesi yükleniyor...</p>
+</div>
+
+<div class="card">
+  <canvas id="chart" width="760" height="230"></canvas>
+</div>
+
+</div>
+
 <script>
-let selected="BTCUSDT",tf="4h",items=[],listOpen=true;
-const FALLBACK=[["BTCUSDT","Bitcoin"],["ETHUSDT","Ethereum"],["BNBUSDT","BNB"],["SOLUSDT","Solana"],["XRPUSDT","XRP"],["DOGEUSDT","Dogecoin"],["ADAUSDT","Cardano"],["AVAXUSDT","Avalanche"],["LINKUSDT","Chainlink"],["DOTUSDT","Polkadot"],["TRXUSDT","Tron"],["MATICUSDT","Polygon"],["LTCUSDT","Litecoin"],["BCHUSDT","Bitcoin Cash"],["ATOMUSDT","Cosmos"],["NEARUSDT","Near"],["APTUSDT","Aptos"],["OPUSDT","Optimism"],["ARBUSDT","Arbitrum"],["INJUSDT","Injective"],["FILUSDT","Filecoin"],["ETCUSDT","Ethereum Classic"],["SUIUSDT","Sui"],["SEIUSDT","Sei"],["TIAUSDT","Celestia"],["RUNEUSDT","Thorchain"],["AAVEUSDT","Aave"],["UNIUSDT","Uniswap"],["MKRUSDT","Maker"],["FETUSDT","Fetch AI"],["RNDRUSDT","Render"],["GRTUSDT","Graph"],["PEPEUSDT","Pepe"]],TOP=FALLBACK.map(x=>x[0]);
-function show(x){out.innerHTML=x}function last(a){return a[a.length-1]}function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}function std(a){let m=avg(a);return Math.sqrt(avg(a.map(x=>(x-m)*(x-m))))||0}function fmt(v,d=4){return Number(v).toLocaleString("tr-TR",{maximumFractionDigits:d})}
-function ema(a,n){let k=2/(n+1),r=[],e=a[0];for(let v of a){e=v*k+e*(1-k);r.push(e)}return r}function sma(a,n){return a.map((_,i)=>avg(a.slice(Math.max(0,i-n+1),i+1)))}function rsi(a,n=14){if(a.length<n+2)return 50;let g=0,l=0;for(let i=a.length-n;i<a.length;i++){let d=a[i]-a[i-1];d>0?g+=d:l-=d}if(l===0)return 100;let rs=g/l;return 100-100/(1+rs)}function macd(a){let e12=ema(a,12),e26=ema(a,26),m=e12.map((v,i)=>v-e26[i]),s=ema(m,9);return{h:last(m)-last(s)}}function atr(h,l,c,n=14){let tr=[];for(let i=1;i<c.length;i++)tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])));return avg(tr.slice(-n))||0}function stoch(c,h,l,n=14){let hi=Math.max(...h.slice(-n)),lo=Math.min(...l.slice(-n)),d=hi-lo;return d?((last(c)-lo)/d)*100:50}function roc(c,n=10){return c.length>n?((last(c)-c[c.length-1-n])/c[c.length-1-n])*100:0}function boll(c,n=20,m=2){let s=c.slice(-n),mid=avg(s),sd=std(s);return{mid,up:mid+m*sd,lo:mid-m*sd,width:mid?((m*sd*2)/mid)*100:0}}function highest(a,n){return Math.max(...a.slice(-n))}function lowest(a,n){return Math.min(...a.slice(-n))}
-function obv(c,v){let o=[0];for(let i=1;i<c.length;i++){let p=o[i-1];o.push(c[i]>c[i-1]?p+v[i]:c[i]<c[i-1]?p-v[i]:p)}return o}function vwapValue(h,l,c,v,n=80){let pv=0,vv=0;for(let i=Math.max(0,c.length-n);i<c.length;i++){let t=(h[i]+l[i]+c[i])/3;pv+=t*v[i];vv+=v[i]}return vv?pv/vv:last(c)}function cci(h,l,c,n=20){let tp=c.map((_,i)=>(h[i]+l[i]+c[i])/3),r=tp.slice(-n),ma=avg(r),md=avg(r.map(x=>Math.abs(x-ma)));return md?(last(tp)-ma)/(0.015*md):0}function mfi(h,l,c,v,n=14){let pos=0,neg=0;for(let i=c.length-n;i<c.length;i++){let tp=(h[i]+l[i]+c[i])/3,pr=(h[i-1]+l[i-1]+c[i-1])/3,flow=tp*v[i];if(tp>pr)pos+=flow;else if(tp<pr)neg+=flow}if(neg===0)return 100;return 100-(100/(1+pos/neg))}function williamsR(c,h,l,n=14){let hh=highest(h,n),ll=lowest(l,n);return hh-ll?((hh-last(c))/(hh-ll))*-100:-50}function adxValue(h,l,c,n=14){let pd=[],md=[],tr=[];for(let i=1;i<c.length;i++){let up=h[i]-h[i-1],dn=l[i-1]-l[i];pd.push(up>dn&&up>0?up:0);md.push(dn>up&&dn>0?dn:0);tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])))}let t=avg(tr.slice(-n));if(!t)return 0;let p=100*(avg(pd.slice(-n))/t),m=100*(avg(md.slice(-n))/t),dx=Math.abs(p-m)/(p+m)*100;return isFinite(dx)?dx:0}function donchian(h,l,n=20){let up=highest(h,n),lo=lowest(l,n);return{up,lo,mid:(up+lo)/2}}function keltner(c,at,n=20,m=1.5){let mid=last(ema(c,n));return{mid,up:mid+at*m,lo:mid-at*m}}
-function tfProfile(x){return({"5m":{b:"5m",lim:500,ag:1,sr:48,fib:120,am:1.10,rr:1.40,lab:"5 dakika"},"15m":{b:"15m",lim:500,ag:1,sr:48,fib:120,am:1.20,rr:1.50,lab:"15 dakika"},"30m":{b:"30m",lim:500,ag:1,sr:48,fib:120,am:1.30,rr:1.60,lab:"30 dakika"},"1h":{b:"1h",lim:500,ag:1,sr:48,fib:160,am:1.40,rr:1.80,lab:"1 saat"},"2h":{b:"2h",lim:500,ag:1,sr:48,fib:160,am:1.50,rr:2.00,lab:"2 saat"},"4h":{b:"4h",lim:500,ag:1,sr:50,fib:180,am:1.60,rr:2.20,lab:"4 saat"},"8h":{b:"8h",lim:500,ag:1,sr:60,fib:200,am:1.80,rr:2.50,lab:"8 saat"},"16h":{b:"8h",lim:600,ag:2,sr:60,fib:200,am:2.00,rr:2.80,lab:"16 saat"},"1d":{b:"1d",lim:500,ag:1,sr:80,fib:240,am:2.20,rr:3.00,lab:"1 gün"}})[x]||tfProfile("4h")}function tfMs(x){return({"5m":3e5,"15m":9e5,"30m":18e5,"1h":36e5,"2h":72e5,"4h":144e5,"8h":288e5,"16h":576e5,"1d":864e5})[x]||144e5}function aggregateBars(b,n){if(n<=1)return b;let o=[];for(let i=0;i+n<=b.length;i+=n){let g=b.slice(i,i+n);o.push({openTime:g[0].openTime,open:g[0].open,high:Math.max(...g.map(x=>x.high)),low:Math.min(...g.map(x=>x.low)),close:last(g).close,volume:g.reduce((a,x)=>a+x.volume,0),closeTime:last(g).closeTime})}return o}
-function fvgContext(h,l,c){let i=c.length-1;if(l[i]>h[i-2])return{side:"long",msg:"Bullish FVG boşluğu var"};if(h[i]<l[i-2])return{side:"short",msg:"Bearish FVG boşluğu var"};return{side:"info",msg:"Net FVG yok"}}function sweepContext(h,l,c,res,sup){let i=c.length-1;if(l[i]<sup&&c[i]>sup)return{side:"long",msg:"Alt likidite süpürülüp destek üstü kapanış"};if(h[i]>res&&c[i]<res)return{side:"short",msg:"Üst likidite süpürülüp direnç altı kapanış"};return{side:"info",msg:"Net sweep yok"}}function bosChoch(c,res,sup,e21,e55){let p=last(c);if(p>res&&e21>e55)return{side:"long",msg:"Direnç üstü BOS"};if(p<sup&&e21<e55)return{side:"short",msg:"Destek altı BOS"};if(p>res&&e21<e55)return{side:"long",msg:"Yukarı CHOCH ihtimali"};if(p<sup&&e21>e55)return{side:"short",msg:"Aşağı CHOCH ihtimali"};return{side:"info",msg:"BOS/CHOCH teyidi yok"}}
-function updateSelectedBox(){selectedBox.innerHTML=`${selected}<small>${listOpen?"Liste açık - seçim yapınca kapanır":"Liste kapalı - açmak için dokun"}</small>`}function toggleList(){listOpen=!listOpen;renderList()}function renderList(){updateSelectedBox();listPanel.classList.toggle("hidden",!listOpen);if(!listOpen){chips.innerHTML="";return}let q=search.value.toUpperCase().trim(),arr=items.filter(x=>!q||x[0].includes(q)||String(x[1]).toUpperCase().includes(q));chips.innerHTML=arr.map(x=>`<button class="chip ${x[0]===selected?'active':''}" onclick="pick('${x[0]}')">${x[0]}</button>`).join("")}function pick(s){selected=s;listOpen=false;renderList();analyzeSelected()}
-async function fetchTimeout(url,type="json",ms=12000){let ctrl=new AbortController(),t=setTimeout(()=>ctrl.abort(),ms);try{let r=await fetch(url,{signal:ctrl.signal,cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);return type==="text"?await r.text():await r.json()}finally{clearTimeout(t)}}async function loadList(){show("<p>Binance kripto listesi yükleniyor...</p>");try{let j=await fetchTimeout("https://api.binance.com/api/v3/exchangeInfo");items=j.symbols.filter(x=>x.status==="TRADING"&&x.quoteAsset==="USDT").map(x=>[x.symbol,x.baseAsset]).sort((a,b)=>{let ia=TOP.indexOf(a[0]),ib=TOP.indexOf(b[0]);if(ia<0)ia=9999;if(ib<0)ib=9999;return ia-ib||a[0].localeCompare(b[0])});renderList();show(`<p><b>${items.length}</b> adet Binance USDT kripto listelendi. Sembole basınca analiz otomatik çalışır.</p>`)}catch(e){items=[...FALLBACK];renderList();show(`<div class="result warn">LİSTE UYARISI</div><p>Canlı liste gelmedi, yedek liste açıldı.</p><small>${e.message||e}</small>`)}}function setTf(x){tf=x;document.querySelectorAll(".tf button").forEach(b=>b.classList.toggle("active",b.dataset.tf===tf));analyzeSelected()}
-async function getBars(sym){let p=tfProfile(tf),url=`https://api.binance.com/api/v3/klines?symbol=${sym}&interval=${p.b}&limit=${p.lim}&_=${Date.now()}`,j=await fetchTimeout(url);if(!Array.isArray(j))throw Error("Binance veri formatı hatalı");let bars=j.map(x=>({openTime:x[0],open:+x[1],high:+x[2],low:+x[3],close:+x[4],volume:+x[5],closeTime:x[6]}));bars=p.ag>1?aggregateBars(bars,p.ag).slice(-300):bars.slice(-300);let real=bars.length>2?bars[bars.length-1].openTime-bars[bars.length-2].openTime:0;return{ok:true,source:p.ag>1?`Binance ${p.b} → Sentetik ${tf}`:"Binance Kline",symbol:sym,tf,tfLabel:p.lab,expectedMs:tfMs(tf),realMs:real,bars,profile:p,attempts:[{source:p.ag>1?`Binance ${p.b} aggregate`:`Binance ${tf}`,ok:true}]}}
-async function analyzeSelected(){show(`<p>Veri çekiliyor: <b>${selected}</b> / <b>${tf}</b></p>`);try{let d=await getBars(selected);if(!d.bars||d.bars.length<80)throw Error("Yetersiz mum verisi: "+(d.bars?d.bars.length:0));calc(d)}catch(e){show(`<div class="result warn">VERİ HATASI</div><p><b>${selected}</b> için Binance verisi alınamadı.</p><span class="badge bad">Binance Kline: ÇALIŞMADI ${e.message||e}</span>`)}}
-function addContext(name,fn,ctx,long,short,info){try{let r=fn();ctx.push({name,ok:true,side:r.side||"info",msg:r.msg||""});if(r.side==="long")long.push(`${name}: ${r.msg}`);else if(r.side==="short")short.push(`${name}: ${r.msg}`);else info.push(`${name}: ${r.msg}`)}catch(e){ctx.push({name,ok:false,side:"fail",msg:e.message||String(e)})}}
-function calc(data){let b=data.bars,o=b.map(x=>x.open),h=b.map(x=>x.high),l=b.map(x=>x.low),c=b.map(x=>x.close),v=b.map(x=>x.volume),price=last(c),e9=last(ema(c,9)),e21=last(ema(c,21)),e55=last(ema(c,55)),e100=last(ema(c,100)),e200=last(ema(c,Math.min(200,c.length))),s20=last(sma(c,20)),s50=last(sma(c,50)),rs=rsi(c),mc=macd(c),sto=stoch(c,h,l),at=atr(h,l,c),rc=roc(c),bb=boll(c),adx=adxValue(h,l,c),cciVal=cci(h,l,c),mfiVal=mfi(h,l,c,v),willVal=williamsR(c,h,l),obvArr=obv(c,v),obvSlope=last(obvArr)-obvArr[obvArr.length-10],vwap=vwapValue(h,l,c,v,80),p=data.profile,srLen=Math.min(p.sr,c.length-5),fibLen=Math.min(p.fib,c.length-5),sup=lowest(l,srLen),res=highest(h,srLen),supF=lowest(l,fibLen),resF=highest(h,fibLen),dc=donchian(h,l,20),kc=keltner(c,at,20,1.5),volNow=last(v)||0,volAvg=avg(v.slice(-20))||1,slope10=price-c[c.length-11],slope20=price-c[c.length-21],fib382=resF-(resF-supF)*.382,fib618=resF-(resF-supF)*.618,body=Math.abs(last(c)-last(o)),range=Math.max(last(h)-last(l),.0000001),upper=last(h)-Math.max(last(o),last(c)),lower=Math.min(last(o),last(c))-last(l),long=[],short=[],info=[],ctx=[];
-const add=(n,f)=>addContext(n,f,ctx,long,short,info);
-add("1) Trend Rejimi",()=>e21>e55&&price>e100?{side:"long",msg:"Trend rejimi pozitif"}:e21<e55&&price<e100?{side:"short",msg:"Trend rejimi negatif"}:{side:"info",msg:"Trend karışık"});
-add("2) Trend Kırılımı",()=>price>res?{side:"long",msg:`${srLen} mum direnci kırıldı`}:price<sup?{side:"short",msg:`${srLen} mum desteği kırıldı`}:{side:"info",msg:"Kırılım yok"});
-add("3) BOS / CHOCH",()=>bosChoch(c,res,sup,e21,e55));
-add("4) EMA21",()=>price>e21?{side:"long",msg:"Fiyat EMA21 üstünde"}:{side:"short",msg:"Fiyat EMA21 altında"});
-add("5) EMA Dizilimi",()=>e9>e21&&e21>e55?{side:"long",msg:"EMA9>21>55"}:e9<e21&&e21<e55?{side:"short",msg:"EMA9<21<55"}:{side:"info",msg:"Dizilim karışık"});
-add("6) EMA200",()=>price>e200?{side:"long",msg:"Ana yapı güçlü"}:{side:"short",msg:"Ana yapı zayıf"});
-add("7) SMA20/50",()=>s20>s50?{side:"long",msg:"SMA20>SMA50"}:{side:"short",msg:"SMA20<SMA50"});
-add("8) ADX",()=>adx>25&&e21>e55?{side:"long",msg:"ADX güçlü yukarı"}:adx>25&&e21<e55?{side:"short",msg:"ADX güçlü aşağı"}:{side:"info",msg:"ADX zayıf/yatay"});
-add("9) MACD",()=>mc.h>0?{side:"long",msg:"Histogram pozitif"}:{side:"short",msg:"Histogram negatif"});
-add("10) RSI",()=>rs>55?{side:"long",msg:"RSI güçlü"}:rs<45?{side:"short",msg:"RSI zayıf"}:{side:"info",msg:"RSI nötr"});
-add("11) Stochastic",()=>sto>60?{side:"long",msg:"Stoch güçlü"}:sto<40?{side:"short",msg:"Stoch zayıf"}:{side:"info",msg:"Stoch nötr"});
-add("12) ROC",()=>rc>0?{side:"long",msg:"Momentum pozitif"}:{side:"short",msg:"Momentum negatif"});
-add("13) CCI",()=>cciVal>100?{side:"long",msg:"CCI pozitif"}:cciVal<-100?{side:"short",msg:"CCI negatif"}:{side:"info",msg:"CCI nötr"});
-add("14) MFI",()=>mfiVal>55?{side:"long",msg:"Para akışı pozitif"}:mfiVal<45?{side:"short",msg:"Para akışı negatif"}:{side:"info",msg:"MFI nötr"});
-add("15) Williams %R",()=>willVal>-50?{side:"long",msg:"Üst bölge"}:{side:"short",msg:"Alt bölge"});
-add("16) Hacim",()=>volNow>volAvg*1.15?{side:"long",msg:"Hacim destekli"}:{side:"short",msg:"Hacim zayıf"});
-add("17) OBV",()=>obvSlope>0?{side:"long",msg:"OBV pozitif"}:{side:"short",msg:"OBV negatif"});
-add("18) VWAP",()=>price>vwap?{side:"long",msg:"VWAP üstü"}:{side:"short",msg:"VWAP altı"});
-add("19) Destek/Direnç",()=>price>res-at*.2?{side:"long",msg:"Direnç kırılım bölgesi"}:price<sup+at*.2?{side:"short",msg:"Destek tehlike"}:{side:"info",msg:"Aralıkta"});
-add("20) Donchian",()=>price>dc.mid?{side:"long",msg:"Kanal orta üstü"}:{side:"short",msg:"Kanal orta altı"});
-add("21) Bollinger",()=>price>bb.up?{side:"long",msg:"Üst bant kırılım"}:price<bb.lo?{side:"short",msg:"Alt bant baskı"}:price>bb.mid?{side:"long",msg:"Orta bant üstü"}:{side:"short",msg:"Orta bant altı"});
-add("22) Keltner",()=>price>kc.up?{side:"long",msg:"Üst kanal kırılım"}:price<kc.lo?{side:"short",msg:"Alt kanal baskı"}:{side:"info",msg:"Kanal içi"});
-add("23) Squeeze",()=>bb.width<3?{side:"info",msg:"Sıkışma"}:bb.width>8&&price>bb.mid?{side:"long",msg:"Volatilite yukarı"}:bb.width>8&&price<bb.mid?{side:"short",msg:"Volatilite aşağı"}:{side:"info",msg:"Normal volatilite"});
-add("24) Fibonacci",()=>price>fib382?{side:"long",msg:`0.382 üstü (${fibLen} mum)`}:price<fib618?{side:"short",msg:`0.618 altı (${fibLen} mum)`}:{side:"info",msg:"Orta bölge"});
-add("25) Liquidity Sweep",()=>sweepContext(h,l,c,res,sup));
-add("26) FVG",()=>fvgContext(h,l,c));
-add("27) Mum Fitili",()=>lower>body*2&&upper<body*1.2?{side:"long",msg:"Alt fitil tepki"}:upper>body*2&&lower<body*1.2?{side:"short",msg:"Üst fitil baskı"}:body/range<.15?{side:"info",msg:"Doji"}:last(c)>last(o)?{side:"long",msg:"Son mum yeşil"}:{side:"short",msg:"Son mum kırmızı"});
-add("28) 3 Mum",()=>c[c.length-1]>c[c.length-2]&&c[c.length-2]>c[c.length-3]?{side:"long",msg:"3 mum yukarı"}:c[c.length-1]<c[c.length-2]&&c[c.length-2]<c[c.length-3]?{side:"short",msg:"3 mum aşağı"}:{side:"info",msg:"Net değil"});
-let worked=ctx.filter(x=>x.ok).length,failed=ctx.filter(x=>!x.ok).length,directional=long.length+short.length,decision=long.length>=short.length?"LONG":"SHORT",confidence=directional?Math.round(Math.max(long.length,short.length)/directional*100):50;confidence=Math.min(95,Math.max(35,confidence));let entry=price,stop=decision==="LONG"?Math.max(entry-at*p.am,sup-at*.1):Math.min(entry+at*p.am,res+at*.1),risk=Math.abs(entry-stop)||at*p.am,tp1=decision==="LONG"?entry+risk:entry-risk,tp2=decision==="LONG"?entry+risk*p.rr:entry-risk*p.rr,tp3=decision==="LONG"?entry+risk*(p.rr+1):entry-risk*(p.rr+1);drawChart(c,entry,stop,tp2);let lastTime=new Date(last(b).closeTime).toLocaleString("tr-TR");
-show(`<div class="result ${decision==="LONG"?"long":"short"}">${decision}</div><div class="kpi"><div>Sembol<b>${data.symbol}</b></div><div>Time Frame<b>${tf}</b></div><div>TF Kontrol<b>${data.tfLabel}</b></div><div>Mum Aralığı<b>${Math.round(data.realMs/60000)} dk</b></div><div>SR Bakış<b>${srLen} mum</b></div><div>Hedef R/R<b>${p.rr}R</b></div><div>Kaynak<b>${data.source}</b></div><div>Son Veri<b>${lastTime}</b></div><div>Güven<b>%${confidence}</b></div><div>Fiyat<b>${fmt(price)}</b></div><div>Giriş<b>${fmt(entry)}</b></div><div>Stop<b>${fmt(stop)}</b></div><div>Hedef 1<b>${fmt(tp1)}</b></div><div>Hedef 2<b>${fmt(tp2)}</b></div><div>Hedef 3<b>${fmt(tp3)}</b></div><div>ATR<b>${fmt(at)}</b></div></div><p><b>Veri bağı:</b> ${(data.attempts||[]).map(a=>`<span class="badge ${a.ok?'good':'bad'}">${a.source}: ${a.ok?'ÇALIŞTI':'ÇALIŞMADI'}</span>`).join("")}</p><p><b>Çalışan bağlam:</b> ${worked} <span class="badge good">ÇALIŞTI</span> <b>Çalışmayan bağlam:</b> ${failed} <span class="badge ${failed?'bad':'good'}">${failed}</span></p><p class="notice">Her time frame kendi mum verisi, ATR, destek/direnç ve hedef katsayısıyla hesaplanır. Sistem emir göndermez; karar destek analizidir.</p><p><b>LONG sebepleri:</b><br>${long.map(x=>`<span class="badge good">${x}</span>`).join("")}</p><p><b>SHORT sebepleri:</b><br>${short.map(x=>`<span class="badge bad">${x}</span>`).join("")}</p><p><b>Nötr / Bilgi:</b><br>${info.map(x=>`<span class="badge info">${x}</span>`).join("")}</p><p><b>Çalışan analiz bağları:</b><br>${ctx.filter(x=>x.ok).map(x=>`<span class="badge info">${x.name}</span>`).join("")}</p>${failed?`<p><b>Çalışmayan bağlar:</b><br>${ctx.filter(x=>!x.ok).map(x=>`<span class="badge bad">${x.name}: ${x.msg}</span>`).join("")}</p>`:""}`)}
-function drawChart(c,entry,stop,tp){let canvas=document.getElementById("chart"),ctx=canvas.getContext("2d"),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);ctx.fillStyle="#0f1528";ctx.fillRect(0,0,w,h);let arr=c.slice(-90),min=Math.min(...arr,entry,stop,tp),max=Math.max(...arr,entry,stop,tp),pad=(max-min)*.08||1;min-=pad;max+=pad;let y=v=>h-20-(v-min)/(max-min)*(h-40),x=i=>20+i/(arr.length-1)*(w-40);ctx.strokeStyle="#7aa2ff";ctx.lineWidth=2;ctx.beginPath();arr.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.stroke();function line(v,color,name){ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(20,y(v));ctx.lineTo(w-20,y(v));ctx.stroke();ctx.fillStyle=color;ctx.font="13px Arial";ctx.fillText(name+" "+fmt(v),24,y(v)-4)}line(entry,"#ffd166","Giriş");line(stop,"#ff6b7a","Stop");line(tp,"#2cff9a","Hedef")}
+let selected="BTCUSDT";
+let tf="4h";
+let items=[];
+let listOpen=true;
+
+const FALLBACK=[
+["BTCUSDT","Bitcoin"],
+["ETHUSDT","Ethereum"],
+["BNBUSDT","BNB"],
+["SOLUSDT","Solana"],
+["XRPUSDT","XRP"],
+["DOGEUSDT","Dogecoin"],
+["ADAUSDT","Cardano"],
+["AVAXUSDT","Avalanche"],
+["LINKUSDT","Chainlink"],
+["DOTUSDT","Polkadot"],
+["TRXUSDT","Tron"],
+["MATICUSDT","Polygon"],
+["LTCUSDT","Litecoin"],
+["BCHUSDT","Bitcoin Cash"],
+["ATOMUSDT","Cosmos"],
+["NEARUSDT","Near"],
+["APTUSDT","Aptos"],
+["OPUSDT","Optimism"],
+["ARBUSDT","Arbitrum"],
+["INJUSDT","Injective"],
+["FILUSDT","Filecoin"],
+["ETCUSDT","Ethereum Classic"],
+["SUIUSDT","Sui"],
+["SEIUSDT","Sei"],
+["TIAUSDT","Celestia"],
+["RUNEUSDT","Thorchain"],
+["AAVEUSDT","Aave"],
+["UNIUSDT","Uniswap"],
+["MKRUSDT","Maker"],
+["FETUSDT","Fetch AI"],
+["RNDRUSDT","Render"],
+["GRTUSDT","Graph"],
+["PEPEUSDT","Pepe"]
+];
+
+const TOP=FALLBACK.map(x=>x[0]);
+
+const API_BASES=[
+  "https://data-api.binance.vision",
+  "https://api.binance.com",
+  "https://api1.binance.com",
+  "https://api2.binance.com",
+  "https://api3.binance.com",
+  "https://api4.binance.com"
+];
+
+function el(id){
+  return document.getElementById(id);
+}
+
+function show(x){
+  el("out").innerHTML=x;
+}
+
+function last(a){
+  return a[a.length-1];
+}
+
+function avg(a){
+  return a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
+}
+
+function std(a){
+  let m=avg(a);
+  return Math.sqrt(avg(a.map(x=>(x-m)*(x-m))))||0;
+}
+
+function fmt(v,d=4){
+  return Number(v).toLocaleString("tr-TR",{maximumFractionDigits:d});
+}
+
+function ema(a,n){
+  let k=2/(n+1);
+  let r=[];
+  let e=a[0];
+
+  for(let v of a){
+    e=v*k+e*(1-k);
+    r.push(e);
+  }
+
+  return r;
+}
+
+function sma(a,n){
+  return a.map((_,i)=>avg(a.slice(Math.max(0,i-n+1),i+1)));
+}
+
+function rsi(a,n=14){
+  if(a.length<n+2)return 50;
+
+  let g=0;
+  let l=0;
+
+  for(let i=a.length-n;i<a.length;i++){
+    let d=a[i]-a[i-1];
+
+    if(d>0)g+=d;
+    else l-=d;
+  }
+
+  if(l===0)return 100;
+
+  let rs=g/l;
+  return 100-100/(1+rs);
+}
+
+function macd(a){
+  let e12=ema(a,12);
+  let e26=ema(a,26);
+  let m=e12.map((v,i)=>v-e26[i]);
+  let s=ema(m,9);
+
+  return {
+    hist:last(m)-last(s)
+  };
+}
+
+function atr(h,l,c,n=14){
+  let tr=[];
+
+  for(let i=1;i<c.length;i++){
+    tr.push(Math.max(
+      h[i]-l[i],
+      Math.abs(h[i]-c[i-1]),
+      Math.abs(l[i]-c[i-1])
+    ));
+  }
+
+  return avg(tr.slice(-n))||0;
+}
+
+function stoch(c,h,l,n=14){
+  let hi=Math.max(...h.slice(-n));
+  let lo=Math.min(...l.slice(-n));
+  let d=hi-lo;
+
+  return d ? ((last(c)-lo)/d)*100 : 50;
+}
+
+function roc(c,n=10){
+  return c.length>n ? ((last(c)-c[c.length-1-n])/c[c.length-1-n])*100 : 0;
+}
+
+function boll(c,n=20,m=2){
+  let s=c.slice(-n);
+  let mid=avg(s);
+  let sd=std(s);
+
+  return {
+    mid,
+    up:mid+m*sd,
+    lo:mid-m*sd,
+    width:mid ? ((m*sd*2)/mid)*100 : 0
+  };
+}
+
+function highest(a,n){
+  return Math.max(...a.slice(-n));
+}
+
+function lowest(a,n){
+  return Math.min(...a.slice(-n));
+}
+
+function obv(c,v){
+  let o=[0];
+
+  for(let i=1;i<c.length;i++){
+    let p=o[i-1];
+
+    if(c[i]>c[i-1])o.push(p+v[i]);
+    else if(c[i]<c[i-1])o.push(p-v[i]);
+    else o.push(p);
+  }
+
+  return o;
+}
+
+function vwapValue(h,l,c,v,n=80){
+  let pv=0;
+  let vv=0;
+
+  for(let i=Math.max(0,c.length-n);i<c.length;i++){
+    let t=(h[i]+l[i]+c[i])/3;
+    pv+=t*v[i];
+    vv+=v[i];
+  }
+
+  return vv ? pv/vv : last(c);
+}
+
+function cci(h,l,c,n=20){
+  let tp=c.map((_,i)=>(h[i]+l[i]+c[i])/3);
+  let r=tp.slice(-n);
+  let ma=avg(r);
+  let md=avg(r.map(x=>Math.abs(x-ma)));
+
+  return md ? (last(tp)-ma)/(0.015*md) : 0;
+}
+
+function mfi(h,l,c,v,n=14){
+  let pos=0;
+  let neg=0;
+
+  for(let i=c.length-n;i<c.length;i++){
+    let tp=(h[i]+l[i]+c[i])/3;
+    let pr=(h[i-1]+l[i-1]+c[i-1])/3;
+    let flow=tp*v[i];
+
+    if(tp>pr)pos+=flow;
+    else if(tp<pr)neg+=flow;
+  }
+
+  if(neg===0)return 100;
+
+  return 100-(100/(1+pos/neg));
+}
+
+function williamsR(c,h,l,n=14){
+  let hh=highest(h,n);
+  let ll=lowest(l,n);
+
+  return hh-ll ? ((hh-last(c))/(hh-ll))*-100 : -50;
+}
+
+function adxValue(h,l,c,n=14){
+  let pd=[];
+  let md=[];
+  let tr=[];
+
+  for(let i=1;i<c.length;i++){
+    let up=h[i]-h[i-1];
+    let dn=l[i-1]-l[i];
+
+    pd.push(up>dn && up>0 ? up : 0);
+    md.push(dn>up && dn>0 ? dn : 0);
+
+    tr.push(Math.max(
+      h[i]-l[i],
+      Math.abs(h[i]-c[i-1]),
+      Math.abs(l[i]-c[i-1])
+    ));
+  }
+
+  let t=avg(tr.slice(-n));
+  if(!t)return 0;
+
+  let p=100*(avg(pd.slice(-n))/t);
+  let m=100*(avg(md.slice(-n))/t);
+  let dx=Math.abs(p-m)/(p+m)*100;
+
+  return isFinite(dx)?dx:0;
+}
+
+function donchian(h,l,n=20){
+  let up=highest(h,n);
+  let lo=lowest(l,n);
+
+  return {
+    up,
+    lo,
+    mid:(up+lo)/2
+  };
+}
+
+function keltner(c,at,n=20,m=1.5){
+  let mid=last(ema(c,n));
+
+  return {
+    mid,
+    up:mid+at*m,
+    lo:mid-at*m
+  };
+}
+
+function tfProfile(x){
+  const map={
+    "5m":  {binance:"5m",  limit:500, aggregate:1, sr:48, fib:120, atrMult:1.10, rr:1.40, label:"5 dakika"},
+    "15m": {binance:"15m", limit:500, aggregate:1, sr:48, fib:120, atrMult:1.20, rr:1.50, label:"15 dakika"},
+    "30m": {binance:"30m", limit:500, aggregate:1, sr:48, fib:120, atrMult:1.30, rr:1.60, label:"30 dakika"},
+    "1h":  {binance:"1h",  limit:500, aggregate:1, sr:48, fib:160, atrMult:1.40, rr:1.80, label:"1 saat"},
+    "2h":  {binance:"2h",  limit:500, aggregate:1, sr:48, fib:160, atrMult:1.50, rr:2.00, label:"2 saat"},
+    "4h":  {binance:"4h",  limit:500, aggregate:1, sr:50, fib:180, atrMult:1.60, rr:2.20, label:"4 saat"},
+    "8h":  {binance:"8h",  limit:500, aggregate:1, sr:60, fib:200, atrMult:1.80, rr:2.50, label:"8 saat"},
+    "16h": {binance:"8h",  limit:600, aggregate:2, sr:60, fib:200, atrMult:2.00, rr:2.80, label:"16 saat"},
+    "1d":  {binance:"1d",  limit:500, aggregate:1, sr:80, fib:240, atrMult:2.20, rr:3.00, label:"1 gün"}
+  };
+
+  return map[x] || map["4h"];
+}
+
+function tfMs(x){
+  const map={
+    "5m":5*60*1000,
+    "15m":15*60*1000,
+    "30m":30*60*1000,
+    "1h":60*60*1000,
+    "2h":2*60*60*1000,
+    "4h":4*60*60*1000,
+    "8h":8*60*60*1000,
+    "16h":16*60*60*1000,
+    "1d":24*60*60*1000
+  };
+
+  return map[x] || map["4h"];
+}
+
+function aggregateBars(b,n){
+  if(n<=1)return b;
+
+  let o=[];
+
+  for(let i=0;i+n<=b.length;i+=n){
+    let g=b.slice(i,i+n);
+
+    o.push({
+      openTime:g[0].openTime,
+      open:g[0].open,
+      high:Math.max(...g.map(x=>x.high)),
+      low:Math.min(...g.map(x=>x.low)),
+      close:last(g).close,
+      volume:g.reduce((a,x)=>a+x.volume,0),
+      closeTime:last(g).closeTime
+    });
+  }
+
+  return o;
+}
+
+function fvgContext(h,l,c){
+  let i=c.length-1;
+
+  if(i<2)return {side:"info",msg:"FVG için yeterli mum yok"};
+
+  if(l[i]>h[i-2])return {side:"long",msg:"Bullish FVG boşluğu var"};
+  if(h[i]<l[i-2])return {side:"short",msg:"Bearish FVG boşluğu var"};
+
+  return {side:"info",msg:"Net FVG yok"};
+}
+
+function sweepContext(h,l,c,res,sup){
+  let i=c.length-1;
+
+  if(l[i]<sup && c[i]>sup){
+    return {side:"long",msg:"Alt likidite süpürülüp destek üstü kapanış"};
+  }
+
+  if(h[i]>res && c[i]<res){
+    return {side:"short",msg:"Üst likidite süpürülüp direnç altı kapanış"};
+  }
+
+  return {side:"info",msg:"Net sweep yok"};
+}
+
+function bosChoch(c,res,sup,e21,e55){
+  let p=last(c);
+
+  if(p>res && e21>e55)return {side:"long",msg:"Direnç üstü BOS"};
+  if(p<sup && e21<e55)return {side:"short",msg:"Destek altı BOS"};
+  if(p>res && e21<e55)return {side:"long",msg:"Yukarı CHOCH ihtimali"};
+  if(p<sup && e21>e55)return {side:"short",msg:"Aşağı CHOCH ihtimali"};
+
+  return {side:"info",msg:"BOS/CHOCH teyidi yok"};
+}
+
+function updateSelectedBox(){
+  el("selectedBox").innerHTML=
+    `${selected}<small>${listOpen ? "Liste açık - seçim yapınca kapanır" : "Liste kapalı - açmak için dokun"}</small>`;
+}
+
+function toggleList(){
+  listOpen=!listOpen;
+  renderList();
+}
+
+function renderList(){
+  updateSelectedBox();
+
+  el("listPanel").classList.toggle("hidden",!listOpen);
+
+  if(!listOpen){
+    el("chips").innerHTML="";
+    return;
+  }
+
+  let q=el("search").value.toUpperCase().trim();
+
+  let arr=items.filter(x=>
+    !q ||
+    x[0].includes(q) ||
+    String(x[1]).toUpperCase().includes(q)
+  );
+
+  el("chips").innerHTML=arr.map(x=>
+    `<button class="chip ${x[0]===selected?'active':''}" onclick="pick('${x[0]}')">${x[0]}</button>`
+  ).join("");
+}
+
+function pick(s){
+  selected=s;
+  listOpen=false;
+  renderList();
+  analyzeSelected();
+}
+
+async function fetchTimeout(url,ms=9000){
+  let ctrl=new AbortController();
+  let t=setTimeout(()=>ctrl.abort(),ms);
+
+  try{
+    let r=await fetch(url,{
+      signal:ctrl.signal,
+      cache:"no-store"
+    });
+
+    if(!r.ok)throw Error("HTTP "+r.status);
+
+    return await r.json();
+  }finally{
+    clearTimeout(t);
+  }
+}
+
+function hostName(url){
+  try{
+    return new URL(url).hostname;
+  }catch(e){
+    return url;
+  }
+}
+
+function buildUrls(path){
+  let urls=API_BASES.map(base=>base+path);
+
+  let core="https://data-api.binance.vision"+path;
+
+  urls.push("https://api.allorigins.win/raw?url="+encodeURIComponent(core));
+  urls.push("https://corsproxy.io/?"+encodeURIComponent(core));
+
+  return urls;
+}
+
+async function fetchFirst(path){
+  let attempts=[];
+
+  for(let url of buildUrls(path)){
+    let name=hostName(url);
+
+    try{
+      let data=await fetchTimeout(url);
+      attempts.push({source:name,ok:true});
+
+      return {
+        data,
+        source:name,
+        attempts
+      };
+    }catch(e){
+      attempts.push({
+        source:name,
+        ok:false,
+        error:e.message || String(e)
+      });
+    }
+  }
+
+  let err=new Error("Tüm veri kapıları çalışmadı");
+  err.attempts=attempts;
+  throw err;
+}
+
+async function loadList(){
+  show("<p>Binance kripto listesi yükleniyor...</p>");
+
+  try{
+    let r=await fetchFirst("/api/v3/exchangeInfo");
+    let j=r.data;
+
+    items=j.symbols
+      .filter(x=>x.status==="TRADING" && x.quoteAsset==="USDT")
+      .map(x=>[x.symbol,x.baseAsset])
+      .sort((a,b)=>{
+        let ia=TOP.indexOf(a[0]);
+        let ib=TOP.indexOf(b[0]);
+
+        if(ia<0)ia=9999;
+        if(ib<0)ib=9999;
+
+        return ia-ib || a[0].localeCompare(b[0]);
+      });
+
+    renderList();
+
+    show(`<p><b>${items.length}</b> adet Binance USDT kripto listelendi. Liste kaynağı: <b>${r.source}</b></p>`);
+
+    analyzeSelected();
+  }catch(e){
+    items=[...FALLBACK];
+    renderList();
+
+    show(`
+      <div class="result warn">LİSTE UYARISI</div>
+      <p>Canlı liste gelmedi, yedek liste açıldı.</p>
+      ${(e.attempts||[]).map(a=>
+        `<span class="badge bad">${a.source}: ${a.error || "çalışmadı"}</span>`
+      ).join("")}
+    `);
+
+    analyzeSelected();
+  }
+}
+
+function setTf(x){
+  tf=x;
+
+  document.querySelectorAll(".tf button").forEach(b=>{
+    b.classList.toggle("active",b.dataset.tf===tf);
+  });
+
+  analyzeSelected();
+}
+
+async function getBars(sym){
+  let p=tfProfile(tf);
+
+  let path=`/api/v3/klines?symbol=${sym}&interval=${p.binance}&limit=${p.limit}&_=${Date.now()}`;
+  let r=await fetchFirst(path);
+  let j=r.data;
+
+  if(!Array.isArray(j)){
+    let err=new Error("Binance veri formatı hatalı");
+    err.attempts=r.attempts;
+    throw err;
+  }
+
+  let bars=j.map(x=>({
+    openTime:x[0],
+    open:+x[1],
+    high:+x[2],
+    low:+x[3],
+    close:+x[4],
+    volume:+x[5],
+    closeTime:x[6]
+  }));
+
+  if(p.aggregate>1){
+    bars=aggregateBars(bars,p.aggregate).slice(-300);
+  }else{
+    bars=bars.slice(-300);
+  }
+
+  let real=bars.length>2 ? bars[bars.length-1].openTime-bars[bars.length-2].openTime : 0;
+
+  return {
+    ok:true,
+    source:p.aggregate>1 ? `${r.source} ${p.binance} → Sentetik ${tf}` : r.source,
+    symbol:sym,
+    tf,
+    tfLabel:p.label,
+    expectedMs:tfMs(tf),
+    realMs:real,
+    bars,
+    profile:p,
+    attempts:r.attempts
+  };
+}
+
+async function analyzeSelected(){
+  show(`<p>Veri çekiliyor: <b>${selected}</b> / <b>${tf}</b></p>`);
+
+  try{
+    let d=await getBars(selected);
+
+    if(!d.bars || d.bars.length<80){
+      let err=new Error("Yetersiz mum verisi: "+(d.bars?d.bars.length:0));
+      err.attempts=d.attempts;
+      throw err;
+    }
+
+    calc(d);
+  }catch(e){
+    let at=e.attempts || [{source:"Binance",ok:false,error:e.message || String(e)}];
+
+    show(`
+      <div class="result warn">VERİ HATASI</div>
+      <p><b>${selected}</b> için veri alınamadı. Tüm Binance kapıları denendi.</p>
+      ${at.map(a=>
+        `<span class="badge ${a.ok?'good':'bad'}">${a.source}: ${a.ok ? "ÇALIŞTI" : "ÇALIŞMADI "+(a.error||"")}</span>`
+      ).join("")}
+    `);
+  }
+}
+
+function addContext(name,fn,ctx,long,short,info){
+  try{
+    let r=fn();
+
+    ctx.push({
+      name,
+      ok:true,
+      side:r.side || "info",
+      msg:r.msg || ""
+    });
+
+    if(r.side==="long")long.push(`${name}: ${r.msg}`);
+    else if(r.side==="short")short.push(`${name}: ${r.msg}`);
+    else info.push(`${name}: ${r.msg}`);
+  }catch(e){
+    ctx.push({
+      name,
+      ok:false,
+      side:"fail",
+      msg:e.message || String(e)
+    });
+  }
+}
+
+function calc(data){
+  let b=data.bars;
+
+  let o=b.map(x=>x.open);
+  let h=b.map(x=>x.high);
+  let l=b.map(x=>x.low);
+  let c=b.map(x=>x.close);
+  let v=b.map(x=>x.volume);
+
+  let price=last(c);
+
+  let e9=last(ema(c,9));
+  let e21=last(ema(c,21));
+  let e55=last(ema(c,55));
+  let e100=last(ema(c,100));
+  let e200=last(ema(c,Math.min(200,c.length)));
+
+  let s20=last(sma(c,20));
+  let s50=last(sma(c,50));
+
+  let rs=rsi(c);
+  let mc=macd(c);
+  let sto=stoch(c,h,l);
+  let at=atr(h,l,c);
+  let rc=roc(c);
+  let bb=boll(c);
+
+  let adx=adxValue(h,l,c);
+  let cciVal=cci(h,l,c);
+  let mfiVal=mfi(h,l,c,v);
+  let willVal=williamsR(c,h,l);
+
+  let obvArr=obv(c,v);
+  let obvSlope=last(obvArr)-obvArr[obvArr.length-10];
+
+  let vwap=vwapValue(h,l,c,v,80);
+
+  let p=data.profile;
+
+  let srLen=Math.min(p.sr,c.length-5);
+  let fibLen=Math.min(p.fib,c.length-5);
+
+  let sup=lowest(l,srLen);
+  let res=highest(h,srLen);
+
+  let supF=lowest(l,fibLen);
+  let resF=highest(h,fibLen);
+
+  let dc=donchian(h,l,20);
+  let kc=keltner(c,at,20,1.5);
+
+  let volNow=last(v)||0;
+  let volAvg=avg(v.slice(-20))||1;
+
+  let fib382=resF-(resF-supF)*0.382;
+  let fib618=resF-(resF-supF)*0.618;
+
+  let body=Math.abs(last(c)-last(o));
+  let range=Math.max(last(h)-last(l),0.0000001);
+  let upper=last(h)-Math.max(last(o),last(c));
+  let lower=Math.min(last(o),last(c))-last(l);
+
+  let long=[];
+  let short=[];
+  let info=[];
+  let ctx=[];
+
+  const add=(n,f)=>addContext(n,f,ctx,long,short,info);
+
+  add("1) Trend Rejimi",()=>e21>e55&&price>e100
+    ?{side:"long",msg:"Trend rejimi pozitif"}
+    :e21<e55&&price<e100
+      ?{side:"short",msg:"Trend rejimi negatif"}
+      :{side:"info",msg:"Trend karışık"});
+
+  add("2) Trend Kırılımı",()=>price>res
+    ?{side:"long",msg:`${srLen} mum direnci kırıldı`}
+    :price<sup
+      ?{side:"short",msg:`${srLen} mum desteği kırıldı`}
+      :{side:"info",msg:"Kırılım yok"});
+
+  add("3) BOS / CHOCH",()=>bosChoch(c,res,sup,e21,e55));
+
+  add("4) EMA21",()=>price>e21
+    ?{side:"long",msg:"Fiyat EMA21 üstünde"}
+    :{side:"short",msg:"Fiyat EMA21 altında"});
+
+  add("5) EMA Dizilimi",()=>e9>e21&&e21>e55
+    ?{side:"long",msg:"EMA9 > EMA21 > EMA55"}
+    :e9<e21&&e21<e55
+      ?{side:"short",msg:"EMA9 < EMA21 < EMA55"}
+      :{side:"info",msg:"Dizilim karışık"});
+
+  add("6) EMA200",()=>price>e200
+    ?{side:"long",msg:"Ana yapı güçlü"}
+    :{side:"short",msg:"Ana yapı zayıf"});
+
+  add("7) SMA20/50",()=>s20>s50
+    ?{side:"long",msg:"SMA20 > SMA50"}
+    :{side:"short",msg:"SMA20 < SMA50"});
+
+  add("8) ADX",()=>adx>25&&e21>e55
+    ?{side:"long",msg:"ADX güçlü yukarı"}
+    :adx>25&&e21<e55
+      ?{side:"short",msg:"ADX güçlü aşağı"}
+      :{side:"info",msg:"ADX zayıf/yatay"});
+
+  add("9) MACD",()=>mc.hist>0
+    ?{side:"long",msg:"Histogram pozitif"}
+    :{side:"short",msg:"Histogram negatif"});
+
+  add("10) RSI",()=>rs>55
+    ?{side:"long",msg:"RSI güçlü"}
+    :rs<45
+      ?{side:"short",msg:"RSI zayıf"}
+      :{side:"info",msg:"RSI nötr"});
+
+  add("11) Stochastic",()=>sto>60
+    ?{side:"long",msg:"Stoch güçlü"}
+    :sto<40
+      ?{side:"short",msg:"Stoch zayıf"}
+      :{side:"info",msg:"Stoch nötr"});
+
+  add("12) ROC",()=>rc>0
+    ?{side:"long",msg:"Momentum pozitif"}
+    :{side:"short",msg:"Momentum negatif"});
+
+  add("13) CCI",()=>cciVal>100
+    ?{side:"long",msg:"CCI pozitif"}
+    :cciVal<-100
+      ?{side:"short",msg:"CCI negatif"}
+      :{side:"info",msg:"CCI nötr"});
+
+  add("14) MFI",()=>mfiVal>55
+    ?{side:"long",msg:"Para akışı pozitif"}
+    :mfiVal<45
+      ?{side:"short",msg:"Para akışı negatif"}
+      :{side:"info",msg:"MFI nötr"});
+
+  add("15) Williams %R",()=>willVal>-50
+    ?{side:"long",msg:"Üst bölge"}
+    :{side:"short",msg:"Alt bölge"});
+
+  add("16) Hacim",()=>volNow>volAvg*1.15
+    ?{side:"long",msg:"Hacim destekli"}
+    :{side:"short",msg:"Hacim zayıf"});
+
+  add("17) OBV",()=>obvSlope>0
+    ?{side:"long",msg:"OBV pozitif"}
+    :{side:"short",msg:"OBV negatif"});
+
+  add("18) VWAP",()=>price>vwap
+    ?{side:"long",msg:"VWAP üstü"}
+    :{side:"short",msg:"VWAP altı"});
+
+  add("19) Destek/Direnç",()=>price>res-at*0.2
+    ?{side:"long",msg:"Direnç kırılım bölgesi"}
+    :price<sup+at*0.2
+      ?{side:"short",msg:"Destek tehlike"}
+      :{side:"info",msg:"Aralıkta"});
+
+  add("20) Donchian",()=>price>dc.mid
+    ?{side:"long",msg:"Kanal orta üstü"}
+    :{side:"short",msg:"Kanal orta altı"});
+
+  add("21) Bollinger",()=>price>bb.up
+    ?{side:"long",msg:"Üst bant kırılım"}
+    :price<bb.lo
+      ?{side:"short",msg:"Alt bant baskı"}
+      :price>bb.mid
+        ?{side:"long",msg:"Orta bant üstü"}
+        :{side:"short",msg:"Orta bant altı"});
+
+  add("22) Keltner",()=>price>kc.up
+    ?{side:"long",msg:"Üst kanal kırılım"}
+    :price<kc.lo
+      ?{side:"short",msg:"Alt kanal baskı"}
+      :{side:"info",msg:"Kanal içi"});
+
+  add("23) Squeeze",()=>bb.width<3
+    ?{side:"info",msg:"Sıkışma"}
+    :bb.width>8&&price>bb.mid
+      ?{side:"long",msg:"Volatilite yukarı"}
+      :bb.width>8&&price<bb.mid
+        ?{side:"short",msg:"Volatilite aşağı"}
+        :{side:"info",msg:"Normal volatilite"});
+
+  add("24) Fibonacci",()=>price>fib382
+    ?{side:"long",msg:`0.382 üstü (${fibLen} mum)`}
+    :price<fib618
+      ?{side:"short",msg:`0.618 altı (${fibLen} mum)`}
+      :{side:"info",msg:"Orta bölge"});
+
+  add("25) Liquidity Sweep",()=>sweepContext(h,l,c,res,sup));
+
+  add("26) FVG",()=>fvgContext(h,l,c));
+
+  add("27) Mum Fitili",()=>lower>body*2&&upper<body*1.2
+    ?{side:"long",msg:"Alt fitil tepki"}
+    :upper>body*2&&lower<body*1.2
+      ?{side:"short",msg:"Üst fitil baskı"}
+      :body/range<0.15
+        ?{side:"info",msg:"Doji"}
+        :last(c)>last(o)
+          ?{side:"long",msg:"Son mum yeşil"}
+          :{side:"short",msg:"Son mum kırmızı"});
+
+  add("28) 3 Mum",()=>c[c.length-1]>c[c.length-2]&&c[c.length-2]>c[c.length-3]
+    ?{side:"long",msg:"3 mum yukarı"}
+    :c[c.length-1]<c[c.length-2]&&c[c.length-2]<c[c.length-3]
+      ?{side:"short",msg:"3 mum aşağı"}
+      :{side:"info",msg:"Net değil"});
+
+  let worked=ctx.filter(x=>x.ok).length;
+  let failed=ctx.filter(x=>!x.ok).length;
+
+  let directional=long.length+short.length;
+  let decision=long.length>=short.length ? "LONG" : "SHORT";
+
+  let confidence=directional
+    ? Math.round(Math.max(long.length,short.length)/directional*100)
+    : 50;
+
+  confidence=Math.min(95,Math.max(35,confidence));
+
+  let entry=price;
+
+  let stop=decision==="LONG"
+    ? Math.max(entry-at*p.atrMult,sup-at*0.1)
+    : Math.min(entry+at*p.atrMult,res+at*0.1);
+
+  let risk=Math.abs(entry-stop)||at*p.atrMult;
+
+  let tp1=decision==="LONG" ? entry+risk : entry-risk;
+  let tp2=decision==="LONG" ? entry+risk*p.rr : entry-risk*p.rr;
+  let tp3=decision==="LONG" ? entry+risk*(p.rr+1) : entry-risk*(p.rr+1);
+
+  drawChart(c,entry,stop,tp2);
+
+  let lastTime=new Date(last(b).closeTime).toLocaleString("tr-TR");
+
+  show(`
+    <div class="result ${decision==="LONG"?"long":"short"}">${decision}</div>
+
+    <div class="kpi">
+      <div>Sembol<b>${data.symbol}</b></div>
+      <div>Time Frame<b>${tf}</b></div>
+      <div>TF Kontrol<b>${data.tfLabel}</b></div>
+      <div>Mum Aralığı<b>${Math.round(data.realMs/60000)} dk</b></div>
+      <div>SR Bakış<b>${srLen} mum</b></div>
+      <div>Hedef R/R<b>${p.rr}R</b></div>
+      <div>Kaynak<b>${data.source}</b></div>
+      <div>Son Veri<b>${lastTime}</b></div>
+      <div>Güven<b>%${confidence}</b></div>
+      <div>Fiyat<b>${fmt(price)}</b></div>
+      <div>Giriş<b>${fmt(entry)}</b></div>
+      <div>Stop<b>${fmt(stop)}</b></div>
+      <div>Hedef 1<b>${fmt(tp1)}</b></div>
+      <div>Hedef 2<b>${fmt(tp2)}</b></div>
+      <div>Hedef 3<b>${fmt(tp3)}</b></div>
+      <div>ATR<b>${fmt(at)}</b></div>
+    </div>
+
+    <p>
+      <b>Veri bağı:</b>
+      ${(data.attempts||[]).map(a=>
+        `<span class="badge ${a.ok?'good':'bad'}">${a.source}: ${a.ok ? "ÇALIŞTI" : "ÇALIŞMADI "+(a.error||"")}</span>`
+      ).join("")}
+    </p>
+
+    <p>
+      <b>Çalışan bağlam:</b> ${worked}
+      <span class="badge good">ÇALIŞTI</span>
+      <b>Çalışmayan bağlam:</b> ${failed}
+      <span class="badge ${failed?'bad':'good'}">${failed}</span>
+    </p>
+
+    <p class="notice">Her time frame kendi mum verisi, ATR, destek/direnç ve hedef katsayısıyla hesaplanır. Sistem emir göndermez; karar destek analizidir.</p>
+
+    <p><b>LONG sebepleri:</b><br>${long.map(x=>`<span class="badge good">${x}</span>`).join("")}</p>
+
+    <p><b>SHORT sebepleri:</b><br>${short.map(x=>`<span class="badge bad">${x}</span>`).join("")}</p>
+
+    <p><b>Nötr / Bilgi:</b><br>${info.map(x=>`<span class="badge info">${x}</span>`).join("")}</p>
+
+    <p><b>Çalışan analiz bağları:</b><br>${ctx.filter(x=>x.ok).map(x=>`<span class="badge info">${x.name}</span>`).join("")}</p>
+
+    ${failed ? `<p><b>Çalışmayan bağlar:</b><br>${ctx.filter(x=>!x.ok).map(x=>`<span class="badge bad">${x.name}: ${x.msg}</span>`).join("")}</p>` : ""}
+  `);
+}
+
+function drawChart(c,entry,stop,tp){
+  let canvas=el("chart");
+  let ctx=canvas.getContext("2d");
+  let w=canvas.width;
+  let h=canvas.height;
+
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle="#0f1528";
+  ctx.fillRect(0,0,w,h);
+
+  let arr=c.slice(-90);
+
+  let min=Math.min(...arr,entry,stop,tp);
+  let max=Math.max(...arr,entry,stop,tp);
+  let pad=(max-min)*0.08||1;
+
+  min-=pad;
+  max+=pad;
+
+  let y=v=>h-20-(v-min)/(max-min)*(h-40);
+  let x=i=>20+i/(arr.length-1)*(w-40);
+
+  ctx.strokeStyle="#7aa2ff";
+  ctx.lineWidth=2;
+  ctx.beginPath();
+
+  arr.forEach((v,i)=>{
+    if(i)ctx.lineTo(x(i),y(v));
+    else ctx.moveTo(x(i),y(v));
+  });
+
+  ctx.stroke();
+
+  function line(v,color,name){
+    ctx.strokeStyle=color;
+    ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(20,y(v));
+    ctx.lineTo(w-20,y(v));
+    ctx.stroke();
+
+    ctx.fillStyle=color;
+    ctx.font="13px Arial";
+    ctx.fillText(name+" "+fmt(v),24,y(v)-4);
+  }
+
+  line(entry,"#ffd166","Giriş");
+  line(stop,"#ff6b7a","Stop");
+  line(tp,"#2cff9a","Hedef");
+}
+
 loadList();
-</script></body></html>
+</script>
+
+</body>
+</html>
