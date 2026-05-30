@@ -1,0 +1,36 @@
+name: Update crypto market data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-crypto-market-data
+  cancel-in-progress: true
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch exchange candles
+        run: node update-crypto-data.js
+
+      - name: Commit updated market data
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update crypto market data"
+          file_pattern: data/market.json
