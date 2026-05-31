@@ -22,7 +22,7 @@ const TFS = {
   '1d':  { binance:'1d',  okx:'1D',  kucoin:'1day',  ms:24*60*60*1000,  sr:80, fib:220, am:2.20, rr:3.00, label:'1 gün' }
 };
 
-const LIMIT = 240;
+const LIMIT = 500;
 const CONCURRENCY = 8;
 
 function baseFromSymbol(symbol) {
@@ -75,7 +75,7 @@ async function fromBinance(symbol, tf) {
 async function fromOKX(symbol, tf) {
   const base = baseFromSymbol(symbol);
   const instId = `${base}-USDT`;
-  const url = `https://www.okx.com/api/v5/market/candles?instId=${instId}&bar=${tf.okx}&limit=${LIMIT}`;
+  const url = `https://www.okx.com/api/v5/market/candles?instId=${instId}&bar=${tf.okx}&limit=${Math.min(LIMIT, 300)}`;
   const data = await fetchJson(url);
   if (data.code !== '0') throw new Error(data.msg || 'OKX hata');
   if (!Array.isArray(data.data)) throw new Error('OKX format hatası');
