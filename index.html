@@ -40,7 +40,7 @@
 
 <div class="card">
   <h2 style="margin:0 0 8px">Backtest</h2>
-  <p class="small">Seçili coin ve zaman diliminde geçmiş mumlarla simülasyon yapar. Bu revizede zayıf sinyaller işleme alınmaz: güven, trend uyumu, momentum, bağlam farkı ve bekleme süresi kontrol edilir. Amaç her LONG/SHORT görüldüğünde işlem açmak değil, sadece kaliteli fırsatları test etmektir.</p>
+  <p class="small">Seçili coin ve zaman diliminde geçmiş mumlarla simülasyon yapar. Bu revizede zayıf sinyaller işleme alınmaz: güven, trend uyumu, momentum, bağlam farkı ve bekleme süresi kontrol edilir. Amaç her LONG/SHORT görüldüğünde işlem açmak değil, sadece kaliteli fırsatları test etmektir. Bu sürüm ayrıca stop riski yüksek işlemleri pas geçer ve işlem belirli sürede ilerlemezse erken çıkış simülasyonu yapar.</p>
   <div class="grid3">
     <div><label class="small">Başlangıç kasa ($)</label><input id="btCapital" class="input" type="number" value="100" min="1" step="1"></div>
     <div><label class="small">Min güven (%)</label><input id="btMinConf" class="input" type="number" value="78" min="35" max="95" step="1"></div>
@@ -248,6 +248,137 @@ function backtestRows(rows,profile,sym,tframe,st){
   if(pos){let fin=finalizeTradeObj(pos,capital,last(rows)[4],'SON',last(rows)[0],feePct,false);capital=fin.capital;trades.push(fin.trade);equity.push(capital)}
   let wins=trades.filter(t=>t.net>0),losses=trades.filter(t=>t.net<=0),grossWin=wins.reduce((a,t)=>a+(t.capital-t.before),0),grossLoss=Math.abs(losses.reduce((a,t)=>a+(t.capital-t.before),0));let peak=startCapital,maxDD=0;for(let e of equity){if(e>peak)peak=e;let dd=(peak-e)/peak*100;if(dd>maxDD)maxDD=dd}let liqCount=trades.filter(t=>t.reason==='LIKIDASYON').length,avgLev=levList.length?avg(levList):0,maxUsed=levList.length?Math.max(...levList):0;return{startCapital,capital,trades,wins:wins.length,losses:losses.length,winRate:trades.length?wins.length/trades.length*100:0,ret:(capital/startCapital-1)*100,maxDD,profitFactor:grossLoss?grossWin/grossLoss:(grossWin?999:0),bars:rows.length,minConf:st.minConf,feePct,profile,levMode:st.levMode,manualLev:st.manualLev,maxRiskPct:st.maxRiskPct,maxLev:st.maxLev,entryMode:st.entryMode,cooldown:st.cooldown,minEdge:st.minEdge,avgLev,maxUsed,liqCount,skipped,skipReasons}}
 /* === /REVIZE === */
+
+
+
+/* === REVIZE v2: WS DURUM PANELİ + AKILLI STOP KAPISI + ERKEN ÇIKIŞ + PF 1.20 HEDEFİ === */
+let wsState={status:'BEKLENİYOR', source:'-', lastTick:0, attempts:0, error:'', url:''};
+function maxStopPctForTf(tframe){return {'5m':0.75,'15m':1.05,'30m':1.35,'1h':1.75,'2h':2.25,'4h':2.85,'1d':4.0}[tframe]||2.0}
+function wsAgeSec(){return wsState.lastTick?Math.round((Date.now()-wsState.lastTick)/1000):null}
+const _refreshStatusV2=refreshStatus;
+refreshStatus=function(){
+  if(!marketData||!marketData.ok||!marketData.generatedAt)return;
+  let t=new Date(marketData.generatedAt).toLocaleString('tr-TR');
+  let f=freshnessState();
+  let local=lastRefreshAt?new Date(lastRefreshAt).toLocaleTimeString('tr-TR'):'-';
+  let row=null; try{row=marketData.markets?.[selected]?.[tf]}catch(e){}
+  let liveTxt='';
+  if(row&&row.live&&row.liveUpdatedAt){
+    let sec=Math.max(0,Math.round((Date.now()-new Date(row.liveUpdatedAt).getTime())/1000));
+    liveTxt=` | WS: CANLI ${sec} sn`;
+  }else{
+    liveTxt=` | WS: ${wsState.status}${wsState.error?' '+wsState.error:''}`;
+  }
+  el('dataStatus').textContent=`Son veri: ${t} | Yaş: ${f.age} dk | Kontrol: ${local} | ${f.label}${liveTxt}`;
+}
+const _closeLiveStreamV2=closeLiveStream;
+closeLiveStream=function(){_closeLiveStreamV2(); wsState.status='KAPALI'; wsState.source='-'; wsState.error=''; wsState.url=''}
+startLiveStream=function(){
+  if(!selected||!tf||!marketData||!marketData.ok)return;
+  let key=selected+'_'+tf; if(liveWsKey===key&&liveWs&&liveWs.readyState<=1)return;
+  closeLiveStream(); liveWsKey=key; wsState={status:'BAĞLANIYOR',source:'Binance WS',lastTick:0,attempts:0,error:'',url:''}; refreshStatus();
+  let urls=[wsEndpoint(selected,tf,false),wsEndpoint(selected,tf,true)];
+  const connect=()=>{
+    let url=urls[Math.min(wsState.attempts,urls.length-1)]; wsState.url=url; wsState.status='BAĞLANIYOR'; refreshStatus();
+    try{
+      liveWs=new WebSocket(url);
+      liveWs.onopen=()=>{wsState.status='BAĞLANDI'; wsState.error=''; lastRefreshAt=Date.now(); refreshStatus()};
+      liveWs.onmessage=(ev)=>{
+        try{
+          let msg=JSON.parse(ev.data), k=msg.k; if(!k)return;
+          let row=marketData.markets?.[selected]?.[tf]; if(!row||!row.ok||!Array.isArray(row.candles))return;
+          let candle=[+k.t,+k.o,+k.h,+k.l,+k.c,+k.v];
+          let arr=row.candles; let lastIdx=arr.length-1;
+          if(lastIdx>=0 && arr[lastIdx][0]===candle[0]) arr[lastIdx]=candle; else if(lastIdx<0 || candle[0]>arr[lastIdx][0]) arr.push(candle);
+          if(arr.length>500) row.candles=arr.slice(-500);
+          row.source='Binance WebSocket'; row.live=true; row.liveUpdatedAt=new Date().toISOString(); row.lastWsPrice=+k.c;
+          marketData.generatedAt=new Date().toISOString(); wsState.status='CANLI'; wsState.lastTick=Date.now(); lastRefreshAt=Date.now();
+          refreshStatus(); clearTimeout(liveTickTimer); liveTickTimer=setTimeout(()=>{analyzeSelected()},450);
+        }catch(e){wsState.error='Mesaj hatası'}
+      };
+      liveWs.onerror=()=>{wsState.status='HATA'; wsState.error='WS engel/bağlantı'; refreshStatus()};
+      liveWs.onclose=()=>{ if(liveWsKey===key && wsState.attempts<1){wsState.attempts++; wsState.status='YEDEK WS'; setTimeout(connect,1000)} else {wsState.status=wsState.lastTick?'KOPTU':'ÇALIŞMADI'; refreshStatus()} };
+    }catch(e){ wsState.status='ÇALIŞMADI'; wsState.error=e.message||'Hata'; refreshStatus(); if(wsState.attempts<1){wsState.attempts++; setTimeout(connect,1000)} }
+  };
+  connect();
+}
+const _calcSignalV2=calcSignal;
+calcSignal=function(rows,profile,symbol,tframe){
+  let sig=_calcSignalV2(rows,profile,symbol,tframe);
+  sig.stopRiskPct=Math.abs(sig.entry-sig.stop)/sig.entry*100;
+  sig.maxStopPct=maxStopPctForTf(tframe);
+  if(sig.stopRiskPct>sig.maxStopPct){
+    sig.info.push(`Stop riski yüksek: %${fmt(sig.stopRiskPct,2)} > izin %${fmt(sig.maxStopPct,2)}`);
+    sig.confidence=Math.max(35,sig.confidence-10);
+    sig.stopRiskHigh=true;
+  }
+  let rr1=Math.abs(sig.tp1-sig.entry)/Math.abs(sig.entry-sig.stop||sig.atr);
+  sig.rr1=rr1;
+  if(rr1<0.85){sig.info.push('RR zayıf: hedef/stop oranı düşük'); sig.confidence=Math.max(35,sig.confidence-6); sig.rrWeak=true;}
+  return sig;
+}
+const _tradeGateV2=tradeGate;
+tradeGate=function(sig,st,i,lastExitIndex){
+  let stopPct=sig.stopRiskPct??(Math.abs(sig.entry-sig.stop)/sig.entry*100);
+  let cap=maxStopPctForTf(sig.tframe||tf);
+  if(stopPct>cap)return{ok:false,reason:'Stop riski yüksek',edge:sig.edge||0};
+  if(sig.rrWeak)return{ok:false,reason:'RR zayıf',edge:sig.edge||0};
+  return _tradeGateV2(sig,st,i,lastExitIndex);
+}
+function shouldTimeExit(pos,curClose,age){
+  if(!pos||pos.tp1Hit)return null;
+  let fav=pos.side==='LONG'?curClose-pos.entry:pos.entry-curClose;
+  let r=pos.r||Math.abs(pos.entry-pos.stop)||1;
+  if(age>=3 && fav < -0.35*r)return 'ERKEN';
+  if(age>=7 && fav < 0.15*r)return 'ZAMAN';
+  return null;
+}
+backtestRows=function(rows,profile,sym,tframe,st){
+  let startCapital=st.start||100,feePct=st.feePct||0.1,capital=startCapital,equity=[capital],trades=[],pos=null,warm=120,levList=[],skipped=0,skipReasons={},lastExitIndex=-999;
+  for(let i=warm;i<rows.length-1;i++){
+    let slice=rows.slice(0,i+1),sig=calcSignal(slice,profile,sym,tframe),next=rows[i+1],timeIn=rows[i][0];
+    if(pos){
+      let exit=null,reason='',liquidated=false,curClose=rows[i][4],age=i-pos.entryIndex;
+      if(pos.side==='LONG'){
+        if(next[3]<=pos.liq){exit=pos.liq;reason='LIKIDASYON';liquidated=true}
+        else if(!pos.tp1Hit && next[3]<=pos.stop){exit=pos.stop;reason='STOP'}
+        else{
+          if(!pos.tp1Hit && next[2]>=pos.tp1){closePartCalc(pos,pos.tp1,.45,feePct,false);pos.tp1Hit=true;pos.stop=pos.entry;reason='TP1'}
+          if(next[2]>=pos.tp2){closePartCalc(pos,pos.tp2,.30,feePct,false);pos.stop=Math.max(pos.stop,pos.tp1);pos.tp2Hit=true;reason='TP2'}
+          if(next[2]>=pos.tp3){exit=pos.tp3;reason='HEDEF'}
+          else if(pos.tp1Hit && next[3]<=pos.stop){exit=pos.stop;reason=pos.tp2Hit?'TRAIL':'BE/STOP'}
+        }
+      }else{
+        if(next[2]>=pos.liq){exit=pos.liq;reason='LIKIDASYON';liquidated=true}
+        else if(!pos.tp1Hit && next[2]>=pos.stop){exit=pos.stop;reason='STOP'}
+        else{
+          if(!pos.tp1Hit && next[3]<=pos.tp1){closePartCalc(pos,pos.tp1,.45,feePct,false);pos.tp1Hit=true;pos.stop=pos.entry;reason='TP1'}
+          if(next[3]<=pos.tp2){closePartCalc(pos,pos.tp2,.30,feePct,false);pos.stop=Math.min(pos.stop,pos.tp1);pos.tp2Hit=true;reason='TP2'}
+          if(next[3]<=pos.tp3){exit=pos.tp3;reason='HEDEF'}
+          else if(pos.tp1Hit && next[2]>=pos.stop){exit=pos.stop;reason=pos.tp2Hit?'TRAIL':'BE/STOP'}
+        }
+      }
+      if(!exit){let te=shouldTimeExit(pos,curClose,age); if(te){exit=curClose; reason=te}}
+      if(!exit){let reverse=(pos.side==='LONG'?sig.decision==='SHORT':sig.decision==='LONG')&&sig.confidence>=(st.minConf||78)+8&&tradeGate(sig,st,i,lastExitIndex).ok;if(reverse){exit=rows[i][4];reason='TERS'}}
+      if(exit){let fin=finalizeTradeObj(pos,capital,exit,reason,next[0],feePct,liquidated);capital=fin.capital;trades.push(fin.trade);pos=null;equity.push(capital);lastExitIndex=i}
+    }
+    if(!pos){
+      let gate=tradeGate(sig,st,i,lastExitIndex);
+      if(gate.ok){
+        let lev=chooseLeverage(sig,st,tframe),ri=riskInfo(sig,lev),r=Math.abs(sig.entry-sig.stop)||sig.atr;
+        if((r/sig.entry*100)>maxStopPctForTf(tframe)){skipped++;skipReasons['Stop riski yüksek']=(skipReasons['Stop riski yüksek']||0)+1;continue}
+        levList.push(lev);
+        pos={side:sig.decision,entry:sig.entry,stop:sig.stop,tp1:sig.decision==='LONG'?sig.entry+r*1.05:sig.entry-r*1.05,tp2:sig.decision==='LONG'?sig.entry+r*1.9:sig.entry-r*1.9,tp3:sig.decision==='LONG'?sig.entry+r*2.8:sig.entry-r*2.8,time:timeIn,entryIndex:i,conf:sig.confidence,lev,liq:ri.liq,marginRisk:ri.marginRisk,stopPct:ri.stopPct,edge:gate.edge,remaining:1,realized:0,entryFee:(feePct/100)*lev,r,tp1Hit:false,tp2Hit:false}
+      }else{skipped++;skipReasons[gate.reason]=(skipReasons[gate.reason]||0)+1}
+    }
+  }
+  if(pos){let fin=finalizeTradeObj(pos,capital,last(rows)[4],'SON',last(rows)[0],feePct,false);capital=fin.capital;trades.push(fin.trade);equity.push(capital)}
+  let wins=trades.filter(t=>t.net>0),losses=trades.filter(t=>t.net<=0),grossWin=wins.reduce((a,t)=>a+(t.capital-t.before),0),grossLoss=Math.abs(losses.reduce((a,t)=>a+(t.capital-t.before),0));
+  let peak=startCapital,maxDD=0;for(let e of equity){if(e>peak)peak=e;let dd=(peak-e)/peak*100;if(dd>maxDD)maxDD=dd}
+  let liqCount=trades.filter(t=>t.reason==='LIKIDASYON').length,avgLev=levList.length?avg(levList):0,maxUsed=levList.length?Math.max(...levList):0;
+  return{startCapital,capital,trades,wins:wins.length,losses:losses.length,winRate:trades.length?wins.length/trades.length*100:0,ret:(capital/startCapital-1)*100,maxDD,profitFactor:grossLoss?grossWin/grossLoss:(grossWin?999:0),bars:rows.length,minConf:st.minConf,feePct,profile,levMode:st.levMode,manualLev:st.manualLev,maxRiskPct:st.maxRiskPct,maxLev:st.maxLev,entryMode:st.entryMode,cooldown:st.cooldown,minEdge:st.minEdge,avgLev,maxUsed,liqCount,skipped,skipReasons}
+}
+/* === /REVIZE v2 === */
 
 renderList();loadMarketData(true);setInterval(()=>{loadMarketData(true)},60000);setInterval(refreshStatus,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadMarketData(true)});
 </script>

@@ -177,3 +177,5 @@ main().catch(error => {
   console.error(error);
   process.exit(1);
 });
+
+// REVIZE v2: ws status + smart stop gate package marker
