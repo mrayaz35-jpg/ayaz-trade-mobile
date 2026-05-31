@@ -11,7 +11,7 @@
 <body>
 <div class="wrap">
 <h1>Ayaz Trade Crypto Pro</h1>
-<div class="small">Veri mimarisi: GitHub Actions → <b>data/market.json</b>. Revize: <b>canlı WebSocket veri denemesi</b> + doğru giriş/çıkış motoru + bayat veri kilidi + PF iyileştirme.</div>
+<div class="small">Veri mimarisi: GitHub Actions → <b>data/market.json</b>. Revize: <b>canlı WebSocket veri denemesi</b> + mikro çıkış/zarar kısma + doğru giriş/çıkış motoru + PF iyileştirme.</div>
 
 <div class="card">
   <button id="selectedBox" class="selectedBox" onclick="toggleList()">BTCUSDT<small>Liste kapalı - açmak için dokun</small></button>
@@ -40,7 +40,7 @@
 
 <div class="card">
   <h2 style="margin:0 0 8px">Backtest</h2>
-  <p class="small">Seçili coin ve zaman diliminde geçmiş mumlarla simülasyon yapar. Bu revizede zayıf sinyaller işleme alınmaz: güven, trend uyumu, momentum, bağlam farkı ve bekleme süresi kontrol edilir. Amaç her LONG/SHORT görüldüğünde işlem açmak değil, sadece kaliteli fırsatları test etmektir. Bu sürüm ayrıca stop riski yüksek işlemleri pas geçer ve işlem belirli sürede ilerlemezse erken çıkış simülasyonu yapar.</p>
+  <p class="small">Seçili coin ve zaman diliminde geçmiş mumlarla simülasyon yapar. Bu revizede zayıf sinyaller işleme alınmaz: güven, trend uyumu, momentum, bağlam farkı ve bekleme süresi kontrol edilir. Amaç her LONG/SHORT görüldüğünde işlem açmak değil, sadece kaliteli fırsatları test etmektir. Bu sürüm ayrıca stop riski yüksek işlemleri pas geçer, 0.60R sonrası mikro kâr alır, stopu zararsız bölgeye çeker ve işlem belirli sürede ilerlemezse erken çıkış simülasyonu yapar.</p>
   <div class="grid3">
     <div><label class="small">Başlangıç kasa ($)</label><input id="btCapital" class="input" type="number" value="100" min="1" step="1"></div>
     <div><label class="small">Min güven (%)</label><input id="btMinConf" class="input" type="number" value="78" min="35" max="95" step="1"></div>
@@ -379,6 +379,119 @@ backtestRows=function(rows,profile,sym,tframe,st){
   return{startCapital,capital,trades,wins:wins.length,losses:losses.length,winRate:trades.length?wins.length/trades.length*100:0,ret:(capital/startCapital-1)*100,maxDD,profitFactor:grossLoss?grossWin/grossLoss:(grossWin?999:0),bars:rows.length,minConf:st.minConf,feePct,profile,levMode:st.levMode,manualLev:st.manualLev,maxRiskPct:st.maxRiskPct,maxLev:st.maxLev,entryMode:st.entryMode,cooldown:st.cooldown,minEdge:st.minEdge,avgLev,maxUsed,liqCount,skipped,skipReasons}
 }
 /* === /REVIZE v2 === */
+
+
+/* === REVIZE v3: MIKRO ÇIKIŞ + ZARAR KISMA + TP BÜYÜTME + GİRİŞ KALİTE RAPORU === */
+function softStopPctForTfV3(tframe){return {'5m':0.45,'15m':0.70,'30m':0.95,'1h':1.25,'2h':1.65,'4h':2.10,'1d':3.10}[tframe]||1.4}
+function hardStopPctForTfV3(tframe){return {'5m':0.90,'15m':1.35,'30m':1.85,'1h':2.55,'2h':3.20,'4h':4.20,'1d':5.80}[tframe]||2.7}
+function v3ClampStop(sig,tframe){
+  let soft=softStopPctForTfV3(tframe), hard=hardStopPctForTfV3(tframe);
+  let rawPct=Math.abs(sig.entry-sig.stop)/sig.entry*100;
+  sig.rawStopRiskPct=rawPct; sig.softStopPct=soft; sig.hardStopPct=hard;
+  if(rawPct>hard){sig.hardStopRisk=true; sig.info.push(`V3: Hard stop riski çok yüksek: %${fmt(rawPct,2)} > %${fmt(hard,2)}`); return sig;}
+  if(rawPct>soft){
+    let risk=sig.entry*(soft/100);
+    sig.stop=sig.decision==='LONG'?sig.entry-risk:sig.entry+risk;
+    sig.stopClamped=true;
+    sig.info.push(`V3: Stop teknik üst sınırla daraltıldı: %${fmt(rawPct,2)} → %${fmt(soft,2)}`);
+    sig.confidence=clamp((sig.confidence||50)+3,35,95);
+  }
+  let r=Math.abs(sig.entry-sig.stop)||sig.atr||1;
+  // Daha dengeli hedefler: küçük ilk kâr, sonra daha geniş taşıma
+  sig.tp1=sig.decision==='LONG'?sig.entry+r*0.85:sig.entry-r*0.85;
+  sig.tp2=sig.decision==='LONG'?sig.entry+r*1.75:sig.entry-r*1.75;
+  sig.tp3=sig.decision==='LONG'?sig.entry+r*2.85:sig.entry-r*2.85;
+  sig.stopRiskPct=Math.abs(sig.entry-sig.stop)/sig.entry*100;
+  sig.rr1=Math.abs(sig.tp1-sig.entry)/Math.abs(sig.entry-sig.stop||sig.atr);
+  return sig;
+}
+const _calcSignalV3=calcSignal;
+calcSignal=function(rows,profile,symbol,tframe){
+  let sig=_calcSignalV3(rows,profile,symbol,tframe);
+  return v3ClampStop(sig,tframe);
+}
+const _tradeGateV3=tradeGate;
+tradeGate=function(sig,st,i,lastExitIndex){
+  if(sig.hardStopRisk)return{ok:false,reason:'Hard stop riski',edge:sig.edge||0};
+  let base=_tradeGateV3(sig,st,i,lastExitIndex);
+  if(!base.ok)return base;
+  // Stop daraltıldıysa ek kalite şartı: zayıf momentumla dar stop işlemine girme
+  if(sig.stopClamped && !sig.momentumAligned && (sig.confidence||0)<(st.minConf||78)+6)return{ok:false,reason:'Dar stop kalite zayıf',edge:sig.edge||0};
+  return base;
+}
+function posFavR(pos,hi,lo){let r=pos.r||Math.abs(pos.entry-pos.stop)||1;return pos.side==='LONG'?(hi-pos.entry)/r:(pos.entry-lo)/r}
+function posAdvR(pos,hi,lo){let r=pos.r||Math.abs(pos.entry-pos.stop)||1;return pos.side==='LONG'?(pos.entry-lo)/r:(hi-pos.entry)/r}
+function priceAtR(pos,rMult){let r=pos.r||Math.abs(pos.entry-pos.stop)||1;return pos.side==='LONG'?pos.entry+r*rMult:pos.entry-r*rMult}
+function stopAtR(pos,rMult){let r=pos.r||Math.abs(pos.entry-pos.stop)||1;return pos.side==='LONG'?pos.entry+r*rMult:pos.entry-r*rMult}
+function closePartIfOpen(pos,exit,part,feePct){let p=Math.min(part,pos.remaining||0); if(p>0)closePartCalc(pos,exit,p,feePct,false)}
+backtestRows=function(rows,profile,sym,tframe,st){
+  let startCapital=st.start||100,feePct=st.feePct||0.1,capital=startCapital,equity=[capital],trades=[],pos=null,warm=120,levList=[],skipped=0,skipReasons={},lastExitIndex=-999;
+  for(let i=warm;i<rows.length-1;i++){
+    let slice=rows.slice(0,i+1),sig=calcSignal(slice,profile,sym,tframe),next=rows[i+1],timeIn=rows[i][0];
+    if(pos){
+      let exit=null,reason='',liquidated=false,curClose=rows[i][4],age=i-pos.entryIndex;
+      let hi=next[2], lo=next[3], favR=posFavR(pos,hi,lo), advR=posAdvR(pos,hi,lo);
+      pos.maxFavR=Math.max(pos.maxFavR||0,favR); pos.maxAdvR=Math.max(pos.maxAdvR||0,advR);
+      // Mikro kâr: 0.60R görülürse küçük kâr al ve stopu zararsız bölgeye çek
+      if(!pos.microTaken && favR>=0.60){closePartIfOpen(pos,priceAtR(pos,0.60),0.25,feePct);pos.microTaken=true;pos.stop=stopAtR(pos,0.03);reason='MİKRO'}
+      // Hızlı savunma: işlem erken ters gittiyse tam stopu bekleme
+      if(!exit && !pos.tp1Hit && age>=1 && advR>=0.72){exit=stopAtR(pos,-0.72);reason='KORUMA'}
+      if(pos.side==='LONG'){
+        if(!exit && next[3]<=pos.liq){exit=pos.liq;reason='LIKIDASYON';liquidated=true}
+        else if(!exit && !pos.tp1Hit && next[3]<=pos.stop){exit=pos.stop;reason=pos.microTaken?'MİKRO/STOP':'STOP'}
+        else if(!exit){
+          if(!pos.tp1Hit && next[2]>=pos.tp1){closePartIfOpen(pos,pos.tp1,.35,feePct);pos.tp1Hit=true;pos.stop=Math.max(pos.stop,stopAtR(pos,0.05));reason='TP1'}
+          if(next[2]>=pos.tp2){closePartIfOpen(pos,pos.tp2,.25,feePct);pos.stop=Math.max(pos.stop,priceAtR(pos,0.80));pos.tp2Hit=true;reason='TP2'}
+          if(next[2]>=pos.tp3){exit=pos.tp3;reason='HEDEF'}
+          else if(pos.tp1Hit && next[3]<=pos.stop){exit=pos.stop;reason=pos.tp2Hit?'TRAIL':'BE/STOP'}
+        }
+      }else{
+        if(!exit && next[2]>=pos.liq){exit=pos.liq;reason='LIKIDASYON';liquidated=true}
+        else if(!exit && !pos.tp1Hit && next[2]>=pos.stop){exit=pos.stop;reason=pos.microTaken?'MİKRO/STOP':'STOP'}
+        else if(!exit){
+          if(!pos.tp1Hit && next[3]<=pos.tp1){closePartIfOpen(pos,pos.tp1,.35,feePct);pos.tp1Hit=true;pos.stop=Math.min(pos.stop,stopAtR(pos,0.05));reason='TP1'}
+          if(next[3]<=pos.tp2){closePartIfOpen(pos,pos.tp2,.25,feePct);pos.stop=Math.min(pos.stop,priceAtR(pos,0.80));pos.tp2Hit=true;reason='TP2'}
+          if(next[3]<=pos.tp3){exit=pos.tp3;reason='HEDEF'}
+          else if(pos.tp1Hit && next[2]>=pos.stop){exit=pos.stop;reason=pos.tp2Hit?'TRAIL':'BE/STOP'}
+        }
+      }
+      // Zaman çıkışı: yeterli ilerleme yoksa sermayeyi boşta tut
+      if(!exit && !pos.tp1Hit){
+        if(age>=4 && pos.maxFavR<0.35){exit=curClose;reason='ZAMAN'}
+        else if(age>=7 && pos.maxFavR<0.75){exit=curClose;reason='YAVAŞ'}
+      }
+      if(!exit){
+        let reverse=(pos.side==='LONG'?sig.decision==='SHORT':sig.decision==='LONG')&&sig.confidence>=(st.minConf||78)+7&&tradeGate(sig,st,i,lastExitIndex).ok;
+        if(reverse){exit=rows[i][4];reason='TERS'}
+      }
+      if(exit){let fin=finalizeTradeObj(pos,capital,exit,reason,next[0],feePct,liquidated);capital=fin.capital;trades.push(fin.trade);pos=null;equity.push(capital);lastExitIndex=i}
+    }
+    if(!pos){
+      let gate=tradeGate(sig,st,i,lastExitIndex);
+      if(gate.ok){
+        let lev=chooseLeverage(sig,st,tframe),ri=riskInfo(sig,lev),r=Math.abs(sig.entry-sig.stop)||sig.atr;
+        // Eğer stop hâlâ hard sınırdaysa pas geç
+        if((r/sig.entry*100)>hardStopPctForTfV3(tframe)){skipped++;skipReasons['Hard stop riski']=(skipReasons['Hard stop riski']||0)+1;continue}
+        levList.push(lev);
+        pos={side:sig.decision,entry:sig.entry,stop:sig.stop,tp1:sig.decision==='LONG'?sig.entry+r*0.85:sig.entry-r*0.85,tp2:sig.decision==='LONG'?sig.entry+r*1.75:sig.entry-r*1.75,tp3:sig.decision==='LONG'?sig.entry+r*2.85:sig.entry-r*2.85,time:timeIn,entryIndex:i,conf:sig.confidence,lev,liq:ri.liq,marginRisk:ri.marginRisk,stopPct:ri.stopPct,edge:gate.edge,remaining:1,realized:0,entryFee:(feePct/100)*lev,r,tp1Hit:false,tp2Hit:false,microTaken:false,maxFavR:0,maxAdvR:0}
+      }else{skipped++;skipReasons[gate.reason]=(skipReasons[gate.reason]||0)+1}
+    }
+  }
+  if(pos){let fin=finalizeTradeObj(pos,capital,last(rows)[4],'SON',last(rows)[0],feePct,false);capital=fin.capital;trades.push(fin.trade);equity.push(capital)}
+  let wins=trades.filter(t=>t.net>0),losses=trades.filter(t=>t.net<=0),grossWin=wins.reduce((a,t)=>a+(t.capital-t.before),0),grossLoss=Math.abs(losses.reduce((a,t)=>a+(t.capital-t.before),0));
+  let peak=startCapital,maxDD=0;for(let e of equity){if(e>peak)peak=e;let dd=(peak-e)/peak*100;if(dd>maxDD)maxDD=dd}
+  let liqCount=trades.filter(t=>t.reason==='LIKIDASYON').length,avgLev=levList.length?avg(levList):0,maxUsed=levList.length?Math.max(...levList):0;
+  let reasons={}; trades.forEach(t=>{reasons[t.reason]=(reasons[t.reason]||0)+1});
+  return{startCapital,capital,trades,wins:wins.length,losses:losses.length,winRate:trades.length?wins.length/trades.length*100:0,ret:(capital/startCapital-1)*100,maxDD,profitFactor:grossLoss?grossWin/grossLoss:(grossWin?999:0),bars:rows.length,minConf:st.minConf,feePct,profile,levMode:st.levMode,manualLev:st.manualLev,maxRiskPct:st.maxRiskPct,maxLev:st.maxLev,entryMode:st.entryMode,cooldown:st.cooldown,minEdge:st.minEdge,avgLev,maxUsed,liqCount,skipped,skipReasons,exitReasons:reasons}
+}
+const _renderBacktestV3=renderBacktest;
+renderBacktest=function(r,sym,tframe){
+  _renderBacktestV3(r,sym,tframe);
+  let ex=Object.entries(r.exitReasons||{}).map(([k,v])=>`<span class="badge info">${k}: ${v}</span>`).join('');
+  let panel=`<p><b>V3 çıkış raporu:</b><br>${ex||'<span class="badge info">Çıkış yok</span>'}</p><p class="notice"><b>Mikro çıkış revizesi:</b> Bu sürüm 0.60R kâr görünce kısmi kâr alır, stopu zararsız bölgeye çeker, erken ters hareketlerde tam stopu beklemeden koruma çıkışı dener. Amaç tek büyük stopun küçük kârları silmesini engellemektir.</p>`;
+  el('btOut').innerHTML += panel;
+}
+/* === /REVIZE v3 === */
 
 renderList();loadMarketData(true);setInterval(()=>{loadMarketData(true)},60000);setInterval(refreshStatus,30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadMarketData(true)});
 </script>
