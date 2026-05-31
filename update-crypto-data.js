@@ -22,7 +22,7 @@ const TFS = {
   '1d':  { binance:'1d',  okx:'1D',  kucoin:'1day',  ms:24*60*60*1000,  sr:80, fib:220, am:2.20, rr:3.00, label:'1 gün' }
 };
 
-const LIMIT = 500;
+const LIMIT = 1000;
 const CONCURRENCY = 8;
 
 function baseFromSymbol(symbol) {
@@ -178,4 +178,4 @@ main().catch(error => {
   process.exit(1);
 });
 
-// REVIZE v2: ws status + smart stop gate package marker
+// REVIZE v3: model guvenilirlik + orneklem kilidi + 1000 mum paket marker
