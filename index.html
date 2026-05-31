@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Ayaz Trade — Kârlılık Odaklı Model Tarayıcı</title>
+  <title>Ayaz Trade — Kârlılık Odaklı Model Tarayıcı v2</title>
   <style>
     :root{
       --bg:#070c1c;--card:#111936;--card2:#0d142b;--line:#27325c;--text:#f5f7ff;--muted:#aeb8d9;
@@ -11,14 +11,14 @@
     }
     *{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#080d1f,#090f22 60%,#050916);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;font-weight:650;}
     .wrap{max-width:980px;margin:0 auto;padding:22px 18px 90px}.title{font-size:34px;line-height:1.08;margin:18px 0 10px}.sub{color:var(--muted);font-size:16px;line-height:1.45;margin-bottom:18px;font-weight:600}.sub b{color:#dfe6ff}.card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:24px;padding:18px;margin:16px 0;box-shadow:0 14px 42px rgba(0,0,0,.22)}
-    h2{margin:0 0 14px;font-size:24px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.box{border:1px solid var(--line);border-radius:17px;background:#0b132b;padding:13px}.label{color:var(--muted);font-size:14px;margin-bottom:7px}.val{font-size:22px;white-space:normal;word-break:break-word}.big{font-size:42px;letter-spacing:.02em;text-align:center;padding:18px;border-radius:22px;margin:12px 0}.big.long{background:#06391f;color:#6dffad}.big.short{background:#4b0e1b;color:#ff7287}.big.no{background:#1a2342;color:#dce4ff}.big.lock{background:#4a3509;color:#ffd36b}.pill{display:inline-flex;align-items:center;gap:6px;background:var(--pill);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:9px 12px;color:#dbe5ff;font-size:14px;margin:4px}.pill.green{background:#06391f;color:#76ffb2}.pill.red{background:#4b0e1b;color:#ffacb8}.pill.yellow{background:#47350b;color:#ffd66e}.pill.blue{background:#162d62;color:#8ab6ff}.pill.gray{background:#18213d;color:#bdc8e8}.btn{appearance:none;border:1px solid var(--line);background:#101935;color:var(--text);border-radius:16px;padding:12px 15px;font-weight:850;font-size:15px;cursor:pointer}.btn.primary{background:var(--blue);border-color:#6094ff}.btn.warn{background:#543605;border-color:#7a530e}.btn:disabled{opacity:.45}.select,.input{width:100%;background:#0b132b;color:var(--text);border:1px solid var(--line);border-radius:15px;padding:12px 13px;font-size:16px;font-weight:800}select{appearance:auto}.topbox{border:2px solid #ffd162;border-radius:24px;padding:18px;margin-bottom:14px}.symbol{font-size:36px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.tab{border:1px solid var(--line);background:#0b132b;color:#fff;padding:11px 14px;border-radius:999px;font-weight:900}.tab.active{background:var(--blue)}.table{width:100%;border-collapse:separate;border-spacing:0 8px}.table th{color:var(--muted);font-size:13px;text-align:left;padding:0 8px}.table td{background:#0b132b;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 8px;font-size:14px;vertical-align:middle}.table td:first-child{border-left:1px solid var(--line);border-radius:12px 0 0 12px}.table td:last-child{border-right:1px solid var(--line);border-radius:0 12px 12px 0}.small{font-size:13px;color:var(--muted);font-weight:700}.notice{border-left:5px solid #ffd162;padding:12px 12px 12px 14px;color:#dbe3ff;line-height:1.45;font-weight:700}.chart{width:100%;height:220px;border:1px solid var(--line);border-radius:18px;background:#0b132b;display:block}.loader{display:none;margin:8px 0;color:#ffd162}.loader.on{display:block}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.footer{opacity:.72;font-size:12px;line-height:1.5;margin-top:18px}.sep{height:1px;background:var(--line);margin:14px 0}.statusbar{font-size:15px;color:#dbe4ff;line-height:1.45}.hide{display:none!important}
-    @media(max-width:640px){.wrap{padding:18px 14px 80px}.title{font-size:31px}.grid,.grid3{grid-template-columns:1fr}.table{font-size:12px}.table th:nth-child(4),.table td:nth-child(4){display:none}.symbol{font-size:34px}.card{padding:16px;border-radius:22px}.big{font-size:38px}.chart{height:190px}}
+    h2{margin:0 0 14px;font-size:24px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.box{border:1px solid var(--line);border-radius:17px;background:#0b132b;padding:13px}.label{color:var(--muted);font-size:14px;margin-bottom:7px}.val{font-size:22px;white-space:normal;word-break:break-word}.big{font-size:42px;letter-spacing:.02em;text-align:center;padding:18px;border-radius:22px;margin:12px 0}.big.long{background:#06391f;color:#6dffad}.big.short{background:#4b0e1b;color:#ff7287}.big.no{background:#1a2342;color:#dce4ff}.big.lock{background:#4a3509;color:#ffd36b}.pill{display:inline-flex;align-items:center;gap:6px;background:var(--pill);border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:9px 12px;color:#dbe5ff;font-size:14px;margin:4px}.pill.green{background:#06391f;color:#76ffb2}.pill.red{background:#4b0e1b;color:#ffacb8}.pill.yellow{background:#47350b;color:#ffd66e}.pill.blue{background:#162d62;color:#8ab6ff}.pill.gray{background:#18213d;color:#bdc8e8}.btn{appearance:none;border:1px solid var(--line);background:#101935;color:var(--text);border-radius:16px;padding:12px 15px;font-weight:850;font-size:15px;cursor:pointer}.btn.primary{background:var(--blue);border-color:#6094ff}.btn.warn{background:#543605;border-color:#7a530e}.btn:disabled{opacity:.45}.select,.input{width:100%;background:#0b132b;color:var(--text);border:1px solid var(--line);border-radius:15px;padding:12px 13px;font-size:16px;font-weight:800}select{appearance:auto}.topbox{border:2px solid #ffd162;border-radius:24px;padding:18px;margin-bottom:14px}.symbol{font-size:36px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.tab{border:1px solid var(--line);background:#0b132b;color:#fff;padding:11px 14px;border-radius:999px;font-weight:900}.tab.active{background:var(--blue)}.table{width:100%;border-collapse:separate;border-spacing:0 8px}.table th{color:var(--muted);font-size:13px;text-align:left;padding:0 8px}.table td{background:#0b132b;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 8px;font-size:14px;vertical-align:middle}.table td:first-child{border-left:1px solid var(--line);border-radius:12px 0 0 12px}.table td:last-child{border-right:1px solid var(--line);border-radius:0 12px 12px 0}.small{font-size:13px;color:var(--muted);font-weight:700}.notice{border-left:5px solid #ffd162;padding:12px 12px 12px 14px;color:#dbe3ff;line-height:1.45;font-weight:700}.chart{width:100%;height:220px;border:1px solid var(--line);border-radius:18px;background:#0b132b;display:block}.loader{display:none;margin:8px 0;color:#ffd162}.loader.on{display:block}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.footer{opacity:.72;font-size:12px;line-height:1.5;margin-top:18px}.sep{height:1px;background:var(--line);margin:14px 0}.leadercards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.leadercard{background:#0b132b;border:1px solid var(--line);border-radius:16px;padding:12px}.leadercard .lcTop{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.leadercard .lcSym{font-size:19px;font-weight:950}.leadercard .lcModel{color:#dfe6ff;font-size:14px;line-height:1.25;margin:6px 0}.badge{display:inline-flex;border-radius:999px;padding:6px 9px;font-size:12px;font-weight:950}.badge.live{background:#064323;color:#72ffad}.badge.active{background:#06391f;color:#76ffb2}.badge.aday{background:#4b390a;color:#ffd56c}.badge.test{background:#1b2d62;color:#99bbff}.badge.bad{background:#4b0e1b;color:#ffacb8}.statusbar{font-size:15px;color:#dbe4ff;line-height:1.45}.hide{display:none!important}
+    @media(max-width:640px){.wrap{padding:18px 14px 80px}.title{font-size:31px}.grid,.grid3,.leadercards{grid-template-columns:1fr}.table{font-size:12px}.symbol{font-size:34px}.card{padding:16px;border-radius:22px}.big{font-size:38px}.chart{height:190px}}
   </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="title">Ayaz Trade — Kârlılık Odaklı Model Tarayıcı</div>
-  <div class="sub">Amaç: teknik analiz göstermek değil; <b>coin + zaman dilimi + model</b> bazında geçmişte avantaj üretmiş yapıyı bulmak. TEST/ADAY model canlı işlem açmaz; yalnızca AKTİF model işlem adayı üretir.</div>
+  <div class="title">Ayaz Trade — Kârlılık Odaklı Model Tarayıcı v2</div>
+  <div class="sub">Amaç: teknik analiz göstermek değil; <b>canlı işlem açmaya en yakın, geçmişte kendini kanıtlamış coin + zaman dilimi + model</b> kombinasyonunu bulmak. Bu sürümde PF tek başına yeterli değildir; örneklem, hızlı stop oranı, MFE/MAE ve canlı kurulum birlikte kontrol edilir.</div>
 
   <div class="card">
     <div class="topbox" id="symbolBox">
@@ -49,6 +49,7 @@
     <h2>En Güçlü Fırsatlar</h2>
     <div class="small">AKTİF model yoksa sistem işlem açtırmaz. ADAY modeller izleme listesidir.</div>
     <div id="leaderPills" class="row" style="margin-top:10px"></div>
+    <div id="leaderCards" class="leadercards"></div>
     <div style="overflow:auto"><table class="table" id="leaderTable"></table></div>
   </div>
 
@@ -110,14 +111,14 @@
     <div class="sep"></div>
     <h2>Son işlemler</h2>
     <div style="overflow:auto"><table class="table" id="tradeTable"></table></div>
-    <div class="notice">Bu sürüm kârlılık odaklıdır: model önce geçmişte coin + TF bazında kendini kanıtlar. TEST/ADAY model canlı işlem açmaz. AKTİF olmayan model sadece izleme sinyali verir.</div>
+    <div class="notice">Bu sürüm kârlılık odaklıdır: PF tek başına yeterli değildir. Modelin AKTİF olması için örneklem, net kâr, MFE/MAE ve hızlı stop oranı birlikte geçmelidir. CANLI ADAY yoksa işlem açma; listeyi sadece izleme/tarama için kullan.</div>
   </div>
 
   <div class="footer">Bu uygulama eğitim/test amaçlıdır; gerçek emir göndermez. Kripto piyasası yüksek risklidir. Backtest geçmiş veridir; geleceği garanti etmez.</div>
 </div>
 <script>
 'use strict';
-const APP_VERSION='kar-model-tarayici-v1';
+const APP_VERSION='kar-model-tarayici-v2-risk-kilit';
 const API_BASES=['https://data-api.binance.vision','https://api.binance.com'];
 const DEFAULT_SYMBOLS=['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','ADAUSDT','AVAXUSDT','DOGEUSDT','LINKUSDT','TRXUSDT','DOTUSDT','LTCUSDT','BCHUSDT','NEARUSDT','ARBUSDT','OPUSDT','APTUSDT','ATOMUSDT'];
 const DEFAULT_TFS=['15m','30m','1h','2h','4h','1d'];
@@ -186,10 +187,57 @@ function backtest(k){const s=settings(), ind=indicators(k), trades=[], byModel={
   const modelStats=Object.entries(byModel).map(([model,arr])=>modelStat(model,arr,s));modelStats.sort((a,b)=>statusRank(b.status)-statusRank(a.status)||b.pf-a.pf||b.net-a.net);
   return{trades,modelStats,losses,capital:cap,net:cap-s.capital,netPct:(cap/s.capital-1)*100,win:trades.length?wins/trades.length*100:0,pf:gl?gp/gl:(gp>0?9.99:0),dd:maxDd};
 }
-function modelStat(model,arr,s){const n=arr.length,w=arr.filter(x=>x.r>0).length,net=arr.reduce((a,b)=>a+b.pnl,0),gp=arr.filter(x=>x.pnl>0).reduce((a,b)=>a+b.pnl,0),gl=Math.abs(arr.filter(x=>x.pnl<0).reduce((a,b)=>a+b.pnl,0)),pf=gl?gp/gl:(gp>0?9.99:0),mfe=arr.reduce((a,b)=>a+b.mfe,0)/(n||1),mae=arr.reduce((a,b)=>a+b.mae,0)/(n||1),ratio=mfe/(mae||1e-9);const last3=arr.slice(-3).reduce((a,b)=>a+b.r,0);let status='TEST';if(n>=s.minTrades){if(net>0&&pf>=s.minPf&&(w/n*100)>=s.minWin&&ratio>=s.minMfeMae)status='AKTİF';else status='PASİF';if(last3<-2)status='KARANTİNA'}else if(n>=Math.max(4,Math.floor(s.minTrades/2))&&net>0&&pf>=s.minPf&&ratio>=s.minMfeMae)status='ADAY';return{model,status,n,win:n?w/n*100:0,net,pf,mfe,mae,ratio,arr}}
+function modelStat(model,arr,s){
+  const n=arr.length,w=arr.filter(x=>x.r>0).length;
+  const net=arr.reduce((a,b)=>a+b.pnl,0);
+  const gp=arr.filter(x=>x.pnl>0).reduce((a,b)=>a+b.pnl,0);
+  const gl=Math.abs(arr.filter(x=>x.pnl<0).reduce((a,b)=>a+b.pnl,0));
+  const pf=gl?gp/gl:(gp>0?9.99:0);
+  const mfe=arr.reduce((a,b)=>a+b.mfe,0)/(n||1);
+  const mae=arr.reduce((a,b)=>a+b.mae,0)/(n||1);
+  const ratio=mfe/(mae||1e-9);
+  const win=n?w/n*100:0;
+  const last3=arr.slice(-3).reduce((a,b)=>a+b.r,0);
+  const last5=arr.slice(-5).reduce((a,b)=>a+b.r,0);
+  const fastStops=arr.filter(x=>(x.lossReason||'').includes('aleyhe hızlı hareket')).length;
+  const fastStopRate=n?fastStops/n*100:0;
+  let status='TEST';
+  const baseGood=net>0&&pf>=s.minPf&&win>=s.minWin&&ratio>=s.minMfeMae&&fastStopRate<=35;
+  if(n>=s.minTrades){
+    status=baseGood?'AKTİF':'PASİF';
+    if(last3<-2||fastStopRate>45)status='KARANTİNA';
+  }else if(n>=Math.max(6,Math.ceil(s.minTrades*0.6))&&baseGood){
+    status='ADAY';
+  }
+  return{model,status,n,win,net,pf,mfe,mae,ratio,fastStops,fastStopRate,last3,last5,arr}
+}
 function statusRank(s){return{AKTİF:5,ADAY:4,TEST:3,KARANTİNA:2,PASİF:1}[s]||0}
-function liveDecision(k,bt){const ind=indicators(k), i=k.length-1, cs=buildCandidates(k,ind,i);let c=cs.find(x=>!x.vetos.length);let vetos=[];if(!c){vetos=cs.flatMap(x=>x.vetos);return{side:'İŞLEM YOK',cls:'no',model:'Model yok',status:'-',candidate:null,vetos:vetos.length?vetos:['Net teknik model oluşmadı']}}
- const ms=bt.modelStats.find(x=>x.model===c.model);let status=ms?ms.status:'TEST';if(status!=='AKTİF')vetos.push('Model '+status+'; canlı işlem yok');if(!ms||ms.n<settings().minTrades)vetos.push('Örneklem az');if(vetos.length)return{side:'İŞLEM YOK',cls:'lock',model:c.model,status,candidate:c,vetos};return{side:c.dir,cls:c.dir==='LONG'?'long':'short',model:c.model,status,candidate:c,vetos:[]}}
+function pfSafe(pf){return Number.isFinite(pf)?Math.min(pf,20):0}
+function pfText(pf,n){if(!Number.isFinite(pf))return '-';const txt=fmt(Math.min(pf,20),2);return pf>20?txt+'+':txt}
+function badgeClass(status,live){if(live)return 'live';if(status==='AKTİF')return 'active';if(status==='ADAY')return 'aday';if(status==='TEST')return 'test';return 'bad'}
+function modelRiskNote(m){const notes=[];if(m.n<settings().minTrades)notes.push('örneklem az');if(m.fastStopRate>35)notes.push('hızlı stop yüksek');if(m.ratio<settings().minMfeMae)notes.push('MFE/MAE zayıf');if(m.net<=0)notes.push('net zayıf');return notes.length?notes.join(' / '):'geçmiş uygun'}
+function oppRank(r){const sample=Math.min(r.n/settings().minTrades,1.5);const stable=(100-(r.fastStopRate||0))/100;return (r.liveOK?10000:0)+statusRank(r.status)*1000+pfSafe(r.pf)*35+(r.net||0)*18+(r.ratio||0)*120+sample*90+stable*80}
+function activeReady(m){const s=settings();return m.status==='AKTİF'&&m.n>=s.minTrades&&m.net>0&&m.pf>=s.minPf&&m.ratio>=s.minMfeMae&&(m.fastStopRate||0)<=35}
+
+function liveDecision(k,bt){
+  const ind=indicators(k), i=k.length-1, cs=buildCandidates(k,ind,i);
+  let c=cs.find(x=>!x.vetos.length);
+  let vetos=[];
+  if(!c){
+    vetos=cs.flatMap(x=>x.vetos);
+    return{side:'İŞLEM YOK',cls:'no',model:'Model yok',status:'-',candidate:null,vetos:vetos.length?vetos:['Net teknik model oluşmadı']}
+  }
+  const ms=bt.modelStats.find(x=>x.model===c.model);
+  let status=ms?ms.status:'TEST';
+  if(!ms){vetos.push('Model geçmişi yok')}
+  if(status!=='AKTİF')vetos.push('Model '+status+'; canlı işlem yok');
+  if(ms&&ms.n<settings().minTrades)vetos.push('Örneklem az');
+  if(ms&&ms.fastStopRate>35)vetos.push('Model hızlı stop üretiyor');
+  if(ms&&ms.ratio<settings().minMfeMae)vetos.push('Model MFE/MAE zayıf');
+  if(ms&&ms.net<=0)vetos.push('Model net kârlı değil');
+  if(vetos.length)return{side:'İŞLEM YOK',cls:'lock',model:c.model,status,candidate:c,vetos};
+  return{side:c.dir,cls:c.dir==='LONG'?'long':'short',model:c.model,status,candidate:c,vetos:[]}
+}
 function renderTable(id,head,rows){el(id).innerHTML='<thead><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(x=>'<td>'+x+'</td>').join('')+'</tr>').join('')+'</tbody>'}
 function pill(txt,cls='gray'){return `<span class="pill ${cls}">${txt}</span>`}
 function renderPills(id,arr,cls='gray'){el(id).innerHTML=(arr&&arr.length?arr:['Yok']).map(x=>pill(x,cls)).join('')}
@@ -198,8 +246,39 @@ async function refreshSelected(){setLoading(true);try{await loadMarket();let k=g
 function renderAll(){el('symbolTitle').textContent=symbol;el('symbolSelect').value=symbol;el('tfSelect').value=tf;let last=currentKlines[currentKlines.length-1];let age=last?Math.round((Date.now()-last.t)/60000):9999;el('dataStatus').innerHTML=`Son veri: ${last?new Date(last.t).toLocaleString('tr-TR',{hour12:false}):'-'} | Yaş: ${age} dk | ${age<=tfMs(tf)/60000+10?'VERİ TAZE':'DİKKAT'} | Kaynak: ${market?'market.json + Binance':'Binance canlı'}`;const bt=backtest(currentKlines);const live=liveDecision(currentKlines,bt);renderDecision(live);renderBacktest(bt);renderChart(currentKlines,live.candidate);}
 function renderDecision(live){el('decisionBox').textContent=live.side;el('decisionBox').className='big '+live.cls;el('liveModel').textContent=live.model;el('liveStatus').textContent=live.status;el('liveDecision').textContent=live.vetos.length?'Pas/Kilitli':'İşlem adayı';const c=live.candidate;el('priceVal').textContent=currentKlines.length?fmt(currentKlines[currentKlines.length-1].c,4):'-';el('entryVal').textContent=c?fmt(c.entry,4):'Hesaplanmadı';el('stopVal').textContent=c?fmt(c.stop,4):'Hesaplanmadı';el('tp1Val').textContent=c?fmt(c.tp1,4):'Hesaplanmadı';el('tp2Val').textContent=c?fmt(c.tp2,4):'Hesaplanmadı';el('rrVal').textContent=c?fmt(c.rr,2):'-';renderPills('reasonPills',c?c.reasons:['Yok'],c?'green':'gray');renderPills('vetoPills',live.vetos,live.vetos.length?'red':'green')}
 function renderBacktest(bt){el('btCapital').textContent=money(bt.capital);el('btNet').textContent=money(bt.net)+' / '+pct(bt.netPct);el('btTrades').textContent=fmt0(bt.trades.length);el('btWin').textContent=pct(bt.win);el('btPf').textContent=fmt(bt.pf,2);el('btDd').textContent=pct(bt.dd);renderTable('modelTable',['Model','Durum','İşlem','Win','Net','PF','MFE/MAE'],bt.modelStats.map(m=>[m.model,m.status,fmt0(m.n),pct(m.win),money(m.net),fmt(m.pf,2),fmt(m.mfe,2)+'/'+fmt(m.mae,2)]));renderPills('lossPills',Object.entries(bt.losses).map(([k,v])=>k+': '+v),Object.keys(bt.losses).length?'red':'green');renderTable('tradeTable',['Tarih','Yön','Model','Çıkış','PnL','MFE/MAE'],bt.trades.slice(-10).reverse().map(t=>[t.date,t.dir,t.model,t.exit,money(t.pnl),fmt(t.mfe,2)+'R / '+fmt(t.mae,2)+'R']))}
-async function scanAll(){setLoading(true);try{await loadMarket();let syms=market?.symbols?.length?market.symbols:DEFAULT_SYMBOLS.slice(0,12);let tfs=market?.timeframes?.length?market.timeframes:DEFAULT_TFS;let results=[];for(const sym of syms.slice(0,18)){for(const itf of tfs){let k=getStoredKlines(sym,itf);if(!k||k.length<300)continue;const bt=backtest(k.slice(-settings().limit));for(const m of bt.modelStats){results.push({symbol:sym,tf:itf,...m,bt})}}}results.sort((a,b)=>statusRank(b.status)-statusRank(a.status)||b.pf-a.pf||b.net-a.net||b.n-a.n);renderLeaderboard(results);localStorage.setItem('ayaz_last_leaderboard',JSON.stringify(results.slice(0,40).map(x=>({symbol:x.symbol,tf:x.tf,model:x.model,status:x.status,n:x.n,win:x.win,net:x.net,pf:x.pf,mfe:x.mfe,mae:x.mae}))));}finally{setLoading(false)}}
-function renderLeaderboard(results){const active=results.filter(x=>x.status==='AKTİF').length,aday=results.filter(x=>x.status==='ADAY').length,test=results.filter(x=>x.status==='TEST').length;el('leaderPills').innerHTML=pill('AKTİF: '+active,active?'green':'gray')+pill('ADAY: '+aday,aday?'yellow':'gray')+pill('TEST: '+test,'blue')+pill('Toplam model: '+results.length,'gray');renderTable('leaderTable',['Sembol','TF','Model','Durum','İşlem','PF','Net'],results.slice(0,20).map(r=>[r.symbol,r.tf,r.model,r.status,fmt0(r.n),fmt(r.pf,2),money(r.net)]));}
+async function scanAll(){
+  setLoading(true);
+  try{
+    await loadMarket();
+    let syms=market?.symbols?.length?market.symbols:DEFAULT_SYMBOLS.slice(0,12);
+    let tfs=market?.timeframes?.length?market.timeframes:DEFAULT_TFS;
+    let results=[];
+    for(const sym of syms.slice(0,18)){
+      for(const itf of tfs){
+        let k=getStoredKlines(sym,itf);
+        if(!k||k.length<300)continue;
+        k=k.slice(-settings().limit);
+        const bt=backtest(k);
+        const live=liveDecision(k,bt);
+        for(const m of bt.modelStats){
+          const liveOK=live.candidate&&live.model===m.model&&live.vetos.length===0&&activeReady(m);
+          results.push({symbol:sym,tf:itf,...m,bt,liveOK,liveSide:live.side,liveStatus:live.status,rank:0})
+        }
+      }
+    }
+    results.forEach(r=>r.rank=oppRank(r));
+    results.sort((a,b)=>b.rank-a.rank||statusRank(b.status)-statusRank(a.status)||pfSafe(b.pf)-pfSafe(a.pf)||b.net-a.net||b.n-a.n);
+    renderLeaderboard(results);
+    localStorage.setItem('ayaz_last_leaderboard',JSON.stringify(results.slice(0,40).map(x=>({symbol:x.symbol,tf:x.tf,model:x.model,status:x.status,n:x.n,win:x.win,net:x.net,pf:x.pf,mfe:x.mfe,mae:x.mae,fastStopRate:x.fastStopRate,liveOK:x.liveOK}))));
+  }finally{setLoading(false)}
+}
+function renderLeaderboard(results){
+  const active=results.filter(x=>x.status==='AKTİF').length,aday=results.filter(x=>x.status==='ADAY').length,test=results.filter(x=>x.status==='TEST').length,live=results.filter(x=>x.liveOK).length;
+  el('leaderPills').innerHTML=pill('CANLI ADAY: '+live,live?'green':'gray')+pill('AKTİF: '+active,active?'green':'gray')+pill('ADAY: '+aday,aday?'yellow':'gray')+pill('TEST: '+test,'blue')+pill('Toplam model: '+results.length,'gray');
+  const top=results.filter(r=>r.liveOK||r.status==='AKTİF'||r.status==='ADAY').slice(0,12);
+  el('leaderCards').innerHTML=top.length?top.map(r=>`<div class="leadercard"><div class="lcTop"><div><div class="lcSym">${r.symbol} / ${r.tf}</div><div class="lcModel">${r.model}</div></div><span class="badge ${badgeClass(r.status,r.liveOK)}">${r.liveOK?'CANLI':r.status}</span></div><div class="small">İşlem ${fmt0(r.n)} | Win ${pct(r.win)} | PF ${pfText(r.pf,r.n)} | Net ${money(r.net)}</div><div class="small">MFE/MAE ${fmt(r.mfe,2)}/${fmt(r.mae,2)} | Hızlı stop ${pct(r.fastStopRate)}</div><div class="small">${modelRiskNote(r)}</div></div>`).join(''):'<div class="small">Canlı veya aktif model yok. ADAY modeller izleme amaçlıdır.</div>';
+  renderTable('leaderTable',['Sembol','TF','Model','Durum','İşlem','PF','Net','Hızlı Stop'],results.slice(0,20).map(r=>[r.symbol,r.tf,r.model,r.liveOK?'CANLI':r.status,fmt0(r.n),pfText(r.pf,r.n),money(r.net),pct(r.fastStopRate)]));
+}
 function setLoading(v){el('loader').classList.toggle('on',v);el('refreshBtn').disabled=v;el('scanBtn').disabled=v;el('backtestBtn').disabled=v;}
 function initControls(){const symSel=el('symbolSelect'),tfSel=el('tfSelect');symSel.innerHTML=DEFAULT_SYMBOLS.map(s=>`<option>${s}</option>`).join('');tfSel.innerHTML=DEFAULT_TFS.map(t=>`<option>${t}</option>`).join('');symSel.value=symbol;tfSel.value=tf;el('tfTabs').innerHTML=DEFAULT_TFS.map(t=>`<button class="tab ${t===tf?'active':''}" data-tf="${t}">${t.toUpperCase()}</button>`).join('');symSel.onchange=()=>{symbol=symSel.value;refreshSelected()};tfSel.onchange=()=>{tf=tfSel.value;initControls();refreshSelected()};el('tfTabs').onclick=e=>{if(e.target.dataset.tf){tf=e.target.dataset.tf;initControls();refreshSelected()}};el('refreshBtn').onclick=refreshSelected;el('backtestBtn').onclick=renderAll;el('scanBtn').onclick=scanAll;el('symbolBox').onclick=()=>symSel.focus();}
 (async function main(){initControls();await refreshSelected();await scanAll();})();
