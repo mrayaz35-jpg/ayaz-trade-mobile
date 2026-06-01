@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>Ayaz Trade — Bağlı Karar Motoru v8</title>
+  <title>Ayaz Trade — Gerçek Tarama v9</title>
   <style>
     :root{--bg:#070c1d;--card:#101832;--card2:#0b1228;--line:#293762;--text:#f4f7ff;--muted:#aeb9dc;--blue:#2f7df6;--green:#08743a;--red:#681829;--amber:#705307;--soft:#172343;--gray:#252e4b}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}.wrap{max-width:980px;margin:0 auto;padding:24px 16px 100px}h1{font-size:39px;line-height:1.08;margin:14px 0 8px;font-weight:950}h2{font-size:31px;line-height:1.1;margin:0 0 13px;font-weight:950}h3{font-size:23px;margin:18px 0 11px}p{color:var(--muted);font-size:18px;line-height:1.38}.card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:28px;padding:21px;margin:16px 0;box-shadow:0 12px 32px rgba(0,0,0,.20)}.hero{border:2px solid #f2ca61;border-radius:24px;padding:18px 20px;margin:12px 0 18px}.heroTitle{font-size:36px;font-weight:950}.heroSub{font-size:17px;color:var(--muted);font-weight:850;margin-top:5px}.btn{width:100%;background:var(--blue);border:1px solid #65a0ff;color:#fff;border-radius:24px;padding:20px 18px;font-size:25px;font-weight:950;cursor:pointer;box-shadow:0 10px 28px rgba(47,125,246,.22)}.btn:disabled{opacity:.55}.meta{font-size:18px;font-weight:900;line-height:1.38;color:#dce5ff;margin-top:14px}.pill{display:inline-block;border-radius:999px;padding:8px 13px;font-weight:950;font-size:15px;margin:5px 5px 5px 0}.green{background:#06451f;color:#76ffa8}.red{background:#4b101e;color:#ff93a2}.amber{background:#5a4208;color:#ffd66e}.blue{background:#172d5f;color:#9bc0ff}.gray{background:#202844;color:#c8d2f5}.progress{height:13px;background:#0b1228;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:14px 0}.bar{height:100%;background:#2f7df6;width:0%}.candidate{border:2px solid #0f944e;border-radius:26px;background:#0b1228;padding:20px;margin:14px 0;cursor:pointer}.candidate.short{border-color:#7d1d31}.candidate .top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.sym{font-size:34px;font-weight:950;line-height:1.08}.model{font-size:22px;font-weight:950;margin:8px 0;color:#fff}.score{font-size:29px;font-weight:950;border-radius:22px;padding:14px 16px;min-width:94px;text-align:center;line-height:1.05}.score.long{background:#06451f;color:#76ffa8}.score.short{background:#551121;color:#ff95a6}.line{font-size:18px;line-height:1.37;color:#d3dcff;font-weight:850;margin-top:9px}.decision{font-size:42px;font-weight:950;text-align:center;border-radius:24px;padding:28px 12px;margin:12px 0 17px;background:#1d2541;color:#cbd4ef}.decision.long{background:#073f22;color:#74ffad}.decision.short{background:#541321;color:#ff8599}.decision.wait{background:#3a300a;color:#ffd66e}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.metric{background:#0a1127;border:1px solid var(--line);border-radius:19px;padding:14px}.metric .k{color:var(--muted);font-size:15px;font-weight:850}.metric .v{font-size:22px;font-weight:950;margin-top:5px;word-break:break-word}canvas{width:100%;height:245px;background:#0b1228;border:1px solid var(--line);border-radius:22px;margin-top:12px}.note{border-left:6px solid #ffd166;padding:12px 14px;margin:14px 0;color:#dfe6ff;font-size:17px;line-height:1.42;background:rgba(255,209,102,.07)}.lastRows{display:grid;gap:9px}.tradeRow{display:grid;grid-template-columns:1.1fr .8fr .8fr .9fr;gap:9px;background:#0b1228;border:1px solid var(--line);border-radius:16px;padding:12px;font-size:16px;font-weight:900;align-items:center}.dim{color:var(--muted)}.footer{font-size:15px;color:#9ba7c9;margin:28px 4px}@media(max-width:760px){.wrap{padding:20px 12px 80px}h1{font-size:33px}h2{font-size:29px}.heroTitle{font-size:33px}.grid{grid-template-columns:1fr}.sym{font-size:30px}.candidate{padding:18px}.score{font-size:24px;min-width:82px}.line{font-size:17px}.tradeRow{grid-template-columns:1fr .7fr .8fr .9fr;font-size:15px}}
@@ -11,7 +11,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Ayaz Trade — Bağlı Karar Motoru v8</h1>
+  <h1>Ayaz Trade — Gerçek Tarama v9</h1>
   <p>Tek düğme: canlı veriye bağlanır, kaynaklardaki analiz sırasını arka planda tek karar zincirine çevirir, güven sırasına göre en iyi 10 işlem planını verir.</p>
   <section class="card">
     <div class="hero"><div class="heroTitle">BAĞLI KARAR MOTORU — TEK TUŞ</div><div class="heroSub">Canlı veri sınırı: maksimum 5 dakika. MTF bağlam, destek/direnç bölgesi, pivot yapı, trend kırılımı, FVG/sweep, momentum, hacim, volatilite, stop ve çıkış planı arka planda tek zincirde birleşir.</div></div>
@@ -30,13 +30,47 @@ const TFS=["15m","30m","1h","2h","4h"];
 const TFMS={"15m":900000,"30m":1800000,"1h":3600000,"2h":7200000,"4h":14400000};
 const MODELS=["BAGLI LONG","BAGLI SHORT"];
 const RULE={capital:100,riskPct:2.5,maxLev:10,minConf:80,maxLiveAgeMs:300000,maxStopPct:3.4,minRR:1.55,minTrades:12,minPF:1.25,minWin:55,minMfeMae:1.20,cooldown:6,minConfluence:6,minZoneTouch:2};
-let market={generatedAt:null,data:{}},ws=null,wsOk=false,wsLast=0,candidates=[],selected=null;
+let market={generatedAt:null,data:{}},ws=null,wsOk=false,wsLast=0,liveMap={},candidates=[],selected=null,scanLog={total:0,done:0,rest:0,ws:0,skipped:0};
 const $=id=>document.getElementById(id);const now=()=>Date.now();
-function fmt(n,d=2){if(n===null||n===undefined||!isFinite(n))return"-";return Number(n).toLocaleString("tr-TR",{minimumFractionDigits:d,maximumFractionDigits:d})}function pct(n,d=1){return fmt(n,d)+"%"}function money(n){return(n>=0?fmt(n,2):"-"+fmt(Math.abs(n),2))+"$"}function setBar(x){$("bar").style.width=Math.max(0,Math.min(100,x))+"%"}function setMeta(t){$("meta").textContent=t}function liveAgeSec(){return wsLast?Math.round((now()-wsLast)/1000):9999}function liveText(){return wsOk?`WS CANLI: ${liveAgeSec()} sn`:(wsLast?`WS KOPTU: ${liveAgeSec()} sn`:"WS bağlanmadı")}function delay(ms){return new Promise(r=>setTimeout(r,ms))}
-async function oneClickScan(){$("mainBtn").disabled=true;candidates=[];$("list").innerHTML="<p>Canlı veri bağlanıyor ve adaylar taranıyor...</p>";setBar(1);await loadMarketJson();startWS();await preloadCoreData();await delay(1400);await scanAll();$("mainBtn").disabled=false}
+function fmt(n,d=2){if(n===null||n===undefined||!isFinite(n))return"-";return Number(n).toLocaleString("tr-TR",{minimumFractionDigits:d,maximumFractionDigits:d})}function pct(n,d=1){return fmt(n,d)+"%"}function money(n){return(n>=0?fmt(n,2):"-"+fmt(Math.abs(n),2))+"$"}function setBar(x){$("bar").style.width=Math.max(0,Math.min(100,x))+"%"}function setMeta(t){$("meta").textContent=t}function liveAgeSec(){return wsLast?Math.round((now()-wsLast)/1000):9999}function liveText(){return wsOk?`WS CANLI: son akış ${liveAgeSec()} sn`:(wsLast?`WS KOPTU: son akış ${liveAgeSec()} sn`:"WS bağlanmadı")}function delay(ms){return new Promise(r=>setTimeout(r,ms))}
+async function oneClickScan(){$("mainBtn").disabled=true;candidates=[];scanLog={total:SYMBOLS.length*TFS.length,done:0,rest:0,ws:0,skipped:0};$("list").innerHTML="<p>Gerçek tarama başladı: 30 coin x 5 zaman dilimi = 150 kontrol...</p>";setBar(1);await loadMarketJson();startWS();await preloadCoreData();await delay(1200);await scanAll();$("mainBtn").disabled=false}
 async function loadMarketJson(){setMeta("market.json yükleniyor...");try{const r=await fetch("data/market.json?v="+Date.now(),{cache:"no-store"});if(r.ok)market=await r.json()}catch(e){}if(!market.data)market.data={}}
-function startWS(){try{if(ws)ws.close()}catch(e){}const streams=[];for(const s of SYMBOLS){for(const tf of TFS)streams.push(s.toLowerCase()+"@kline_"+tf)}const url="wss://data-stream.binance.vision/stream?streams="+streams.join("/");try{ws=new WebSocket(url);ws.onopen=()=>{wsOk=true;wsLast=now();setMeta(liveText()+" | Tarama devam ediyor...")};ws.onmessage=ev=>{try{const msg=JSON.parse(ev.data),d=msg.data||msg;if(d.e==="kline"&&d.k){const k=d.k,s=k.s,tf=k.i;const candle={time:+k.t,open:+k.o,high:+k.h,low:+k.l,close:+k.c,volume:+k.v,liveTime:+d.E||now(),closed:!!k.x};market.data[s]=market.data[s]||{};const arr=market.data[s][tf]||[];if(arr.length&&arr[arr.length-1].time===candle.time)arr[arr.length-1]=candle;else{arr.push(candle);if(arr.length>900)arr.shift()}market.data[s][tf]=arr;wsLast=now()}}catch(e){}};ws.onerror=()=>{wsOk=false};ws.onclose=()=>{wsOk=false}}catch(e){wsOk=false}}
-function getCandles(s,tf){return market?.data?.[s]?.[tf]||[]}async function ensureCandles(s,tf){let arr=getCandles(s,tf);const last=arr[arr.length-1];const liveTime=last?.liveTime||wsLast||0;if(arr.length>=250&&now()-liveTime<RULE.maxLiveAgeMs)return arr;try{const url=`https://data-api.binance.vision/api/v3/klines?symbol=${s}&interval=${tf}&limit=700`;const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw new Error("REST");const raw=await r.json();arr=raw.map(k=>({time:+k[0],open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5]}));if(arr.length){arr[arr.length-1].liveTime=now();wsLast=now()}market.data[s]=market.data[s]||{};market.data[s][tf]=arr;return arr}catch(e){return arr}}
+function startWS(){try{if(ws)ws.close()}catch(e){}const streams=[];for(const s of SYMBOLS){for(const tf of TFS)streams.push(s.toLowerCase()+"@kline_"+tf)}const url="wss://data-stream.binance.vision/stream?streams="+streams.join("/");try{ws=new WebSocket(url);ws.onopen=()=>{wsOk=true;wsLast=now();setMeta(liveText()+" | Tarama devam ediyor...")};ws.onmessage=ev=>{try{const msg=JSON.parse(ev.data),d=msg.data||msg;if(d.e==="kline"&&d.k){const k=d.k,s=k.s,tf=k.i;const candle={time:+k.t,open:+k.o,high:+k.h,low:+k.l,close:+k.c,volume:+k.v,liveTime:+d.E||now(),closed:!!k.x};market.data[s]=market.data[s]||{};const arr=market.data[s][tf]||[];if(arr.length&&arr[arr.length-1].time===candle.time)arr[arr.length-1]=candle;else{arr.push(candle);if(arr.length>900)arr.shift()}market.data[s][tf]=arr;wsLast=now();liveMap[s+'|'+tf]=now()}}catch(e){}};ws.onerror=()=>{wsOk=false};ws.onclose=()=>{wsOk=false}}catch(e){wsOk=false}}
+function getCandles(s,tf){return market?.data?.[s]?.[tf]||[]}async function ensureCandles(s,tf){
+  let arr=getCandles(s,tf);
+  const key=s+"|"+tf;
+  const pairLive=liveMap[key]||0;
+  const last=arr[arr.length-1];
+
+  // KRİTİK DÜZELTME:
+  // v8'de global wsLast bazen tek bir coinin güncellemesini tüm coinler taze gibi gösterebiliyordu.
+  // v9'da her sembol+TF ayrı canlılık kontrolünden geçer.
+  if(arr.length>=250 && pairLive && now()-pairLive<RULE.maxLiveAgeMs){
+    scanLog.ws++;
+    return arr;
+  }
+
+  // WebSocket bu parite/TF için henüz canlı güncelleme üretmediyse REST ile gerçekten tazele.
+  try{
+    const url=`https://data-api.binance.vision/api/v3/klines?symbol=${s}&interval=${tf}&limit=700`;
+    const r=await fetch(url,{cache:"no-store"});
+    if(!r.ok)throw new Error("REST");
+    const raw=await r.json();
+    arr=raw.map(k=>({time:+k[0],open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5]}));
+    if(arr.length){
+      arr[arr.length-1].liveTime=now();
+      liveMap[key]=now();
+      wsLast=now();
+    }
+    market.data[s]=market.data[s]||{};
+    market.data[s][tf]=arr;
+    scanLog.rest++;
+    return arr;
+  }catch(e){
+    scanLog.skipped++;
+    return arr;
+  }
+}
 
 async function preloadCoreData(){
   setMeta("Çekirdek veri hazırlanıyor: BTC ve üst zaman dilimleri...");
@@ -199,8 +233,43 @@ function htfOk(sym,tf,dir){
   if(sym!=="BTCUSDT"&&btc&&btc.length>=120){const b=enrich(btc),x=b[b.length-1];btcOk=dir==="LONG"?x.close>=x.e55*.985:x.close<=x.e55*1.015}
   return selfOk&&btcOk;
 }
-function buildCandidate(sym,tf,b,stat){if(stat.count<RULE.minTrades||stat.pf<RULE.minPF||stat.win<RULE.minWin||stat.net<=0)return null;if(stat.avgMfe/Math.max(stat.avgMae,.05)<RULE.minMfeMae||stat.fast>28)return null;const c=b.candles,last=c[c.length-1],liveTime=last.liveTime||wsLast||0,ageMs=now()-liveTime;if(ageMs>RULE.maxLiveAgeMs)return null;const sig=signal(c,c.length-1,stat.model.includes("LONG")?"BAGLI LONG":"BAGLI SHORT");if(!sig||sig.stopPct>RULE.maxStopPct||sig.rr<RULE.minRR)return null;if(!htfOk(sym,tf,sig.dir))return null;const recent=stat.trades.slice(-6),recentBad=recent.length>=4&&recent.filter(x=>x.pnl<0).length>=3;if(recentBad)return null;const mfeMae=stat.avgMfe/Math.max(stat.avgMae,.05);let conf=Math.round(sig.q*.42+Math.min(stat.pf,4)*8+stat.win*.20+Math.min(mfeMae,3)*7+Math.min(stat.count,40)*.28+Math.max(-8,Math.min(12,stat.net*.75))-stat.fast*.22);conf=Math.max(1,Math.min(97,conf));if(conf<RULE.minConf)return null;const lev=leverage(sig,conf);return{sym,tf,model:sig.model,sub:sig.sub,dir:sig.dir,conf,entry:sig.entry,stop:sig.stop,t1:sig.t1,t2:sig.t2,t3:sig.t3,stopPct:sig.stopPct,rr:sig.rr,why:sig.why,stat,lev,candles:c,ageSec:Math.round(ageMs/1000)}}
-async function scanAll(){setMeta("Canlı tarama başladı...");candidates=[];const total=SYMBOLS.length*TFS.length;let done=0;for(const s of SYMBOLS){for(const tf of TFS){await ensureCandles(s,tf);const b=backtest(s,tf);if(b){for(const st of b.stats){const cand=buildCandidate(s,tf,b,st);if(cand)candidates.push(cand)}}done++;setBar(done/total*100);setMeta(`${liveText()} | Tarama ${done}/${total} | Bulunan canlı işlem: ${candidates.length}`);await delay(4)}}candidates.sort((a,b)=>b.conf-a.conf);renderList();setMeta(`${liveText()} | Tarama bitti. Gösterilen işlem: ${Math.min(10,candidates.length)} | Veri sınırı: 5 dk`)}
+function buildCandidate(sym,tf,b,stat){if(stat.count<RULE.minTrades||stat.pf<RULE.minPF||stat.win<RULE.minWin||stat.net<=0)return null;if(stat.avgMfe/Math.max(stat.avgMae,.05)<RULE.minMfeMae||stat.fast>28)return null;const c=b.candles,last=c[c.length-1],pairLive=liveMap[sym+'|'+tf]||last.liveTime||0,ageMs=now()-pairLive;if(ageMs>RULE.maxLiveAgeMs)return null;const sig=signal(c,c.length-1,stat.model.includes("LONG")?"BAGLI LONG":"BAGLI SHORT");if(!sig||sig.stopPct>RULE.maxStopPct||sig.rr<RULE.minRR)return null;if(!htfOk(sym,tf,sig.dir))return null;const recent=stat.trades.slice(-6),recentBad=recent.length>=4&&recent.filter(x=>x.pnl<0).length>=3;if(recentBad)return null;const mfeMae=stat.avgMfe/Math.max(stat.avgMae,.05);let conf=Math.round(sig.q*.42+Math.min(stat.pf,4)*8+stat.win*.20+Math.min(mfeMae,3)*7+Math.min(stat.count,40)*.28+Math.max(-8,Math.min(12,stat.net*.75))-stat.fast*.22);conf=Math.max(1,Math.min(97,conf));if(conf<RULE.minConf)return null;const lev=leverage(sig,conf);return{sym,tf,model:sig.model,sub:sig.sub,dir:sig.dir,conf,entry:sig.entry,stop:sig.stop,t1:sig.t1,t2:sig.t2,t3:sig.t3,stopPct:sig.stopPct,rr:sig.rr,why:sig.why,stat,lev,candles:c,ageSec:Math.round(ageMs/1000)}}
+async function scanAll(){
+  setMeta("Gerçek tarama başladı: 30 coin x 5 TF = 150 kontrol...");
+  candidates=[];
+  const total=SYMBOLS.length*TFS.length;
+  scanLog.total=total; scanLog.done=0;
+  let done=0;
+  for(const s of SYMBOLS){
+    for(const tf of TFS){
+      await ensureCandles(s,tf);
+      const arr=getCandles(s,tf);
+      const key=s+"|"+tf;
+      const pairAge=liveMap[key]?Math.round((now()-liveMap[key])/1000):9999;
+
+      if(arr && arr.length>=250 && pairAge<=300){
+        const b=backtest(s,tf);
+        if(b){
+          for(const st of b.stats){
+            const cand=buildCandidate(s,tf,b,st);
+            if(cand)candidates.push(cand);
+          }
+        }
+      }else{
+        scanLog.skipped++;
+      }
+
+      done++;
+      scanLog.done=done;
+      setBar(done/total*100);
+      setMeta(`${liveText()} | Gerçek tarama ${done}/${total} | Coin: ${s} | TF: ${tf} | REST: ${scanLog.rest} | WS/parite: ${scanLog.ws} | Aday: ${candidates.length}`);
+      await delay(22);
+    }
+  }
+  candidates.sort((a,b)=>b.conf-a.conf);
+  renderList();
+  setMeta(`${liveText()} | Tarama bitti: ${done}/${total} kontrol edildi | REST: ${scanLog.rest} | WS/parite: ${scanLog.ws} | Gösterilen: ${Math.min(10,candidates.length)} | Veri sınırı: 5 dk`);
+}
 function renderList(){const box=$("list");if(!candidates.length){box.innerHTML='<div class="decision wait">CANLI İŞLEM YOK</div><p>5 dakika sınırında canlı veri ve yüksek güvenli işlem adayı bulunamadı.</p>';return}box.innerHTML=candidates.slice(0,10).map((x,i)=>`<div class="candidate ${x.dir==='SHORT'?'short':'long'}" onclick="selectCandidate(${i})"><div class="top"><div><div class="sym">${i+1}) ${x.sym} / ${x.tf}</div><div class="model">${x.model}${x.sub?" — "+x.sub:""}</div></div><div class="score ${x.dir==='LONG'?'long':'short'}">${x.conf}%<br><span style="font-size:16px">${x.dir}</span></div></div><div class="line">Giriş ${fmt(x.entry,4)} | Stop ${fmt(x.stop,4)} | TP1 ${fmt(x.t1,4)} | TP2 ${fmt(x.t2,4)} | TP3 ${fmt(x.t3,4)}<br>Kaldıraç x${fmt(x.lev.lev,1)} | Pozisyon ${money(x.lev.notional)} | Marjin ${money(x.lev.margin)} | Risk ${money(x.lev.riskD)} | Stop ${pct(x.stopPct,2)}<br>Backtest: İşlem ${x.stat.count} | Win ${pct(x.stat.win,1)} | PF ${x.stat.pf>=20?'20+':fmt(x.stat.pf,2)} | Net ${money(x.stat.net)} | Veri ${x.ageSec} sn</div></div>`).join("")}
 function selectCandidate(i){const x=candidates[i];selected=x;$("decision").className="decision "+(x.dir==="LONG"?"long":"short");$("decision").textContent=`${x.dir} İŞLEM — GÜVEN ${x.conf}%`;$("metrics").innerHTML=metric("Sembol / TF",`${x.sym} / ${x.tf}`)+metric("Model",x.model+(x.sub?" — "+x.sub:""))+metric("Canlı veri",`${x.ageSec} sn`)+metric("Giriş",fmt(x.entry,4))+metric("Stop",fmt(x.stop,4))+metric("Stop %",pct(x.stopPct,2))+metric("TP1",fmt(x.t1,4))+metric("TP2",fmt(x.t2,4))+metric("TP3",fmt(x.t3,4))+metric("Kaldıraç",`x${fmt(x.lev.lev,1)}`)+metric("Pozisyon",money(x.lev.notional))+metric("Marjin",money(x.lev.margin))+metric("Risk",money(x.lev.riskD))+metric("RR",fmt(x.rr,2))+metric("PF",x.stat.pf>=20?"20+":fmt(x.stat.pf,2));$("reasons").innerHTML=x.why.map(r=>`<span class="pill ${x.dir==="LONG"?"green":"red"}">${r}</span>`).join("")+`<span class="pill blue">Win ${pct(x.stat.win,1)}</span><span class="pill blue">MFE/MAE ${fmt(x.stat.avgMfe,2)}R / ${fmt(x.stat.avgMae,2)}R</span>`;drawChart(x.candles,x);renderBacktest(x);$("planBox").scrollIntoView({behavior:"smooth"})}
 function metric(k,v){return`<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`}function renderBacktest(x){const trs=x.stat.trades.slice(-10).reverse();$("bt").innerHTML=`<div class="grid">${metric("İşlem",x.stat.count)}${metric("Win",pct(x.stat.win,1))}${metric("PF",x.stat.pf>=20?"20+":fmt(x.stat.pf,2))}${metric("Net",money(x.stat.net))}${metric("MFE/MAE",`${fmt(x.stat.avgMfe,2)}R / ${fmt(x.stat.avgMae,2)}R`)}${metric("Hızlı stop",pct(x.stat.fast,1))}</div><h3>Son işlemler</h3><div class="lastRows">${trs.map(t=>`<div class="tradeRow"><div>${t.date}</div><div>${t.dir}</div><div>${t.exit}</div><div>${fmt(t.mfe,2)}R/${fmt(t.mae,2)}R</div></div>`).join("")}</div><div class="note">Bu plan otomatik üretilir. Emirden önce borsadaki anlık fiyatın girişe yakınlığı, spread ve stop emri ayrıca kontrol edilmelidir.</div>`}
