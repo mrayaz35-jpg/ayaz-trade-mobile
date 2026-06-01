@@ -8,8 +8,28 @@ const DEFAULT_SYMBOLS=["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","ADAUSD
 const EXCLUDED_BASES=new Set(["USDC","FDUSD","TUSD","BUSD","DAI","USDP","EUR","TRY","BRL","GBP","UAH","AEUR","EURI","PAX","USTC"]);
 const BAD_SUFFIX=["UP","DOWN","BULL","BEAR","3L","3S","5L","5S"];
 
-function getJson(url){return new Promise((resolve,reject)=>{https.get(url,{headers:{"User-Agent":"ayaz-trade-v11"}},res=>{let data="";res.on("data",d=>data+=d);res.on("end",()=>{try{resolve(JSON.parse(data))}catch(e){reject(e)}})}).on("error",reject)})}
+function getJson(url){return new Promise((resolve,reject)=>{https.get(url,{headers:{"User-Agent":"ayaz-trade-v13"}},res=>{let data="";res.on("data",d=>data+=d);res.on("end",()=>{try{resolve(JSON.parse(data))}catch(e){reject(e)}})}).on("error",reject)})}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+async function getFxTry(){
+  const sources=[
+    {url:"https://data-api.binance.vision/api/v3/ticker/price?symbol=USDTTRY",source:"Binance data-api USDTTRY"},
+    {url:"https://api.binance.com/api/v3/ticker/price?symbol=USDTTRY",source:"Binance API USDTTRY"}
+  ];
+  for(const s of sources){
+    try{
+      const j=await getJson(s.url);
+      const rate=Number(j.price);
+      if(rate>10&&rate<250)return{usdtTry:rate,source:s.source,generatedAt:new Date().toISOString()};
+    }catch(e){console.log("FX fail",s.source,e.message)}
+  }
+  try{
+    const j=await getJson("https://open.er-api.com/v6/latest/USD");
+    const rate=Number(j.rates&&j.rates.TRY);
+    if(rate>10&&rate<250)return{usdtTry:rate,source:"USDTRY açık kur",generatedAt:new Date().toISOString()};
+  }catch(e){console.log("FX fallback fail",e.message)}
+  return{usdtTry:null,source:"kur alınamadı",generatedAt:new Date().toISOString()};
+}
+
 async function getUniverse(){
   try{
     const [ex,tickers]=await Promise.all([
@@ -28,7 +48,8 @@ async function getUniverse(){
 }
 (async()=>{
   const symbols=await getUniverse();
-  const out={generatedAt:new Date().toISOString(),source:"data-api.binance.vision",universeLimit:UNIVERSE_LIMIT,symbolCount:symbols.length,symbols,data:{}};
+  const fx=await getFxTry();
+  const out={generatedAt:new Date().toISOString(),source:"data-api.binance.vision",universeLimit:UNIVERSE_LIMIT,symbolCount:symbols.length,symbols,fx,data:{}};
   const liveTime=Date.now();
   for(const sym of symbols){
     out.data[sym]={};
