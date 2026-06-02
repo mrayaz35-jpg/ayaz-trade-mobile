@@ -1,0 +1,9 @@
+AYAZ TRADE v14.5 NET REVIZE
+
+1) Zip dosyasini direkt GitHub'a yuklemeyin. Zip'i acip icindeki dosyalari repo ana dizinine yukleyin.
+2) index.html, script.js, update-crypto-data.js ve .github/workflows/update-market.yml dosyalari ana repo yapisinda olmalidir.
+3) GitHub Pages linki: https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=stabil-veri-motoru-v14-5
+4) Actions > Update Ayaz Trade Market Data v14.5 > Run workflow ile market.json yenileyin.
+5) Bu surumde eski JSON'dan islem acilmaz; 5 dakikadan taze REST/WS veya market.json gerekir.
+6) Stopu genis/yuksek riskli adaylarin guveni tavanlanir ve siralamada asagi itilir.
+7) Veri kaynagi kartlarda gosterilir: WS, REST veya JSON TAZE.

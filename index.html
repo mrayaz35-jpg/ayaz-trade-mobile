@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>Ayaz Trade — Stabil Veri Motoru v14.3</title>
+  <title>Ayaz Trade — Canlı Veri Zorunlu v14.5</title>
   <style>
     :root{--bg:#070c1d;--card:#101832;--card2:#0b1228;--line:#293762;--text:#f4f7ff;--muted:#aeb9dc;--blue:#2f7df6;--green:#08743a;--red:#681829;--amber:#705307;--soft:#172343;--gray:#252e4b}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}.wrap{max-width:980px;margin:0 auto;padding:24px 16px 100px}h1{font-size:39px;line-height:1.08;margin:14px 0 8px;font-weight:950}h2{font-size:31px;line-height:1.1;margin:0 0 13px;font-weight:950}h3{font-size:23px;margin:18px 0 11px}p{color:var(--muted);font-size:18px;line-height:1.38}.card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:28px;padding:21px;margin:16px 0;box-shadow:0 12px 32px rgba(0,0,0,.20)}.hero{border:2px solid #f2ca61;border-radius:24px;padding:18px 20px;margin:12px 0 18px}.heroTitle{font-size:36px;font-weight:950}.heroSub{font-size:17px;color:var(--muted);font-weight:850;margin-top:5px}.btn{width:100%;background:var(--blue);border:1px solid #65a0ff;color:#fff;border-radius:24px;padding:20px 18px;font-size:25px;font-weight:950;cursor:pointer;box-shadow:0 10px 28px rgba(47,125,246,.22)}.btn:disabled{opacity:.55}.meta{font-size:18px;font-weight:900;line-height:1.38;color:#dce5ff;margin-top:14px}.fxbox{margin-top:12px;background:#0b1228;border:1px solid var(--line);border-radius:18px;padding:13px 15px;font-size:17px;font-weight:950;color:#dce5ff}.fxbox b{color:#76ffa8}.tryline{font-size:16px;color:#ffd66e;font-weight:950;margin-top:7px;line-height:1.35}.databox{margin-top:10px;background:#101936;border:1px solid var(--line);border-radius:18px;padding:12px 14px;font-size:16px;font-weight:950;color:#dce5ff;line-height:1.35}.ok{color:#7dffac}.bad{color:#ff8ea0}.pill{display:inline-block;border-radius:999px;padding:8px 13px;font-weight:950;font-size:15px;margin:5px 5px 5px 0}.green{background:#06451f;color:#76ffa8}.red{background:#4b101e;color:#ff93a2}.amber{background:#5a4208;color:#ffd66e}.blue{background:#172d5f;color:#9bc0ff}.gray{background:#202844;color:#c8d2f5}.progress{height:13px;background:#0b1228;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:14px 0}.bar{height:100%;background:#2f7df6;width:0%}.candidate{border:2px solid #0f944e;border-radius:26px;background:#0b1228;padding:20px;margin:14px 0;cursor:pointer}.candidate.short{border-color:#7d1d31}.candidate .top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.sym{font-size:34px;font-weight:950;line-height:1.08}.model{font-size:22px;font-weight:950;margin:8px 0;color:#fff}.score{font-size:29px;font-weight:950;border-radius:22px;padding:14px 16px;min-width:94px;text-align:center;line-height:1.05}.score.long{background:#06451f;color:#76ffa8}.score.short{background:#551121;color:#ff95a6}.line{font-size:18px;line-height:1.37;color:#d3dcff;font-weight:850;margin-top:9px}.decision{font-size:42px;font-weight:950;text-align:center;border-radius:24px;padding:28px 12px;margin:12px 0 17px;background:#1d2541;color:#cbd4ef}.decision.long{background:#073f22;color:#74ffad}.decision.short{background:#541321;color:#ff8599}.decision.wait{background:#3a300a;color:#ffd66e}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.metric{background:#0a1127;border:1px solid var(--line);border-radius:19px;padding:14px}.metric .k{color:var(--muted);font-size:15px;font-weight:850}.metric .v{font-size:22px;font-weight:950;margin-top:5px;word-break:break-word}canvas{width:100%;height:245px;background:#0b1228;border:1px solid var(--line);border-radius:22px;margin-top:12px}.note{border-left:6px solid #ffd166;padding:12px 14px;margin:14px 0;color:#dfe6ff;font-size:17px;line-height:1.42;background:rgba(255,209,102,.07)}.lastRows{display:grid;gap:9px}.tradeRow{display:grid;grid-template-columns:1.1fr .8fr .8fr .9fr;gap:9px;background:#0b1228;border:1px solid var(--line);border-radius:16px;padding:12px;font-size:16px;font-weight:900;align-items:center}.dim{color:var(--muted)}.footer{font-size:15px;color:#9ba7c9;margin:28px 4px}@media(max-width:760px){.wrap{padding:20px 12px 80px}h1{font-size:33px}h2{font-size:29px}.heroTitle{font-size:33px}.grid{grid-template-columns:1fr}.sym{font-size:30px}.candidate{padding:18px}.score{font-size:24px;min-width:82px}.line{font-size:17px}.tradeRow{grid-template-columns:1fr .7fr .8fr .9fr;font-size:15px}}
@@ -11,10 +11,10 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Ayaz Trade — Stabil Veri Motoru v14.3</h1>
+  <h1>Ayaz Trade — Canlı Veri Zorunlu v14.5</h1>
   <p>Tek düğme: Önce veri bağlantısını kurar, sonra dinamik coin evrenini tarar; USDT ve TL işlem planını birlikte gösterir.</p>
   <section class="card">
-    <div class="hero"><div class="heroTitle">STABİL VERİ + TL PLAN — TEK TUŞ</div><div class="heroSub">Canlı veri sınırı: maksimum 5 dakika. v14.3 JSON/REST/WS veri bağlantısını açık gösterir. JSON eski kalsa bile yedek bağlam motoru en güçlü 10 adayı boş bırakmaz. Coin sembolleri asla çevrilmez; sadece fiyatlar TL’ye çevrilir.</div></div>
+    <div class="hero"><div class="heroTitle">STABİL VERİ + TL PLAN — TEK TUŞ</div><div class="heroSub">Canlı veri sınırı: maksimum 5 dakika. v14.5 eski JSON’dan işlem açmaz. REST/WS canlıysa veya GitHub Actions ile üretilen market.json 5 dakikadan tazeyse En Güçlü 10 adayı üretir. Yüksek riskli ve stopu geniş adaylar artık yukarı taşınmaz; veri kaynağı kartta açık görünür.</div></div>
     <button id="mainBtn" class="btn" onclick="oneClickScan()">CANLI TARA</button>
     <div class="progress"><div class="bar" id="bar"></div></div>
     <div class="meta" id="meta">Hazır. CANLI TARA butonuna bas.</div><div class="fxbox" id="fxBox">USDT/TRY kuru bekleniyor...</div><div class="databox" id="dataBox">Veri motoru beklemede.</div>
@@ -22,7 +22,7 @@
   <section class="card"><h2>En Güçlü 10 Canlı İşlem Planı</h2><p>Liste güven ve geçmiş performans sırasına göre dizilir. Dinamik coin evreni arka planda taranır; ekranda sadece gerçekçi riskle filtrelenmiş işlem planları görünür.</p><div id="list"></div></section>
   <section class="card" id="planBox"><h2>Seçilen İşlem Planı</h2><div id="decision" class="decision wait">Henüz işlem seçilmedi</div><div id="metrics" class="grid"></div><div id="tryPlan" class="note">Binance TR emir özeti, işlem seçilince burada TL olarak görünür.</div><div id="reasons"></div><canvas id="chart" width="900" height="300"></canvas></section>
   <section class="card"><h2>Seçilen İşlemin Backtesti</h2><div id="bt"><p>Adaya dokununca bu bölümde seçilen işlemin geçmiş performansı görünür.</p></div></section>
-  <div class="footer">Eğitim/test amaçlıdır; gerçek emir göndermez. Kripto piyasası yüksek risklidir. Canlı veri Binance WebSocket + REST yedek ile alınır. Dinamik coin evreni yüksek hacimli USDT paritelerini tarar. v14.3 veri bağlantısını açık gösterir, JSON yedek veriyi aday üretiminde kullanır ve sembolleri bozmaz. Backtest geçmiş veridir, geleceği garanti etmez.</div>
+  <div class="footer">Eğitim/test amaçlıdır; gerçek emir göndermez. Kripto piyasası yüksek risklidir. v14.5 canlı veri zorunludur: REST/WS veya 5 dakikadan taze market.json yoksa işlem adayı üretilmez. SHORT kartları spotta emir değil, vadeli/izleme planıdır. Backtest geçmiş veridir, geleceği garanti etmez.</div>
 </div>
 <script>
 
@@ -34,17 +34,20 @@ const BAD_SUFFIX=["UP","DOWN","BULL","BEAR","3L","3S","5L","5S"];
 const TFS=["15m","30m","1h","2h","4h"];
 const TFMS={"15m":900000,"30m":1800000,"1h":3600000,"2h":7200000,"4h":14400000};
 const MODELS=["BAGLI LONG","BAGLI SHORT"];
-const RULE={capital:100,riskPct:2.5,maxLev:10,minConf:62,liveOnlyMinConf:56,staleMinConf:50,maxLiveAgeMs:300000,maxJsonBackupAgeMs:86400000,maxStopPct:4.2,minRR:1.20,minTrades:6,minPF:1.05,minWin:45,minMfeMae:0.75,cooldown:6,minConfluence:4,minZoneTouch:1,forceTopCount:10,staleConfCap:68,maxConf:96,maxDisplay:10};
-let market={generatedAt:null,data:{}},wsList=[],wsOk=false,wsLast=0,liveMap={},candidates=[],selected=null,scanLog={total:0,done:0,rest:0,ws:0,json:0,skipped:0},fx={rate:null,source:'-',updatedAt:null,ageSec:null},dataHealth={json:false,rest:false,ws:false,lastError:'-',candles:0};
+const RULE={capital:100,riskPct:2.5,maxLev:6,minConf:62,liveOnlyMinConf:58,maxLiveAgeMs:300000,maxStopPct:3.8,minRR:1.20,minTrades:6,minPF:1.05,minWin:45,minMfeMae:0.75,cooldown:6,minConfluence:4,minZoneTouch:1,forceTopCount:10,maxConf:94,maxDisplay:10,liveRequired:true,allowHighRiskTop:false};
+let market={generatedAt:null,data:{}},wsList=[],wsOk=false,wsLast=0,liveMap={},sourceMap={},candidates=[],selected=null,scanLog={total:0,done:0,rest:0,ws:0,json:0,skipped:0},fx={rate:null,source:'-',updatedAt:null,ageSec:null},dataHealth={json:false,rest:false,ws:false,lastError:'-',candles:0};
 const $=id=>document.getElementById(id);const now=()=>Date.now();
 function fmt(n,d=2){if(n===null||n===undefined||!isFinite(n))return"-";return Number(n).toLocaleString("tr-TR",{minimumFractionDigits:d,maximumFractionDigits:d})}
 function pct(n,d=1){return fmt(n,d)+"%"}
 function money(n){return(n>=0?fmt(n,2):"-"+fmt(Math.abs(n),2))+"$"}
 function fxReady(){return fx&&fx.rate&&isFinite(fx.rate)&&fx.rate>0}
 function tlMoney(n){if(!fxReady())return"TL yok";return(n>=0?fmt(n*fx.rate,2):"-"+fmt(Math.abs(n*fx.rate),2))+" TL"}
-function tlPrice(n,d=4){if(!fxReady())return"TL yok";return Number(n*fx.rate).toFixed(d).replace(/0+$/,'').replace(/\.$/,'')+" TL"}
-function tlInput(n,d=4){if(!fxReady())return"-";return Number(n*fx.rate).toFixed(d).replace(/0+$/,'').replace(/\.$/,'')}
-function dualPrice(n,d=4){return fmt(n,d)+" USDT / "+tlPrice(n,4)}
+function priceDecimals(n){n=Math.abs(Number(n)||0);if(n>=1000)return 2;if(n>=100)return 3;if(n>=1)return 4;if(n>=0.01)return 5;return 8}
+function tlDecimals(n){n=Math.abs(Number(n)||0);if(n>=10000)return 2;if(n>=1000)return 2;if(n>=10)return 3;if(n>=1)return 4;return 6}
+function trimFixed(n,d){return Number(n).toLocaleString("tr-TR",{minimumFractionDigits:d>4?0:2,maximumFractionDigits:d})}
+function tlPrice(n,d=null){if(!fxReady())return"TL yok";const v=n*fx.rate,dd=d===null?tlDecimals(v):d;return trimFixed(v,dd)+" TL"}
+function tlInput(n,d=null){if(!fxReady())return"-";const v=n*fx.rate,dd=d===null?tlDecimals(v):d;return trimFixed(v,dd)}
+function dualPrice(n,d=null){const dd=d===null?priceDecimals(n):d;return fmt(n,dd)+" USDT / "+tlPrice(n)}
 function dualMoney(n){return money(n)+" / "+tlMoney(n)}
 function cleanSymbol(s){
   s=String(s||"").toUpperCase().trim().replace(/[^A-Z0-9]/g,"");
@@ -61,11 +64,10 @@ function safeTs(v){
 function pairSourceTime(sym,tf,arr){
   const a=arr||getCandles(sym,tf)||[];
   const last=a[a.length-1]||{};
-  const t=Number(last.time)||0;
-  const tfEnd=t+(TFMS[tf]||0);
-  // Teşhis: bazı market.json dosyalarında liveTime yoksa sadece mum açılış zamanı kalıyordu.
-  // Bu yüzden taze JSON bile 5 dakika filtresinde elenebiliyordu.
-  return Math.max(Number(last.liveTime)||0,Number(last.closeTime)||0,safeTs(market&&market.generatedAt)||0,safeTs(market&&market.fx&&market.fx.generatedAt)||0,tfEnd||0,t||0);
+  // v14.4 CANLI ZORUNLU:
+  // İşlem kararı için mumun açılış/kapanış saati değil, verinin gerçekten çekildiği zaman kullanılır.
+  // Böylece 1h/2h/4h mumlarında eski JSON, mum kapanışı gelecekte diye taze sanılmaz.
+  return Math.max(Number(last.liveTime)||0,safeTs(market&&market.generatedAt)||0);
 }
 function sourceAgeMs(stamp){
   if(!stamp)return 999999999;
@@ -116,6 +118,7 @@ function setBar(x){$("bar").style.width=Math.max(0,Math.min(100,x))+"%"}function
 async function oneClickScan(){
   $("mainBtn").disabled=true;
   candidates=[];
+  sourceMap={};
   scanLog={total:0,done:0,rest:0,ws:0,json:0,skipped:0};
   dataHealth={json:false,rest:false,ws:false,lastError:"-",candles:0};
   updateDataBox();
@@ -211,7 +214,7 @@ function startWS(){
             market.data[s]=market.data[s]||{};
             const arr=market.data[s][tf]||[];
             if(arr.length&&arr[arr.length-1].time===candle.time)arr[arr.length-1]=candle;else{arr.push(candle);if(arr.length>900)arr.shift()}
-            market.data[s][tf]=arr;wsLast=now();liveMap[s+'|'+tf]=now();
+            market.data[s][tf]=arr;wsLast=now();liveMap[s+'|'+tf]=now();sourceMap[s+'|'+tf]='WS';
           }
         }catch(e){}
       };
@@ -228,9 +231,10 @@ function getCandles(s,tf){return market?.data?.[s]?.[tf]||[]}async function ensu
   let pairLive=liveMap[key]||pairSourceTime(s,tf,arr);
   let ageMs=sourceAgeMs(pairLive);
 
-  // v14.3: JSON verisi varsa REST/WS beklenmez. Tazeyse canlı, eskiyse yedek veri olarak kullanılır.
+  // v14.4: Sadece 5 dakikadan taze kaynak işlem üretimine girebilir.
+  // JSON tazeyse kullanılır; eskiyse sadece arşiv/teşhis olarak kalır.
   if(arr.length>=220 && pairLive && ageMs<=RULE.maxLiveAgeMs){
-    liveMap[key]=pairLive;
+    liveMap[key]=pairLive;sourceMap[key]='JSON TAZE';
     scanLog.json++; dataHealth.json=true; updateDataBox(); return arr;
   }
 
@@ -247,21 +251,19 @@ function getCandles(s,tf){return market?.data?.[s]?.[tf]||[]}async function ensu
       if(fresh.length>=220){
         market.data[s]=market.data[s]||{};
         market.data[s][tf]=fresh;
-        liveMap[key]=now(); wsLast=now(); scanLog.rest++;
-        dataHealth.rest=true; dataHealth.candles+=fresh.length; updateDataBox();
+        liveMap[key]=now();sourceMap[key]='REST'; wsLast=now(); scanLog.rest++;
+        dataHealth.rest=true; dataHealth.candles+=fresh.length; dataHealth.lastError="-"; updateDataBox();
         return fresh;
       }
     }catch(e){dataHealth.lastError=`${s} ${tf} REST hata`;updateDataBox()}
   }
 
-  // Kritik revize: REST/WS çalışmıyorsa JSON mumlarını çöpe atma.
-  // Eskiyse adaylar “JSON YEDEK / canlı teyit gerekir” etiketiyle üretilecek.
   arr=getCandles(s,tf);
   if(arr&&arr.length>=220){
     pairLive=pairSourceTime(s,tf,arr);
     ageMs=sourceAgeMs(pairLive);
     scanLog.json++; dataHealth.json=true;
-    if(ageMs>RULE.maxLiveAgeMs)dataHealth.lastError=`${s} ${tf} JSON yedek ${Math.round(ageMs/1000)} sn`;
+    dataHealth.lastError=`${s} ${tf} JSON eski ${Math.round(ageMs/1000)} sn - işlem kapalı`;
     updateDataBox();
     return arr;
   }
@@ -524,6 +526,12 @@ function leverage(sig,conf){
   const margin=notional/lev;
   return{lev,notional,margin,riskD,liqPressure:sig.stopPct*lev};
 }
+function adjustRiskConfidence(obj){
+  if(!obj)return obj;
+  if(obj.riskClass==='Yüksek'){obj.rawConf=Math.min(obj.rawConf,78);obj.conf=Math.min(obj.conf,78);obj.capNotes=[...(obj.capNotes||[]),'yüksek risk güven tavanı'];}
+  if(obj.stopPct>RULE.maxStopPct)return null;
+  return obj;
+}
 function htfFor(tf){return tf==="15m"?"1h":tf==="30m"?"2h":tf==="1h"?"4h":tf==="2h"?"4h":"4h"}
 function htfOk(sym,tf,dir){
   const htf=htfFor(tf),raw=getCandles(sym,htf);
@@ -540,7 +548,8 @@ function buildCandidate(sym,tf,b,stat){
   const mfeMae=stat.avgMfe/Math.max(stat.avgMae,.05);
   if(mfeMae<RULE.minMfeMae||stat.fast>45)return null;
   const c=b.candles,last=c[c.length-1],pairLive=liveMap[sym+'|'+tf]||pairSourceTime(sym,tf,c),ageMs=sourceAgeMs(pairLive);
-  const stale=ageMs>RULE.maxLiveAgeMs;
+  if(!pairLive||ageMs>RULE.maxLiveAgeMs)return null;
+  const stale=false;
   const dir=stat.model.includes("LONG")?"LONG":"SHORT";
   let sig=null;
   for(let k=0;k<=3;k++){
@@ -560,11 +569,10 @@ function buildCandidate(sym,tf,b,stat){
   rawConf=Math.max(1,Math.min(99,rawConf));
   const capInfo=confidenceCaps(sig,stat,rawConf,mfeMae);
   let conf=capInfo.conf;
-  if(stale)conf=Math.min(conf,RULE.staleConfCap);
-  if((!stale&&conf<RULE.minConf)||(stale&&conf<RULE.staleMinConf))return null;
+  if(conf<RULE.minConf)return null;
   const lev=leverage(sig,conf);
   const rClass=riskClass(sig.stopPct,lev.lev);
-  return{sym,tf,model:sig.model,sub:sig.sub,dir:sig.dir,conf,rawConf,cap:stale?RULE.staleConfCap:capInfo.cap,capNotes:stale?["JSON yedek veri", "canlı fiyatla teyit gerekir", ...capInfo.notes]:capInfo.notes,riskClass:rClass,entry:sig.entry,stop:sig.stop,t1:sig.t1,t2:sig.t2,t3:sig.t3,stopPct:sig.stopPct,rr:sig.rr,why:sig.why,stat,lev,candles:c,ageSec:Math.max(0,Math.round(ageMs/1000)),liveOnly:false,stale}
+  return adjustRiskConfidence({sym,tf,model:sig.model,sub:sig.sub,dir:sig.dir,conf,rawConf,cap:capInfo.cap,capNotes:["canlı/taze veri", ...capInfo.notes],riskClass:rClass,entry:sig.entry,stop:sig.stop,t1:sig.t1,t2:sig.t2,t3:sig.t3,stopPct:sig.stopPct,rr:sig.rr,why:sig.why,stat,lev,candles:c,ageSec:Math.max(0,Math.round(ageMs/1000)),source:sourceMap[sym+'|'+tf]||'Taze veri',liveOnly:false,stale:false})
 }
 function emptyLiveStat(dir){
   return{model:"Canlı Bağlam "+dir,count:0,win:0,net:0,pf:0,avgMfe:0,avgMae:0,fast:0,trades:[]};
@@ -577,7 +585,8 @@ function buildLiveCandidate(sym,tf,raw,b){
   if(!raw||raw.length<240)return null;
   const c=(b&&b.candles)||enrich(raw);
   const last=c[c.length-1],pairLive=liveMap[sym+'|'+tf]||pairSourceTime(sym,tf,c),ageMs=sourceAgeMs(pairLive);
-  const stale=ageMs>RULE.maxLiveAgeMs;
+  if(!pairLive||ageMs>RULE.maxLiveAgeMs)return null;
+  const stale=false;
   const out=[];
   for(const dir of ["LONG","SHORT"]){
     let sig=null;
@@ -586,7 +595,7 @@ function buildLiveCandidate(sym,tf,raw,b){
       if(sig){sig.entry=last.close;break}
     }
     if(!sig)sig=setupOpportunitySignal(c,c.length-1,dir);
-    if(!sig||sig.stopPct>RULE.maxStopPct*1.35||sig.rr<1.05)continue;
+    if(!sig||sig.stopPct>RULE.maxStopPct||sig.rr<1.05)continue;
     const stat=pickStatForDir(b,dir);
     const hasStat=stat.count>=RULE.minTrades;
     const mfeMae=stat.count?stat.avgMfe/Math.max(stat.avgMae,.05):1.05;
@@ -595,23 +604,25 @@ function buildLiveCandidate(sym,tf,raw,b){
     let rawConf=Math.round(sig.q*.72+statBoost);
     if(!htfOk(sym,tf,sig.dir))rawConf-=8;
     if(!hasStat)rawConf=Math.min(rawConf,76);
-    if(stale)rawConf=Math.min(rawConf,RULE.staleConfCap);
     rawConf=Math.max(45,Math.min(92,rawConf));
-    const minConf=stale?RULE.staleMinConf:(hasStat?RULE.minConf:RULE.liveOnlyMinConf);
+    const minConf=hasStat?RULE.minConf:RULE.liveOnlyMinConf;
     if(rawConf<minConf)continue;
-    const conf=Math.round(Math.min(rawConf,stale?RULE.staleConfCap:(hasStat?RULE.maxConf:76)));
+    const conf=Math.round(Math.min(rawConf,hasStat?RULE.maxConf:76));
     const lev=leverage(sig,conf),rClass=riskClass(sig.stopPct,lev.lev);
-    out.push({sym,tf,model:sig.model||("Canlı Bağlam "+dir),sub:(sig.sub||"canlı bağlam"),dir:sig.dir,conf,rawConf,cap:stale?RULE.staleConfCap:(hasStat?RULE.maxConf:76),capNotes:stale?["JSON yedek veri", "canlı fiyatla teyit gerekir"]:(hasStat?["canlı fırsat filtresi"]:["backtest örneklemi yetersiz", "canlı bağlam öncelikli"]),riskClass:rClass,entry:last.close,stop:sig.stop,t1:sig.t1,t2:sig.t2,t3:sig.t3,stopPct:sig.stopPct,rr:sig.rr,why:sig.why,stat,lev,candles:c,ageSec:Math.max(0,Math.round(ageMs/1000)),liveOnly:!hasStat,stale});
+    out.push(adjustRiskConfidence({sym,tf,model:sig.model||("Canlı Bağlam "+dir),sub:(sig.sub||"canlı bağlam"),dir:sig.dir,conf,rawConf,cap:hasStat?RULE.maxConf:76,capNotes:hasStat?["canlı/taze veri", "canlı fırsat filtresi"]:["canlı/taze veri", "backtest örneklemi yetersiz", "canlı bağlam öncelikli"],riskClass:rClass,entry:last.close,stop:sig.stop,t1:sig.t1,t2:sig.t2,t3:sig.t3,stopPct:sig.stopPct,rr:sig.rr,why:sig.why,stat,lev,candles:c,ageSec:Math.max(0,Math.round(ageMs/1000)),source:sourceMap[sym+'|'+tf]||'Taze veri',liveOnly:!hasStat,stale:false}));
   }
-  out.sort((a,b)=>b.conf-a.conf);
-  return out[0]||null;
+  const clean=out.filter(Boolean);
+  clean.sort((a,b)=>b.conf-a.conf);
+  return clean[0]||null;
 }
 function buildContextFallbackCandidate(sym,tf,raw,b){
   if(!raw||raw.length<160)return null;
   const c=(b&&b.candles)||enrich(raw),i=c.length-1,x=c[i],p=c[i-1],a=x.atr||x.high-x.low||1;
   if(!x||!p||!isFinite(x.close)||!isFinite(a))return null;
   const ms=marketStructure(c,i);
-  const pairLive=liveMap[sym+'|'+tf]||pairSourceTime(sym,tf,c),ageMs=sourceAgeMs(pairLive),stale=ageMs>RULE.maxLiveAgeMs;
+  const pairLive=liveMap[sym+'|'+tf]||pairSourceTime(sym,tf,c),ageMs=sourceAgeMs(pairLive);
+  if(!pairLive||ageMs>RULE.maxLiveAgeMs)return null;
+  const stale=false;
   const volOk=!x.v20||x.volume>=x.v20*.50;
   const pivotSup=ms.lastLow?ms.lastLow.v:x.sup34, pivotRes=ms.lastHigh?ms.lastHigh.v:x.res34;
   const nearSup=Math.abs(x.low-pivotSup)<=a*2.15||Math.abs(x.close-x.sup34)<=a*1.60||x.close<=x.e21+a*.65;
@@ -660,15 +671,15 @@ function buildContextFallbackCandidate(sym,tf,raw,b){
     const stat=pickStatForDir(b,dir),hasStat=stat.count>=RULE.minTrades;
     if(hasStat){score+=Math.min(8,stat.pf*2)+Math.min(7,stat.win/10)+Math.min(5,stat.count/5)-Math.min(8,stat.fast/8)}
     if(score<48)return null;
-    let conf=Math.round(Math.max(50,Math.min(stale?RULE.staleConfCap:82,score)));
+    let conf=Math.round(Math.max(50,Math.min(82,score)));
     const lev=leverage({stopPct},conf),rClass=riskClass(stopPct,lev.lev);
-    return{sym,tf,model:'Yedek Bağlam '+dir,sub:sub.slice(0,2).join(' + ')||'en güçlü 10 doldurma',dir,conf,rawConf:Math.round(score),cap:stale?RULE.staleConfCap:82,capNotes:stale?['JSON yedek veri','canlı fiyatla teyit gerekir','sert sinyal yoksa bağlam adayı']:['sert sinyal yoksa bağlam adayı'],riskClass:rClass,entry,stop,t1,t2,t3,stopPct,rr,why:[...new Set(why)].slice(0,6),stat,lev,candles:c,ageSec:Math.max(0,Math.round(ageMs/1000)),liveOnly:true,stale,contextFallback:true};
+    return adjustRiskConfidence({sym,tf,model:'Canlı Yedek Bağlam '+dir,sub:sub.slice(0,2).join(' + ')||'en güçlü 10 doldurma',dir,conf,rawConf:Math.round(score),cap:82,capNotes:['canlı/taze veri','sert sinyal yoksa bağlam adayı'],riskClass:rClass,entry,stop,t1,t2,t3,stopPct,rr,why:[...new Set(why)].slice(0,6),stat,lev,candles:c,ageSec:Math.max(0,Math.round(ageMs/1000)),source:sourceMap[sym+'|'+tf]||'Taze veri',liveOnly:true,stale:false,contextFallback:true});
   }
   const arr=[make('LONG'),make('SHORT')].filter(Boolean).sort((a,b)=>b.conf-a.conf);
   return arr[0]||null;
 }
 function sortCandidates(){
-  candidates.sort((a,b)=>b.conf-a.conf||a.ageSec-b.ageSec);
+  candidates.sort((a,b)=>{const ra=a.riskClass==='Yüksek'?1:0,rb=b.riskClass==='Yüksek'?1:0;if(ra!==rb)return ra-rb;return b.conf-a.conf||a.ageSec-b.ageSec});
   const seen=new Set(),out=[];
   for(const c of candidates){
     const k=c.sym+'|'+c.tf+'|'+c.dir;
@@ -691,7 +702,7 @@ async function scanAll(){
       const key=s+"|"+tf;
       const pairLive=liveMap[key]||pairSourceTime(s,tf,arr);
       const pairAge=pairLive?Math.round(sourceAgeMs(pairLive)/1000):9999;
-      if(arr&&arr.length>=220){
+      if(arr&&arr.length>=220&&pairLive&&sourceAgeMs(pairLive)<=RULE.maxLiveAgeMs){
         const before=candidates.length;
         const b=backtest(s,tf);
         if(b){for(const st of b.stats){const cand=buildCandidate(s,tf,b,st);if(cand)candidates.push(cand)}}
@@ -707,42 +718,42 @@ async function scanAll(){
   sortCandidates();
   renderList();
   if(candidates.length)setTimeout(()=>selectCandidate(0,true),50);
-  setMeta(`${liveText()} | Tarama bitti: ${done}/${total} kontrol | Coin evreni: ${SYMBOLS.length} | JSON: ${scanLog.json} | REST: ${scanLog.rest} | WS: ${scanLog.ws} | Gösterilen: ${Math.min(RULE.maxDisplay,candidates.length)} | Taze veri sınırı: 5 dk | JSON yedek aktif`);
+  setMeta(`${liveText()} | Tarama bitti: ${done}/${total} kontrol | Coin evreni: ${SYMBOLS.length} | JSON: ${scanLog.json} | REST: ${scanLog.rest} | WS: ${scanLog.ws} | Gösterilen: ${Math.min(RULE.maxDisplay,candidates.length)} | Taze veri sınırı: 5 dk | Eski JSON: işlem kapalı | v14.5 risk filtresi aktif`);
 }
 function renderList(){
   const box=$("list");
   if(!candidates.length){
-    box.innerHTML='<div class="decision wait">ADAY HENÜZ YOK</div><p>Tarama devam ediyor veya veri çok sınırlı. v14.3 JSON yedek motoru aktif; yeterli mum bulunan ilk güçlü bağlamda liste dolmaya başlar.</p>';
+    box.innerHTML='<div class="decision wait">ADAY HENÜZ YOK</div><p>Tarama devam ediyor veya canlı/taze veri bekleniyor. v14.4 eski JSON’dan işlem açmaz; REST/WS ya da 5 dakikadan taze market.json gerekir.</p>';
     return;
   }
   box.innerHTML=candidates.slice(0,RULE.maxDisplay).map((x,i)=>{
-    const bt=x.stale?'JSON yedek / canlı fiyat teyidi gerekir':(x.liveOnly?'Canlı bağlam / backtest örneklemi yetersiz':`İşlem ${x.stat.count} | Win ${pct(x.stat.win,1)} | PF ${x.stat.pf>=20?'20+':fmt(x.stat.pf,2)} | Net ${money(x.stat.net)}`);
-    return `<div class="candidate ${x.dir==='SHORT'?'short':'long'}" onclick="selectCandidate(${i})"><div class="top"><div><div class="sym">${i+1}) ${cleanSymbol(x.sym)||x.sym} / ${x.tf}</div><div class="model">${x.model}${x.sub?" — "+x.sub:""}</div></div><div class="score ${x.dir==='LONG'?'long':'short'}">${x.conf}%<br><span style="font-size:16px">${x.dir}</span></div></div><div class="line">Giriş ${dualPrice(x.entry,4)}<br>Stop ${dualPrice(x.stop,4)}<br>TP1 ${dualPrice(x.t1,4)} | TP2 ${dualPrice(x.t2,4)} | TP3 ${dualPrice(x.t3,4)}<br>Kaldıraç x${fmt(x.lev.lev,1)} | Pozisyon ${dualMoney(x.lev.notional)} | Marjin ${dualMoney(x.lev.margin)} | Risk ${dualMoney(x.lev.riskD)} | Stop ${pct(x.stopPct,2)}<br>Backtest: ${bt} | Veri ${x.ageSec} sn<br>Risk sınıfı: ${x.riskClass} | Ham güven ${x.rawConf}% → Gerçekçi güven ${x.conf}%${x.stale?' | JSON YEDEK':(x.liveOnly?' | CANLI ÖNCELİKLİ':'')}</div></div>`;
+    const bt=x.liveOnly?'Canlı bağlam / backtest örneklemi yetersiz':`İşlem ${x.stat.count} | Win ${pct(x.stat.win,1)} | PF ${x.stat.pf>=20?'20+':fmt(x.stat.pf,2)} | Net ${money(x.stat.net)}`;
+    return `<div class="candidate ${x.dir==='SHORT'?'short':'long'}" onclick="selectCandidate(${i})"><div class="top"><div><div class="sym">${i+1}) ${cleanSymbol(x.sym)||x.sym} / ${x.tf}</div><div class="model">${x.model}${x.sub?" — "+x.sub:""}</div></div><div class="score ${x.dir==='LONG'?'long':'short'}">${x.conf}%<br><span style="font-size:16px">${x.dir}</span></div></div><div class="line">Giriş ${dualPrice(x.entry)}<br>Stop ${dualPrice(x.stop)}<br>TP1 ${dualPrice(x.t1)} | TP2 ${dualPrice(x.t2)} | TP3 ${dualPrice(x.t3)}<br>Kaldıraç x${fmt(x.lev.lev,1)} | Pozisyon ${dualMoney(x.lev.notional)} | Marjin ${dualMoney(x.lev.margin)} | Risk ${dualMoney(x.lev.riskD)} | Stop ${pct(x.stopPct,2)}<br>Backtest: ${bt} | Veri ${x.ageSec} sn | Kaynak: ${x.source||'Taze veri'}<br>Risk sınıfı: ${x.riskClass} | Ham güven ${x.rawConf}% → Gerçekçi güven ${x.conf}%${x.liveOnly?' | CANLI ÖNCELİKLİ':''}</div></div>`;
   }).join("")
 }
 function selectCandidate(i,auto=false){
   const x=candidates[i]; if(!x)return;
   selected=x;
   $("decision").className="decision "+(x.dir==="LONG"?"long":"short");
-  $("decision").textContent=`${x.dir} İŞLEM — GÜVEN ${x.conf}%${x.stale?' — JSON YEDEK':(x.liveOnly?' — CANLI BAĞLAM':'')}`;
-  $("metrics").innerHTML=metric("Sembol / TF",`${cleanSymbol(x.sym)||x.sym} / ${x.tf}`)+metric("Model",x.model+(x.sub?" — "+x.sub:""))+metric("Canlı veri",`${x.ageSec} sn`)+metric("Risk sınıfı",x.riskClass)+metric("Ham/Gerçekçi güven",`${x.rawConf}% / ${x.conf}%`)+metric("Giriş",dualPrice(x.entry,4))+metric("Stop",dualPrice(x.stop,4))+metric("Stop %",pct(x.stopPct,2))+metric("TP1",dualPrice(x.t1,4))+metric("TP2",dualPrice(x.t2,4))+metric("TP3",dualPrice(x.t3,4))+metric("Kaldıraç",`x${fmt(x.lev.lev,1)}`)+metric("Pozisyon",dualMoney(x.lev.notional))+metric("Marjin",dualMoney(x.lev.margin))+metric("Risk",dualMoney(x.lev.riskD))+metric("RR",fmt(x.rr,2))+metric("PF",x.liveOnly?"Canlı bağlam":(x.stat.pf>=20?"20+":fmt(x.stat.pf,2)));
+  $("decision").textContent=`${x.dir} İŞLEM — GÜVEN ${x.conf}%${x.liveOnly?' — CANLI BAĞLAM':''}`;
+  $("metrics").innerHTML=metric("Sembol / TF",`${cleanSymbol(x.sym)||x.sym} / ${x.tf}`)+metric("Model",x.model+(x.sub?" — "+x.sub:""))+metric("Canlı veri",`${x.ageSec} sn`)+metric("Veri kaynağı",x.source||"Taze veri")+metric("Risk sınıfı",x.riskClass)+metric("Ham/Gerçekçi güven",`${x.rawConf}% / ${x.conf}%`)+metric("Giriş",dualPrice(x.entry))+metric("Stop",dualPrice(x.stop))+metric("Stop %",pct(x.stopPct,2))+metric("TP1",dualPrice(x.t1))+metric("TP2",dualPrice(x.t2))+metric("TP3",dualPrice(x.t3))+metric("Kaldıraç",`x${fmt(x.lev.lev,1)}`)+metric("Pozisyon",dualMoney(x.lev.notional))+metric("Marjin",dualMoney(x.lev.margin))+metric("Risk",dualMoney(x.lev.riskD))+metric("RR",fmt(x.rr,2))+metric("PF",x.liveOnly?"Canlı bağlam":(x.stat.pf>=20?"20+":fmt(x.stat.pf,2)));
   $("tryPlan").innerHTML=binanceTryPlan(x);
-  $("reasons").innerHTML=x.why.map(r=>`<span class="pill ${x.dir==="LONG"?"green":"red"}">${r}</span>`).join("")+`<span class="pill blue">${x.stale?'JSON yedek':(x.liveOnly?'Canlı fırsat':'Win '+pct(x.stat.win,1))}</span><span class="pill blue">MFE/MAE ${fmt(x.stat.avgMfe,2)}R / ${fmt(x.stat.avgMae,2)}R</span>`+(x.capNotes&&x.capNotes.length?x.capNotes.slice(0,5).map(n=>`<span class="pill amber">${n}</span>`).join(""):"");
+  $("reasons").innerHTML=x.why.map(r=>`<span class="pill ${x.dir==="LONG"?"green":"red"}">${r}</span>`).join("")+`<span class="pill blue">${x.liveOnly?'Canlı fırsat':'Win '+pct(x.stat.win,1)}</span><span class="pill blue">MFE/MAE ${fmt(x.stat.avgMfe,2)}R / ${fmt(x.stat.avgMae,2)}R</span>`+(x.capNotes&&x.capNotes.length?x.capNotes.slice(0,5).map(n=>`<span class="pill amber">${n}</span>`).join(""):"");
   drawChart(x.candles,x);renderBacktest(x);
   if(!auto)$("planBox").scrollIntoView({behavior:"smooth"});
 }
 function metric(k,v){return`<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`}
 function binanceTryPlan(x){
   if(!fxReady())return"USDT/TRY kuru alınamadı. TL fiyatları görünmeden Binance TR emri girme.";
-  const warn=x.stale?`<div class="tryline">UYARI: Veri ${x.ageSec} sn eski görünüyor. Canlı borsa fiyatını teyit etmeden emir girme.</div>`:"";
+  const warn="";
   if(x.dir==="LONG"){
     const stopLimit=x.stop*0.998;
-    return `${warn}<b>Binance TR LONG emir özeti</b><div class="tryline">Limit AL fiyatı: ${tlInput(x.entry,4)} TL</div><div class="tryline">OCO SAT: Kar al ${tlInput(x.t1,4)} TL | Stop ${tlInput(x.stop,4)} TL | Stop-limit ${tlInput(stopLimit,4)} TL</div><div class="tryline">Pozisyon: ${tlMoney(x.lev.notional)} | Marjin: ${tlMoney(x.lev.margin)} | Risk: ${tlMoney(x.lev.riskD)}</div><div class="tryline">TP2: ${tlInput(x.t2,4)} TL | TP3: ${tlInput(x.t3,4)} TL</div>`;
+    return `${warn}<b>Binance TR LONG emir özeti</b><div class="tryline">Limit AL fiyatı: ${tlInput(x.entry)} TL</div><div class="tryline">OCO SAT: Kar al ${tlInput(x.t1)} TL | Stop ${tlInput(x.stop)} TL | Stop-limit ${tlInput(stopLimit)} TL</div><div class="tryline">Pozisyon: ${tlMoney(x.lev.notional)} | Marjin: ${tlMoney(x.lev.margin)} | Risk: ${tlMoney(x.lev.riskD)}</div><div class="tryline">TP2: ${tlInput(x.t2)} TL | TP3: ${tlInput(x.t3)} TL</div>`;
   }
-  return `${warn}<b>SHORT planı</b><div class="tryline">Bu yön Binance TR spotta doğrudan short olarak açılamaz. Vadeli/marjin altyapısı gerekir; şimdilik izleme sinyali gibi değerlendir.</div><div class="tryline">Giriş: ${tlInput(x.entry,4)} TL | Stop: ${tlInput(x.stop,4)} TL | TP1: ${tlInput(x.t1,4)} TL</div>`;
+  return `${warn}<b>SHORT planı</b><div class="tryline">Bu yön Binance TR spotta doğrudan short olarak açılamaz. Vadeli/marjin altyapısı gerekir; şimdilik izleme sinyali gibi değerlendir.</div><div class="tryline">Giriş: ${tlInput(x.entry)} TL | Stop: ${tlInput(x.stop)} TL | TP1: ${tlInput(x.t1)} TL</div>`;
 }function renderBacktest(x){
-  if(x.liveOnly||x.stale){
-    $("bt").innerHTML=`<div class="grid">${metric("Durum",x.stale?"JSON yedek":"Canlı bağlam")}${metric("Backtest",x.contextFallback?"Bağlam adayı":"Yeterli örnek yok")}${metric("Güven",pct(x.conf,0))}${metric("RR",fmt(x.rr,2))}${metric("Stop",pct(x.stopPct,2))}${metric("Risk sınıfı",x.riskClass)}</div><div class="note">Bu aday, işlem listesinin boş kalmaması için v14.3 yedek bağlam motorundan geçirilmiştir. Veri eski görünüyorsa canlı fiyatla teyit şarttır; güven puanı bu yüzden tavanla sınırlandırılmıştır.</div>`;
+  if(x.liveOnly){
+    $("bt").innerHTML=`<div class="grid">${metric("Durum","Canlı bağlam")}${metric("Backtest",x.contextFallback?"Bağlam adayı":"Yeterli örnek yok")}${metric("Güven",pct(x.conf,0))}${metric("RR",fmt(x.rr,2))}${metric("Stop",pct(x.stopPct,2))}${metric("Risk sınıfı",x.riskClass)}</div><div class="note">Bu aday yalnızca 5 dakikadan taze veriyle üretildi. Veri kaynağı ayrıca kartta gösterilir. Backtest örneklemi yetersizse canlı bağlam motoru devrededir; eski JSON’dan işlem açılmaz.</div>`;
     return;
   }
   const trs=x.stat.trades.slice(-10).reverse();

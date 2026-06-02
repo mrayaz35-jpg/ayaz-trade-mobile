@@ -8,7 +8,7 @@ const DEFAULT_SYMBOLS=["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","ADAUSD
 const EXCLUDED_BASES=new Set(["USDC","FDUSD","TUSD","BUSD","DAI","USDP","EUR","TRY","BRL","GBP","UAH","AEUR","EURI","PAX","USTC"]);
 const BAD_SUFFIX=["UP","DOWN","BULL","BEAR","3L","3S","5L","5S"];
 
-function getJson(url){return new Promise((resolve,reject)=>{https.get(url,{headers:{"User-Agent":"ayaz-trade-v14-2"}},res=>{let data="";res.on("data",d=>data+=d);res.on("end",()=>{try{resolve(JSON.parse(data))}catch(e){reject(e)}})}).on("error",reject)})}
+function getJson(url){return new Promise((resolve,reject)=>{https.get(url,{headers:{"User-Agent":"ayaz-trade-v14-4"}},res=>{let data="";res.on("data",d=>data+=d);res.on("end",()=>{try{resolve(JSON.parse(data))}catch(e){reject(e)}})}).on("error",reject)})}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 async function getFxTry(){
   const sources=[
@@ -49,7 +49,7 @@ async function getUniverse(){
 (async()=>{
   const symbols=await getUniverse();
   const fx=await getFxTry();
-  const out={generatedAt:new Date().toISOString(),source:"data-api.binance.vision",universeLimit:UNIVERSE_LIMIT,symbolCount:symbols.length,symbols,fx,data:{}};
+  const out={generatedAt:new Date().toISOString(),source:"data-api.binance.vision",mode:"v14.4-live-required",universeLimit:UNIVERSE_LIMIT,symbolCount:symbols.length,symbols,fx,data:{}};
   const liveTime=Date.now();
   for(const sym of symbols){
     out.data[sym]={};
@@ -57,7 +57,7 @@ async function getUniverse(){
       const url=`https://data-api.binance.vision/api/v3/klines?symbol=${sym}&interval=${tf}&limit=${LIMIT}`;
       try{
         const raw=await getJson(url);
-        const arr=raw.map(k=>({time:+k[0],open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5]}));
+        const arr=raw.map(k=>({time:+k[0],open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5],closeTime:+k[6]}));
         if(arr.length)arr[arr.length-1].liveTime=liveTime;
         out.data[sym][tf]=arr;
         console.log("OK",sym,tf,arr.length);
