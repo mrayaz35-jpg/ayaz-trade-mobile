@@ -8,7 +8,7 @@ const DEFAULT_SYMBOLS=["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","ADAUSD
 const EXCLUDED_BASES=new Set(["USDC","FDUSD","TUSD","BUSD","DAI","USDP","EUR","TRY","BRL","GBP","UAH","AEUR","EURI","PAX","USTC"]);
 const BAD_SUFFIX=["UP","DOWN","BULL","BEAR","3L","3S","5L","5S"];
 
-function getJson(url){return new Promise((resolve,reject)=>{https.get(url,{headers:{"User-Agent":"ayaz-trade-v16"}},res=>{let data="";res.on("data",d=>data+=d);res.on("end",()=>{try{resolve(JSON.parse(data))}catch(e){reject(e)}})}).on("error",reject)})}
+function getJson(url){return new Promise((resolve,reject)=>{https.get(url,{headers:{"User-Agent":"ayaz-trade-v17"}},res=>{let data="";res.on("data",d=>data+=d);res.on("end",()=>{try{resolve(JSON.parse(data))}catch(e){reject(e)}})}).on("error",reject)})}
 function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
 async function getFxTry(){
   const sources=[
