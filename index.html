@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-  <title>Ayaz Trade — Tarama Aktif Top10 Motor v21</title>
+  <title>Ayaz Trade — JSON Öncelikli Havuz Fix v22</title>
   <style>
     :root{--bg:#070c1d;--card:#101832;--card2:#0b1228;--line:#293762;--text:#f4f7ff;--muted:#aeb9dc;--blue:#2f7df6;--green:#08743a;--red:#681829;--amber:#705307;--soft:#172343;--gray:#252e4b}
     *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}.wrap{max-width:980px;margin:0 auto;padding:24px 16px 100px}h1{font-size:39px;line-height:1.08;margin:14px 0 8px;font-weight:950}h2{font-size:31px;line-height:1.1;margin:0 0 13px;font-weight:950}h3{font-size:23px;margin:18px 0 11px}p{color:var(--muted);font-size:18px;line-height:1.38}.card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:28px;padding:21px;margin:16px 0;box-shadow:0 12px 32px rgba(0,0,0,.20)}.hero{border:2px solid #f2ca61;border-radius:24px;padding:18px 20px;margin:12px 0 18px}.heroTitle{font-size:36px;font-weight:950}.heroSub{font-size:17px;color:var(--muted);font-weight:850;margin-top:5px}.btn{width:100%;background:var(--blue);border:1px solid #65a0ff;color:#fff;border-radius:24px;padding:20px 18px;font-size:25px;font-weight:950;cursor:pointer;box-shadow:0 10px 28px rgba(47,125,246,.22)}.btn:disabled{opacity:.55}.meta{font-size:18px;font-weight:900;line-height:1.38;color:#dce5ff;margin-top:14px}.fxbox{margin-top:12px;background:#0b1228;border:1px solid var(--line);border-radius:18px;padding:13px 15px;font-size:17px;font-weight:950;color:#dce5ff}.fxbox b{color:#76ffa8}.tryline{font-size:16px;color:#ffd66e;font-weight:950;margin-top:7px;line-height:1.35}.databox{margin-top:10px;background:#101936;border:1px solid var(--line);border-radius:18px;padding:12px 14px;font-size:16px;font-weight:950;color:#dce5ff;line-height:1.35}.ok{color:#7dffac}.bad{color:#ff8ea0}.pill{display:inline-block;border-radius:999px;padding:8px 13px;font-weight:950;font-size:15px;margin:5px 5px 5px 0}.green{background:#06451f;color:#76ffa8}.red{background:#4b101e;color:#ff93a2}.amber{background:#5a4208;color:#ffd66e}.blue{background:#172d5f;color:#9bc0ff}.gray{background:#202844;color:#c8d2f5}.progress{height:13px;background:#0b1228;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:14px 0}.bar{height:100%;background:#2f7df6;width:0%}.candidate{border:2px solid #0f944e;border-radius:26px;background:#0b1228;padding:20px;margin:14px 0;cursor:pointer}.candidate.short{border-color:#7d1d31}.candidate .top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.sym{font-size:34px;font-weight:950;line-height:1.08}.model{font-size:22px;font-weight:950;margin:8px 0;color:#fff}.score{font-size:29px;font-weight:950;border-radius:22px;padding:14px 16px;min-width:94px;text-align:center;line-height:1.05}.score.long{background:#06451f;color:#76ffa8}.score.short{background:#551121;color:#ff95a6}.line{font-size:18px;line-height:1.37;color:#d3dcff;font-weight:850;margin-top:9px}.decision{font-size:42px;font-weight:950;text-align:center;border-radius:24px;padding:28px 12px;margin:12px 0 17px;background:#1d2541;color:#cbd4ef}.decision.long{background:#073f22;color:#74ffad}.decision.short{background:#541321;color:#ff8599}.decision.wait{background:#3a300a;color:#ffd66e}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}.metric{background:#0a1127;border:1px solid var(--line);border-radius:19px;padding:14px}.metric .k{color:var(--muted);font-size:15px;font-weight:850}.metric .v{font-size:22px;font-weight:950;margin-top:5px;word-break:break-word}canvas{width:100%;height:245px;background:#0b1228;border:1px solid var(--line);border-radius:22px;margin-top:12px}.note{border-left:6px solid #ffd166;padding:12px 14px;margin:14px 0;color:#dfe6ff;font-size:17px;line-height:1.42;background:rgba(255,209,102,.07)}.lastRows{display:grid;gap:9px}.tradeRow{display:grid;grid-template-columns:1.1fr .8fr .8fr .9fr;gap:9px;background:#0b1228;border:1px solid var(--line);border-radius:16px;padding:12px;font-size:16px;font-weight:900;align-items:center}.dim{color:var(--muted)}.footer{font-size:15px;color:#9ba7c9;margin:28px 4px}@media(max-width:760px){.wrap{padding:20px 12px 80px}h1{font-size:33px}h2{font-size:29px}.heroTitle{font-size:33px}.grid{grid-template-columns:1fr}.sym{font-size:30px}.candidate{padding:18px}.score{font-size:24px;min-width:82px}.line{font-size:17px}.tradeRow{grid-template-columns:1fr .7fr .8fr .9fr;font-size:15px}}
@@ -11,18 +11,18 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Ayaz Trade — Tarama Aktif Top10 Motor v21</h1>
-  <p>Tek düğme: taramayı başlatır, ilerlerken havuzu gösterir, ara Top10 üretir, tam tarama sonunda nihai listeyi verir.</p>
+  <h1>Ayaz Trade — JSON Öncelikli Havuz Fix v22</h1>
+  <p>Tek düğme: önce hazır JSON mumlarından havuzu doldurur; REST hata verse bile tarama ve aday üretimi devam eder.</p>
   <section class="card">
-    <div class="hero"><div class="heroTitle">TARAMA AKTİF TOP10 — TEK TUŞ</div><div class="heroSub">v21: tarama beklemede kalmaz; her 20 kontrolde havuz ve liste güncellenir, tam bitince nihai Top10 kesinleşir.</div></div>
+    <div class="hero"><div class="heroTitle">JSON ÖNCELİKLİ HAVUZ TOP10 — TEK TUŞ</div><div class="heroSub">v22: REST hata yüzünden havuzun 0 kalması düzeltildi; önce market.json verisi kullanılır, sonra gerekirse REST denenir.</div></div>
     <button id="mainBtn" class="btn" onclick="oneClickScan()">TARAMAYI BAŞLAT</button>
     <div class="progress"><div class="bar" id="bar"></div></div>
     <div class="meta" id="meta">Hazır. TARAMAYI BAŞLAT butonuna bas.</div><div class="fxbox" id="fxBox">USDT/TRY kuru bekleniyor...</div><div class="databox" id="dataBox">Veri motoru beklemede.</div>
   </section>
-  <section class="card"><h2>Tarama Aktif — En Güçlü 10 İşlem Planı</h2><p>Liste tarama sırasında anlık güncellenir. Tarama bitince nihai Top10 kesinleşir.</p><div id="list"></div></section>
+  <section class="card"><h2>JSON Öncelikli — En Güçlü 10 İşlem Planı</h2><p>Liste JSON mum verisiyle hızlı dolar. REST hata verse bile havuz sıfır kalmaz.</p><div id="list"></div></section>
   <section class="card" id="planBox"><h2>Seçilen İşlem Planı</h2><div id="decision" class="decision wait">Henüz işlem seçilmedi</div><div id="metrics" class="grid"></div><div id="tryPlan" class="note">Binance TR emir özeti, işlem seçilince burada TL olarak görünür.</div><div id="reasons"></div><canvas id="chart" width="900" height="300"></canvas></section>
   <section class="card"><h2>Seçilen İşlemin Backtesti</h2><div id="bt"><p>Adaya dokununca seçilen işlemin temiz işlem planı ve geçmiş/aday performansı görünür.</p></div></section>
-  <div class="footer">Eğitim/test amaçlıdır; gerçek emir göndermez. Kripto piyasası yüksek risklidir. Canlı veri Binance WebSocket + REST yedek ile alınır. v21: tarama başladı yazıp beklemez; havuz oluştuğu anda listeyi günceller, tarama sonunda nihai Top10 verir.</div>
+  <div class="footer">Eğitim/test amaçlıdır; gerçek emir göndermez. Kripto piyasası yüksek risklidir. Canlı veri Binance WebSocket + REST yedek ile alınır. v22: market.json mumları önceliklidir. REST hatası havuzu durdurmaz; adaylar JSON verisinden üretilir.</div>
 </div>
 <script>
 const DEFAULT_SYMBOLS=["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","ADAUSDT","DOGEUSDT","AVAXUSDT","LINKUSDT","DOTUSDT","TRXUSDT","ATOMUSDT","NEARUSDT","APTUSDT","OPUSDT","ARBUSDT","BCHUSDT","LTCUSDT","INJUSDT","RNDRUSDT","SUIUSDT","FILUSDT","UNIUSDT","AAVEUSDT","ETCUSDT","MATICUSDT","TONUSDT","PEPEUSDT","WIFUSDT","FETUSDT"];
@@ -45,7 +45,7 @@ const RULE={
   maxSymbols:500,
   minBacktestTrades:1,
   preferBacktestTrades:5,
-  liveUpdateEvery:20
+  liveUpdateEvery:10
 };
 let market={generatedAt:null,data:{}},wsList=[],wsOk=false,wsLast=0,liveMap={},candidates=[],selected=null,scanLog={total:0,done:0,rest:0,ws:0,json:0,skipped:0},fx={rate:null,source:'-',updatedAt:null,ageSec:null},dataHealth={json:false,rest:false,ws:false,lastError:'-',candles:0};
 const $=id=>document.getElementById(id);const now=()=>Date.now();
@@ -258,39 +258,45 @@ function startWS(){
 }
 function getCandles(s,tf){return market?.data?.[s]?.[tf]||[]}async function ensureCandles(s,tf){
   s=cleanSymbol(s); if(!s)return [];
-  let arr=getCandles(s,tf);
+  let arr=getCandles(s,tf)||[];
   const key=s+"|"+tf;
-  const pairLive=liveMap[key]||0;
 
-  if(arr.length>=250 && pairLive && now()-pairLive<RULE.maxLiveAgeMs){
-    scanLog.ws++; dataHealth.ws=true; updateDataBox(); return arr;
+  // v22 ana fix: market.json içinde yeterli mum varsa REST bekleme/hata yüzünden havuzu sıfırlama.
+  if(Array.isArray(arr) && arr.length>=80){
+    scanLog.json++;
+    dataHealth.json=true;
+    updateDataBox();
+    return arr;
   }
 
   const urls=[
     `https://data-api.binance.vision/api/v3/klines?symbol=${s}&interval=${tf}&limit=700`,
     `https://api.binance.com/api/v3/klines?symbol=${s}&interval=${tf}&limit=700`
   ];
+
   for(const url of urls){
     try{
       const r=await fetch(url,{cache:"no-store"});
       if(!r.ok)throw new Error("HTTP "+r.status);
       const raw=await r.json();
       const fresh=raw.map(k=>({time:+k[0],open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5],liveTime:now()}));
-      if(fresh.length>=250){
+      if(fresh.length>=80){
         market.data[s]=market.data[s]||{};
         market.data[s][tf]=fresh;
-        liveMap[key]=now(); wsLast=now(); scanLog.rest++;
-        dataHealth.rest=true; dataHealth.candles+=fresh.length; updateDataBox();
+        liveMap[key]=now();
+        wsLast=now();
+        scanLog.rest++;
+        dataHealth.rest=true;
+        dataHealth.candles+=fresh.length;
+        updateDataBox();
         return fresh;
       }
-    }catch(e){dataHealth.lastError=`${s} ${tf} REST hata`;updateDataBox()}
+    }catch(e){
+      dataHealth.lastError=`${s} ${tf} REST hata`;
+      updateDataBox();
+    }
   }
 
-  if(arr.length>=250){
-    const last=arr[arr.length-1];
-    const age=now()-(last.liveTime||last.time||0);
-    if(age<RULE.maxLiveAgeMs){scanLog.json++;dataHealth.json=true;updateDataBox();return arr}
-  }
   scanLog.skipped++;
   return arr||[];
 }
@@ -757,19 +763,23 @@ function updatePartialTop10(pool,done,total,currentSym,currentTf){
 }
 
 async function scanAll(){
-  setMeta(`Tarama başladı: evren hazırlanıyor...`);
+  setMeta(`Tarama başladı: JSON verisi kontrol ediliyor...`);
   candidates=[];
   renderList();
 
-  try{
-    if(!Array.isArray(SYMBOLS) || SYMBOLS.length<20){
-      if(typeof loadUniverse==="function") await loadUniverse();
-    }
-  }catch(e){}
+  // v22: Öncelik market.json içindeki gerçek mum verisi olan semboller.
+  let jsonSymbols=Object.keys(market.data||{}).map(cleanSymbol).filter(Boolean);
+  if(jsonSymbols.length>=20){
+    SYMBOLS=[...new Set(jsonSymbols)].slice(0,RULE.maxSymbols||500);
+  }else{
+    try{
+      if(typeof loadDynamicUniverse==="function") await loadDynamicUniverse();
+    }catch(e){}
+    SYMBOLS=[...new Set((SYMBOLS||[]).map(cleanSymbol).filter(Boolean))].slice(0,RULE.maxSymbols||500);
+  }
 
-  SYMBOLS=[...new Set((SYMBOLS||[]).map(cleanSymbol).filter(Boolean))].slice(0,RULE.maxSymbols||500);
   if(!SYMBOLS.length){
-    setMeta("Coin listesi alınamadı. GitHub data/market.json veya Binance sembol listesi kontrol edilmeli.");
+    setMeta("Coin listesi alınamadı. market.json içinde sembol bulunamadı.");
     setBar(0);
     return;
   }
@@ -781,7 +791,7 @@ async function scanAll(){
 
   let done=0;
   setBar(1);
-  setMeta(`Tam tarama başladı: ${SYMBOLS.length} coin x ${tfs.length} TF. Havuz oluşunca liste anlık güncellenir.`);
+  setMeta(`Tam tarama başladı: ${SYMBOLS.length} coin x ${tfs.length} TF. JSON öncelikli havuz oluşturuluyor.`);
 
   for(const s0 of SYMBOLS){
     const s=cleanSymbol(s0);
@@ -789,8 +799,7 @@ async function scanAll(){
 
     for(const tf of tfs){
       try{
-        await ensureCandles(s,tf);
-        const arr=getCandles(s,tf);
+        const arr=await ensureCandles(s,tf);
         done++;
         scanLog.done=done;
 
@@ -800,7 +809,7 @@ async function scanAll(){
           if(arr.length>=180 && typeof backtest==="function"){
             try{
               const b=backtest(s,tf);
-              if(b && Array.isArray(b.stats)){
+              if(b && Array.isArray(b.stats) && b.stats.length){
                 for(const st of b.stats){
                   const cand=buildCandidate(s,tf,b,st);
                   const hc=hydrateCandidate(cand);
@@ -831,6 +840,7 @@ async function scanAll(){
               if(basic){
                 basic.rankScore=top10RankScore(basic);
                 pool.push(basic);
+                produced=true;
               }
             }catch(e){}
           }
@@ -840,6 +850,7 @@ async function scanAll(){
           updatePartialTop10(pool,done,total,s,tf);
           await delay(1);
         }
+
       }catch(err){
         done++;
         scanLog.done=done;
