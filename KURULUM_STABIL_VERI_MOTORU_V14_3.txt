@@ -1,0 +1,25 @@
+AYAZ TRADE — STABİL VERİ MOTORU v14.3 ACİL REVİZE
+
+Ana teşhis:
+- Ekranda Veri: BAĞLI / JSON: OK / Mum: yüzbinlerce görünmesine rağmen taramada JSON: 0 ve Aday: 0 kalıyordu.
+- Sebep: scanAll ve buildCandidate içinde 5 dakikalık canlılık filtresi çok sertti. REST/WS hata verince market.json verisi eski sayılıyor ve tüm pariteler aday üretimine girmeden eleniyordu.
+- Ayrıca liste sadece tarama bitince çiziliyordu; tarama ortasında aday görünmüyordu.
+
+V14.3 düzeltmeleri:
+1) JSON mumları artık REST/WS hata verse bile taramaya alınır.
+2) Veri 5 dakikadan eskiyse tamamen elenmez; JSON YEDEK etiketiyle düşük güven tavanı uygulanır.
+3) Sert sinyal çıkmazsa Yedek Bağlam motoru devreye girer ve En Güçlü 10 listesinin boş kalmasını engeller.
+4) Tarama devam ederken adaylar ekranda canlı canlı görünür.
+5) 1. aday tarama sonunda otomatik seçilir.
+
+GitHub'a zip olarak değil, içindeki dosyalar açılarak yüklenmelidir.
+Mutlaka repo ana dizinine koy:
+- index.html
+- update-crypto-data.js
+- .github/workflows/update-market.yml
+
+Açılış linki:
+https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=stabil-veri-motoru-v14-3
+
+Not:
+JSON YEDEK görünen adaylarda canlı borsa fiyatı teyit edilmeden emir girilmemelidir. Bu mod uygulamanın 0 adayda takılmasını engellemek içindir.
