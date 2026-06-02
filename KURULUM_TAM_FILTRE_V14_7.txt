@@ -1,0 +1,32 @@
+AYAZ TRADE — TAM FILTRE v14.7
+
+YÜKLEME:
+1) Zip dosyasını aç.
+2) Aşağıdaki dosyaları GitHub repo ana dizinine yükle:
+   - index.html
+   - script.js
+   - update-crypto-data.js
+   - .github/workflows/update-market.yml
+   - KURULUM_TAM_FILTRE_V14_7.txt
+3) GitHub > Actions > Update Ayaz Trade Market Data v14.7 > Run workflow çalıştır.
+4) Link:
+   https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=stabil-veri-motoru-v14-7
+
+v14.7 ANA REVİZYONLAR:
+- Tek liste yok; iki ayrı liste var:
+  1) En İyi 7 LONG İşlem
+  2) En İyi 7 SHORT İşlem
+- LONG listesi Binance TR spot AL yönlü takip adayıdır.
+- SHORT listesi Binance TR spotta emir değildir; vadeli/marjin veya çıkış-dikkat yönüdür.
+- Sembol çevirisi kapalıdır. Çinçe/Türkçe isim alanı başlığa basılmaz; sadece temiz USDT sembol kabul edilir.
+- Bozuk semboller otomatik elenir.
+- Eski JSON’dan işlem açılmaz. REST/WS veya 5 dakikadan taze market.json gerekir.
+- Kartlarda veri ayrımı görünür: mum kaynağı, fiyat kaynağı, veri yaşı.
+- JSON TAZE, REST ve WS için ayrı güven tavanı uygulanır.
+- Düşük örneklem ve yüksek risk güven puanı aşağı bastırılır.
+- Kalite puanı eklendi.
+- 10.000 TL Binance TR spot LONG planı seçilen işlem bölümünde otomatik hesaplanır.
+- Stop, RR, PF, Win, MFE/MAE ve hızlı stop filtreleri korunur.
+
+NOT:
+Zip dosyasını direkt repoya yükleme. Zip'i açıp içindeki dosyaları yükle.
