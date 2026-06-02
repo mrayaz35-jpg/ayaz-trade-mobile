@@ -1,0 +1,19 @@
+AYAZ TRADE — STABİL VERİ MOTORU v14.2 REVİZE
+
+Düzeltilen kritik hata:
+- Uygulama JSON verisini görüyor ama REST/WS gelmeyince liveMap boş kaldığı için taramada tüm pariteleri atlıyordu. Bu yüzden ekranda JSON: OK, Mum: yüzbinlerce görünmesine rağmen Aday: 0 kalıyordu.
+- Artık market.json içindeki son mum liveTime / generatedAt zamanı canlı veri zamanı olarak kabul edilir. JSON tazeyse REST/WS olmasa bile aday üretir.
+- setupOpportunitySignal içindeki zSup.score / zRes.score hatası düzeltildi; zoneStrength gerçekte touches/ok döndürüyordu.
+- En güçlü 10 aday listesi için canlı bağlam fallback motoru eklendi. Backtest örneklemi yetersizse aday yine listelenir ama güven tavanı sınırlanır.
+- Tarama bitince 1. aday otomatik “Seçilen İşlem Planı” bölümüne işlenir.
+
+GitHub'a yüklenecek dosyalar:
+- index.html
+- update-crypto-data.js
+- .github/workflows/update-market.yml  (otomatik data/market.json güncellemesi için)
+
+Açılış linki:
+https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=stabil-veri-motoru-v14-2
+
+Not:
+GitHub Pages bazen eski index.html dosyasını cache’ten gösterir. Linkin sonundaki ?v=stabil-veri-motoru-v14-2 bunu kırmak içindir.
