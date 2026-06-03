@@ -49,7 +49,7 @@ async function getUniverse(){
 (async()=>{
   const symbols=await getUniverse();
   const fx=await getFxTry();
-  const out={generatedAt:new Date().toISOString(),source:"data-api.binance.vision",mode:"v14.7-complete-two-lists",universeLimit:UNIVERSE_LIMIT,symbolCount:symbols.length,symbols,fx,data:{}};
+  const out={generatedAt:new Date().toISOString(),source:"data-api.binance.vision",mode:"v14.8-complete-two-lists",universeLimit:UNIVERSE_LIMIT,symbolCount:symbols.length,symbols,fx,data:{}};
   const liveTime=Date.now();
   for(const sym of symbols){
     out.data[sym]={};

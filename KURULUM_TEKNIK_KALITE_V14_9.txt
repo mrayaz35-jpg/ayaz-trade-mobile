@@ -1,0 +1,34 @@
+Ayaz Trade v14.9 — Kurumsal Teknik Kalite Motoru
+
+Bu sürümde amaç aday sayısını doldurmak değil, işlem kalitesini yükseltmektir.
+
+Ana revizyonlar:
+1) Gevşek canlı bağlam/yedek aday üretimi kapatıldı.
+2) İşlem için aynı anda şu teknik filtreler gerekir:
+   - Trend yönü
+   - Üst zaman dilimi / BTC piyasa filtresi
+   - Piyasa yapısı: BOS/CHOCH/HH-HL/LH-LL
+   - Destek/direnç, FVG, likidite dönüşü veya EMA pullback lokasyonu
+   - RSI + MACD + DMI momentum teyidi
+   - Hacim, CMF ve OBV para akışı teyidi
+   - Mum tetik / fitil reddi / kırılım kapanışı
+   - ADX / volatilite / yatay piyasa filtresi
+   - Yakın direnç/destek hedef alanı kontrolü
+3) Çok dar stoplar noise/stop avı sayılır; minimum stop eşiği yükseltildi.
+4) TP1 önünde yeterli alan yoksa işlem elenir.
+5) Backtest örneği olmayan canlı fırsat listeye basılmaz.
+6) Düşük örneklem ve zayıf PF/win değerlerinde güven yüzdesi bastırılır.
+7) LONG ve SHORT ayrı listelenir; ancak 7 adet dolsun diye zayıf işlem eklenmez.
+
+GitHub Pages link örneği:
+https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=stabil-veri-motoru-v14-9
+
+Yükleme:
+Zip'i doğrudan yükleme. İçindeki dosyaları repo ana dizinine koy:
+- index.html
+- script.js
+- update-crypto-data.js
+- .github/workflows/update-market.yml
+- KURULUM_TEKNIK_KALITE_V14_9.txt
+
+Sonra GitHub Actions üzerinden workflow'u çalıştır.
