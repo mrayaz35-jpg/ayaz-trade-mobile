@@ -1,0 +1,24 @@
+AYAZ TRADE v15.2 - DÜNYA ŞAMPİYONU SEÇİCİ
+
+Yükleme:
+1) Zip'i aç.
+2) İçindeki dosyaları GitHub repo ana dizinine yükle.
+3) index.html ana dizinde olmalı.
+4) GitHub Actions > Update Ayaz Trade Market Data v15.2 > Run workflow.
+5) Açılış linki:
+   https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=dunya-sampiyonu-v15-2
+
+v15.2 ana mantık:
+- Sistem önce geniş LONG/SHORT aday havuzu üretir.
+- Sonra 4 ana karne ile en iyi 7 LONG + 7 SHORT seçilir:
+  1) Teknik skor: trend, üst zaman, yapı, lokasyon, momentum, para akışı, tetik, volatilite.
+  2) İcra skoru: stop kalitesi, TP2 alanı, lokasyon gücü, mum tetik kalitesi.
+  3) Backtest skoru: Bayes düzeltilmiş win, PF, işlem sayısı, MFE/MAE, son form, hızlı stop.
+  4) Veri skoru: WS / REST / JSON TAZE canlılık kalitesi.
+
+Önemli:
+- Çok gevşek liste yok.
+- Çok sıkı şekilde hiç işlem göstermeme yok.
+- Geniş havuz görünür, fakat ilk 7'ye sadece şampiyon seçici puanı yüksek adaylar girer.
+- LONG Binance TR spot için AL adayıdır.
+- SHORT spotta doğrudan short değildir; vadeli/izleme/çıkış-dikkat yönüdür.
