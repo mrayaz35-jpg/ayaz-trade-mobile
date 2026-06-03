@@ -1,0 +1,12 @@
+AYAZ TRADE v15.1 — MILLI TAKIM SECICI
+
+Mantık:
+1) Uygulama önce geniş teknik aday havuzu üretir.
+2) Bu havuzdan en iyi 7 LONG ve en iyi 7 SHORT milli takım puanı ile seçilir.
+3) Seçim kriterleri: trend, üst zaman, piyasa yapısı, lokasyon, momentum, para akışı, mum tetik, volatilite, stop kalitesi, TP2 alanı, backtest, hızlı stop oranı ve veri kaynağı.
+4) LONG Binance TR spot AL adayıdır. SHORT Binance TR spotta doğrudan emir değildir; vadeli/marjin veya çıkış-dikkat yönüdür.
+
+GitHub Pages link:
+https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=milli-takim-secici-v15-1
+
+Zip olarak yükleme. Zip’i açıp index.html, script.js, update-crypto-data.js ve .github/workflows/update-market.yml dosyalarını repo ana dizinine yükle.
