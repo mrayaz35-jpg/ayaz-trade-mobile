@@ -1,0 +1,28 @@
+Ayaz Trade — Profesyonel Teknik Motor v15.0
+
+Bu sürümde teknik analiz motoru baştan sertleştirildi.
+
+Ana değişiklikler:
+1) Liste doldurma mantığı kapalıdır. Kalite yoksa işlem yoktur.
+2) En iyi 7 LONG ve en iyi 7 SHORT ayrı listelenir.
+3) İşlem için trend + üst zaman + piyasa yapısı + lokasyon + momentum + hacim/para akışı + mum tetik + volatilite + TP2 alanı birlikte aranır.
+4) Stop artık sadece yüzdeye göre değil, yapı + ATR + pivot + EMA tamponuna göre hesaplanır.
+5) Çok dar stop avı ve çok geniş stop elenir.
+6) Kullanıcı TP2 hedeflediği için TP2 alanı yoksa işlem listeye girmez.
+7) Backtest güveni sertleşti: düşük örneklem, düşük PF, düşük win, yüksek hızlı stop ve kötü son dönem performansı elenir.
+8) JSON taze bile olsa güven tavanı uygulanır; WS/REST kaynakları ayrı gösterilir.
+9) Binance TR spot için LONG uygulanabilir; SHORT spot emir değildir, izleme/çıkış-dikkat listesidir.
+
+Yükleme:
+Zip dosyasını doğrudan GitHub'a yükleme. Zip'i açıp içindeki dosyaları repo ana dizinine yükle:
+- index.html
+- script.js
+- update-crypto-data.js
+- .github/workflows/update-market.yml
+- KURULUM_PROFESYONEL_TEKNIK_V15_0.txt
+
+GitHub Actions:
+Actions → Update Ayaz Trade Market Data v15.0 → Run workflow
+
+Açılış linki:
+https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=profesyonel-teknik-v15-0
