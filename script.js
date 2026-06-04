@@ -1,4 +1,4 @@
-const VERSION="v16.11 sayaç düzeltme + canlı veri kontrolü";
+const VERSION="v16.12 aynalı teknik backtest motoru";
 const TFS=["15m","30m","1h","2h","4h"];
 const TFMS={"15m":900000,"30m":1800000,"1h":3600000,"2h":7200000,"4h":14400000};
 const NEXT_TF={"15m":"1h","30m":"2h","1h":"4h","2h":"4h","4h":"4h"};
@@ -29,19 +29,28 @@ const RULE={
 };
 
 const TECH_GATE={
-  // v16.10 Bilimsel Dengeli+ Teknik Kapı: canlı veri ve backtest standardı değişmez.
-  // Sadece teknik havuza giriş eşikleri ölçü birimli olarak kademeli gevşetildi.
-  minLayerHits:6,          // 7/14 -> 6/14; en az 6 bağımsız teknik katman şartı korunur.
-  techMin:52,              // 55 -> 52; teknik skor hâlâ 50 üstü bağlam ister.
-  execMin:60,              // 62 -> 60; giriş/stop/TP icrası alt eşiği.
-  minPoolTp2:1.50,         // 1.60R -> 1.50R; 1.40R altı yine kabul edilmez.
-  stopAtrMin:0.70,         // stop alt bandı korunur; stopTp motoru ve backtest standardı bozulmaz.
-  stopAtrMax:2.60,         // 2.40ATR -> 2.60ATR; 3.20ATR üstü yine kalite dışıdır.
+  // v16.12: Teknik kapı standardı korunur. Aynı çekirdek hem canlı adayda hem geçmiş backtestte çalışır.
+  minLayerHits:6,
+  techMin:52,
+  execMin:60,
+  minPoolTp2:1.50,
+  stopAtrMin:0.70,
+  stopAtrMax:2.60,
   trendCtxMin:50,
   structureCtxMin:50,
   triggerCtxMin:48,
   executionCtxMin:56,
   contextCountMin:3
+};
+const BACKTEST_GATE={
+  // Final liste kilidi: teknik havuzdan gelen aday, aynalı backtestte bu barajları geçmeden ilk 5'e giremez.
+  minCount:30,
+  minWin:52,
+  minPf:1.50,
+  maxFast:30,
+  minNet:0,
+  minMfeMae:1.20,
+  minHealth:50
 };
 let SYMBOLS=[...DEFAULT_SYMBOLS],market={data:{},generatedAt:null},fx={rate:null,source:"-",ageSec:null},scan={done:0,total:0,dirChecks:0,passedTech:0,btPassed:0,out:0,json:0,rest:0,stale:0,invalid:0,candles:0,restCandles:0,jsonCandles:0,validSets:0,latestCoinAgeSec:null,lastCoinSource:"-"},pool=[],selected=null;
 const $=id=>document.getElementById(id),now=()=>Date.now();
@@ -59,7 +68,7 @@ function money(n){return fmt(n,2)+"$"+(fx.rate?" / "+fmt(n*fx.rate,2)+" TL":"")}
 function setMeta(t){$("meta").textContent=t}
 function setBar(p){$("bar").style.width=clamp(p,0,100)+"%"}
 function cachedCandleCount(){return Object.values(market.data||{}).reduce((s,v)=>s+TFS.reduce((a,tf)=>a+((v&&v[tf]&&v[tf].length)||0),0),0)}
-function setDataBox(){const liveSets=scan.validSets||0;const liveCandles=scan.candles||0;const cached=cachedCandleCount();const ok=liveSets>0||cached>0;const candleText=liveCandles>0?liveCandles:cached;const ageText=scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec;const srcText=scan.lastCoinSource||"-";$("dataBox").innerHTML=`Veri: <b class="${ok?'ok':'bad'}">${ok?'BAĞLI':'BEKLEMEDE'}</b> | Coin: ${SYMBOLS.length} | Geçerli set: ${liveSets}/${scan.done||0} | Mum: ${candleText} | Coin veri yaşı: ${ageText} sn | Kaynak: ${srcText} | v16.11 sayaç düzeltme`}
+function setDataBox(){const liveSets=scan.validSets||0;const liveCandles=scan.candles||0;const cached=cachedCandleCount();const ok=liveSets>0||cached>0;const candleText=liveCandles>0?liveCandles:cached;const ageText=scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec;const srcText=scan.lastCoinSource||"-";$("dataBox").innerHTML=`Veri: <b class="${ok?'ok':'bad'}">${ok?'BAĞLI':'BEKLEMEDE'}</b> | Coin: ${SYMBOLS.length} | Geçerli set: ${liveSets}/${scan.done||0} | Mum: ${candleText} | Coin veri yaşı: ${ageText} sn | Kaynak: ${srcText} | v16.12 aynalı teknik BT`}
 function setFxBox(){if(fx.rate)$("fxBox").innerHTML=`Kur: <b>1 USDT ≈ ${fmt(fx.rate,4)} TL</b> | Kaynak: ${fx.source} | Yaş: ${fx.ageSec??'-'} sn`;else $("fxBox").textContent="USDT/TRY kuru alınamadı."}
 async function jfetch(url,timeout=12000){const ctrl=new AbortController();const id=setTimeout(()=>ctrl.abort(),timeout);try{const r=await fetch(url,{cache:"no-store",signal:ctrl.signal});if(!r.ok)throw new Error(r.status);return await r.json()}finally{clearTimeout(id)}}
 async function loadMarket(){try{const j=await jfetch("data/market.json?v="+Date.now(),9000);market=j||{data:{}};if(j.symbols&&Array.isArray(j.symbols))SYMBOLS=j.symbols.map(cleanSymbol).filter(Boolean).slice(0,UNIVERSE_LIMIT);if(j.fx&&j.fx.usdtTry){fx={rate:Number(j.fx.usdtTry),source:j.fx.source||"market.json",ageSec:Math.floor((now()-Date.parse(j.fx.generatedAt||j.generatedAt||new Date()))/1000)}}sanitizeMarket();setFxBox();setDataBox();return true}catch(e){market={data:{}};setDataBox();return false}}
@@ -170,38 +179,58 @@ function contextGate(scores,st){
   return {trendCtx,structureCtx,triggerCtx,executionCtx,passed,count,ok:count>=TECH_GATE.contextCountMin && passed.execution && (passed.structure || passed.trend)};
 }
 
-function analyzeLast(sym,tf,raw,dir){
-  if(!raw||raw.length<220)return null;
-  const c=enrich(raw),i=c.length-1,x=c[i];
-  const ageSec=Math.max(0,Math.floor((now()-(x.liveTime||x.closeTime||x.time||now()))/1000));
-  if(ageSec>RULE.maxAgeMs/1000)return null;
-  if(String(x.source||"").includes("STALE"))return null;
-  const st=stopTp(c,i,dir);
-  if(st.stopAtr<TECH_GATE.stopAtrMin||st.stopAtr>TECH_GATE.stopAtrMax||st.tp2Area<TECH_GATE.minPoolTp2)return null;
+
+function buildTechnicalScores(c,i,dir,st,sym,tf,mode){
+  // Aynalı teknik çekirdek: canlı tarama ve geçmiş backtest aynı lokal teknik argümanları ölçer.
+  // Üst zaman/BTC bağlamı geçmiş mumda birebir zaman eşlemesi yoksa nötr 55 alınır; canlı son barda gerçek kaynak varsa kullanılır.
+  const live=mode!=="backtest";
   const scores={
-    trend:trendScore(c,i,dir),regime:regimeScore(sym,tf,dir),upper:upperTfScore(sym,tf,dir),
+    trend:trendScore(c,i,dir),
+    regime:live?regimeScore(sym,tf,dir):55,
+    upper:live?upperTfScore(sym,tf,dir):55,
     structure:structureScore(c,i,dir),smc:smcScore(c,i,dir),sr:supportResistanceScore(c,i,dir),
     supplyDemand:supplyDemandScore(c,i,dir),liquidity:liquidityScore(c,i,dir),location:locationScore(c,i,dir),
     momentum:momentumScore(c,i,dir),flow:volumeScore(c,i,dir),candle:candleScore(c,i,dir),volatility:0,stopTp:0
   };
   scores.volatility=volatilityScore(c,i,st);
   scores.stopTp=clamp(st.stopQ*.55+st.tpQ*.45,0,100);
+  return scores;
+}
+function technicalEval(c,i,dir,sym="",tf="",mode="live"){
+  if(!c||i<160||i>=c.length)return null;
+  const st=stopTp(c,i,dir);
+  if(st.stopAtr<TECH_GATE.stopAtrMin||st.stopAtr>TECH_GATE.stopAtrMax||st.tp2Area<TECH_GATE.minPoolTp2)return null;
+  const scores=buildTechnicalScores(c,i,dir,st,sym,tf,mode);
   const layerHits=Object.values(scores).filter(v=>v>=55).length;
   const ctx=contextGate(scores,st);
   const tech=clamp(avg([scores.trend,scores.regime,scores.upper,scores.structure,scores.smc,scores.sr,scores.supplyDemand,scores.liquidity,scores.location,scores.momentum,scores.flow,scores.candle,scores.volatility,scores.stopTp]),0,100);
   const exec=clamp(avg([scores.location,scores.sr,scores.supplyDemand,scores.liquidity,scores.candle,scores.stopTp,scores.volatility])+Math.min(st.tp2Area,3.2)*4,0,100);
-  // v16.9 dengeli teknik kapı: önce sadece teknik bağlam ölçülür.
-  // Teknik kapı geçilmeden backtest hesaplanıp listeye alınmaz.
-  if(layerHits<TECH_GATE.minLayerHits||tech<TECH_GATE.techMin||exec<TECH_GATE.execMin||!ctx.ok)return null;
-  const bt=backtest(c,dir);
-  // Backtest artık ikinci kapı değildir; teknik havuzdaki adayların SIRALAMA ölçüsüdür.
-  // bt.count düşükse rank doğal olarak düşük kalır; aday teknik havuzdan silinmez.
+  const ok=layerHits>=TECH_GATE.minLayerHits && tech>=TECH_GATE.techMin && exec>=TECH_GATE.execMin && ctx.ok;
+  return {ok,st,scores,layerHits,ctx,tech,exec};
+}
+function backtestEligible(bt,back){
+  const mfeMae=bt&&bt.avgMae>0?bt.avgMfe/bt.avgMae:(bt?bt.avgMfe:0);
+  return !!bt && bt.count>=BACKTEST_GATE.minCount && bt.win>=BACKTEST_GATE.minWin && bt.pf>=BACKTEST_GATE.minPf && bt.fast<=BACKTEST_GATE.maxFast && bt.net>BACKTEST_GATE.minNet && mfeMae>=BACKTEST_GATE.minMfeMae && back>=BACKTEST_GATE.minHealth;
+}
+
+function analyzeLast(sym,tf,raw,dir){
+  if(!raw||raw.length<220)return null;
+  const c=enrich(raw),i=c.length-1,x=c[i];
+  const ageSec=Math.max(0,Math.floor((now()-(x.liveTime||x.closeTime||x.time||now()))/1000));
+  if(ageSec>RULE.maxAgeMs/1000)return null;
+  if(String(x.source||"").includes("STALE"))return null;
+  const ev=technicalEval(c,i,dir,sym,tf,"live");
+  if(!ev||!ev.ok)return null;
+  const {st,scores,layerHits,ctx,tech,exec}=ev;
+  // v16.12: Backtest, canlı teknik çekirdeğin aynısını geçmiş mumlarda çalıştırır.
+  const bt=backtest(c,dir,sym,tf);
   const back=backScore(bt);
   const dataScore=x.source==="REST"?92:x.source==="JSON"?88:82;
   const btRank=backtestRank(bt,st,layerHits,tech,exec,dataScore);
   const q=qualityClass(tech,exec,back,bt,st,layerHits);
   const model=dir==="LONG"?longModel(scores):shortModel(scores);
-  return{sym,tf,dir,model,mode:"TEKNIK KAPI HAVUZU + BACKTEST TOP 5",listMode:"TEKNIK KAPI HAVUZU / BACKTEST TOP 5",poolClass:poolClass(tech,layerHits),quality:q.cls,main:q.main,rankScore:btRank,btRank,tech,exec,back,dataScore,scores,context:ctx,layerHits,bt,...st,ageSec,source:x.source||"JSON"}
+  const btOk=backtestEligible(bt,back);
+  return{sym,tf,dir,model,mode:"AYNALI TEKNIK KAPI + BACKTEST TOP 5",listMode:"TEKNIK HAVUZ / AYNALI BACKTEST",poolClass:poolClass(tech,layerHits),quality:q.cls,main:q.main,btOk,rankScore:btRank,btRank,tech,exec,back,dataScore,scores,context:ctx,layerHits,bt,...st,ageSec,source:x.source||"JSON"}
 }
 
 function poolClass(score,hits){if(score>=76&&hits>=9)return"H1";if(score>=65&&hits>=7)return"H2";return"H3"}
@@ -243,15 +272,51 @@ function qualityClass(tech,exec,back,bt,st,hits){
 function rankScore(poolScore,tech,exec,back,bt,st,hits,cls,main){return backtestRank(bt,st,hits,tech,exec,90)}
 function longModel(s){const a=[];if(s.sr>=55)a.push("destek");if(s.supplyDemand>=55)a.push("demand");if(s.smc>=55)a.push("bullish OB/FVG");if(s.liquidity>=55)a.push("likidite reclaim");if(s.structure>=60)a.push("BOS/CHOCH");if(s.location>=65)a.push("lokasyon");if(s.momentum>=65)a.push("momentum");return"LONG — "+(a.slice(0,5).join(" + ")||"teknik bağlam")}
 function shortModel(s){const a=[];if(s.sr>=55)a.push("direnç");if(s.supplyDemand>=55)a.push("supply");if(s.smc>=55)a.push("bearish OB/FVG");if(s.liquidity>=55)a.push("likidite rejection");if(s.structure>=60)a.push("BOS/CHOCH");if(s.location>=65)a.push("lokasyon");if(s.momentum>=65)a.push("momentum");return"SHORT — "+(a.slice(0,5).join(" + ")||"teknik bağlam")}
-function backtest(c,dir){let trades=[],cool=0;for(let i=160;i<c.length-25;i++){if(cool>0){cool--;continue}const st=stopTp(c,i,dir);if(st.stopAtr<RULE.stopAtrIdealMin||st.stopAtr>RULE.stopAtrIdealMax||st.tp2Area<RULE.minPoolTp2)continue;const scores={trend:trendScore(c,i,dir),structure:structureScore(c,i,dir),smc:smcScore(c,i,dir),sr:supportResistanceScore(c,i,dir),supplyDemand:supplyDemandScore(c,i,dir),liquidity:liquidityScore(c,i,dir),location:locationScore(c,i,dir),momentum:momentumScore(c,i,dir),flow:volumeScore(c,i,dir),candle:candleScore(c,i,dir),volatility:volatilityScore(c,i,st),stopTp:clamp(st.stopQ*.55+st.tpQ*.45,0,100)};const hits=Object.values(scores).filter(v=>v>=55).length;const techAvg=avg(Object.values(scores));if(hits<7||techAvg<55)continue;let hit=null,mfe=0,mae=0,bars=0;for(let j=i+1;j<Math.min(c.length,i+28);j++){bars++;const hi=c[j].high,lo=c[j].low;const fav=dir==="LONG"?(hi-st.entry)/st.risk:(st.entry-lo)/st.risk;const adv=dir==="LONG"?(st.entry-lo)/st.risk:(hi-st.entry)/st.risk;mfe=Math.max(mfe,fav);mae=Math.max(mae,adv);if(dir==="LONG"){if(lo<=st.stop){hit="STOP";break}if(hi>=st.t2){hit="TP2";break}if(hi>=st.t1&&!hit)hit="TP1"}else{if(hi>=st.stop){hit="STOP";break}if(lo<=st.t2){hit="TP2";break}if(lo<=st.t1&&!hit)hit="TP1"}}let r=hit==="TP2"?1.85:hit==="TP1"?1.05:hit==="STOP"?-1:(mfe>1?0.4:-0.3);trades.push({r,hit,mfe,mae,bars,fast:hit==="STOP"&&bars<=4});cool=5}if(!trades.length)return{count:0,win:0,pf:0,fast:100,net:0,avgMfe:0,avgMae:0,maxDd:0,tp2Rate:0,expectancy:0,trades:[]};const wins=trades.filter(t=>t.r>0),losses=trades.filter(t=>t.r<0);const gp=wins.reduce((a,b)=>a+b.r,0),gl=-losses.reduce((a,b)=>a+b.r,0);let eq=0,peak=0,maxDd=0;for(const t of trades){eq+=t.r;peak=Math.max(peak,eq);maxDd=Math.max(maxDd,peak-eq)}const net=trades.reduce((a,b)=>a+b.r,0);return{count:trades.length,win:wins.length/trades.length*100,pf:gp/(gl||.01),fast:trades.filter(t=>t.fast).length/trades.length*100,net,avgMfe:avg(trades.map(t=>t.mfe)),avgMae:avg(trades.map(t=>t.mae)),maxDd,tp2Rate:trades.filter(t=>t.hit==="TP2").length/trades.length*100,expectancy:net/trades.length,trades:trades.slice(-10)}}
+function backtest(c,dir,sym="",tf=""){
+  let trades=[],cool=0;
+  for(let i=160;i<c.length-25;i++){
+    if(cool>0){cool--;continue}
+    const ev=technicalEval(c,i,dir,sym,tf,"backtest");
+    if(!ev||!ev.ok)continue;
+    const st=ev.st;
+    let hit=null,mfe=0,mae=0,bars=0;
+    for(let j=i+1;j<Math.min(c.length,i+28);j++){
+      bars++;
+      const hi=c[j].high,lo=c[j].low;
+      const fav=dir==="LONG"?(hi-st.entry)/st.risk:(st.entry-lo)/st.risk;
+      const adv=dir==="LONG"?(st.entry-lo)/st.risk:(hi-st.entry)/st.risk;
+      mfe=Math.max(mfe,fav);mae=Math.max(mae,adv);
+      if(dir==="LONG"){
+        if(lo<=st.stop){hit="STOP";break}
+        if(hi>=st.t2){hit="TP2";break}
+        if(hi>=st.t1&&!hit)hit="TP1"
+      }else{
+        if(hi>=st.stop){hit="STOP";break}
+        if(lo<=st.t2){hit="TP2";break}
+        if(lo<=st.t1&&!hit)hit="TP1"
+      }
+    }
+    let r=hit==="TP2"?1.85:hit==="TP1"?1.05:hit==="STOP"?-1:(mfe>1?0.4:-0.3);
+    trades.push({r,hit,mfe,mae,bars,fast:hit==="STOP"&&bars<=4,tech:ev.tech,exec:ev.exec,layers:ev.layerHits});
+    cool=5;
+  }
+  if(!trades.length)return{count:0,win:0,pf:0,fast:100,net:0,avgMfe:0,avgMae:0,maxDd:0,tp2Rate:0,expectancy:0,trades:[]};
+  const wins=trades.filter(t=>t.r>0),losses=trades.filter(t=>t.r<0);
+  const gp=wins.reduce((a,b)=>a+b.r,0),gl=-losses.reduce((a,b)=>a+b.r,0);
+  let eq=0,peak=0,maxDd=0;
+  for(const t of trades){eq+=t.r;peak=Math.max(peak,eq);maxDd=Math.max(maxDd,peak-eq)}
+  const net=trades.reduce((a,b)=>a+b.r,0);
+  return{count:trades.length,win:wins.length/trades.length*100,pf:gp/(gl||.01),fast:trades.filter(t=>t.fast).length/trades.length*100,net,avgMfe:avg(trades.map(t=>t.mfe)),avgMae:avg(trades.map(t=>t.mae)),maxDd,tp2Rate:trades.filter(t=>t.hit==="TP2").length/trades.length*100,expectancy:net/trades.length,trades:trades.slice(-10)}
+}
 function selectTopByDir(dir){
-  const arr=pool.filter(x=>x.dir===dir).sort((a,b)=>b.rankScore-a.rankScore);
+  // Final liste artık teknik havuzun tamamı değil; aynalı backtest uygunluk kilidini geçenlerdir.
+  const arr=pool.filter(x=>x.dir===dir && x.btOk).sort((a,b)=>b.rankScore-a.rankScore);
   const selected=[],used=new Set();
   for(const x of arr){
     if(selected.length>=RULE.showEach)break;
     const key=x.sym+"_"+dir;
     if(used.has(key))continue;
-    x.listMode=`TEKNİK HAVUZDAN BACKTEST EN İYİ 5 ${dir}`;
+    x.listMode=`TEKNİK HAVUZDAN AYNALI BACKTEST EN İYİ 5 ${dir}`;
     selected.push(x);
     used.add(key);
   }
@@ -259,14 +324,15 @@ function selectTopByDir(dir){
 }
 function renderSummary(){
   const long=pool.filter(x=>x.dir==="LONG"),short=pool.filter(x=>x.dir==="SHORT");
+  const eligLong=long.filter(x=>x.btOk),eligShort=short.filter(x=>x.btOk);
   const topLong=selectTopByDir("LONG"),topShort=selectTopByDir("SHORT");
-  scan.passedTech=pool.length;
-  $("summary").innerHTML=`<div class="dash"><div><b>${SYMBOLS.length}</b><span>coin evreni</span></div><div><b>${scan.done}/${scan.total}</b><span>sembol/TF analiz</span></div><div><b>${scan.dirChecks}</b><span>yön kontrolü</span></div><div><b>${long.length}</b><span>LONG teknik kapı havuzu</span></div><div><b>${short.length}</b><span>SHORT teknik kapı havuzu</span></div><div><b>${topLong.length}+${topShort.length}</b><span>ilk 5+5 backtest</span></div><div><b>${scan.rest}</b><span>REST set</span></div><div><b>${scan.json}</b><span>JSON set</span></div><div><b>${scan.candles}</b><span>toplam mum</span></div><div><b>${scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec}</b><span>coin veri yaşı sn</span></div><div><b>${scan.stale}</b><span>canlı alınamadı</span></div><div><b>${scan.out}</b><span>elenen yön</span></div></div><div class="note"><b>v16.11 sayaç kontrolü:</b> Teknik kapı, backtest sıralaması ve canlı veri sırası değiştirilmedi. Sadece REST/JSON kline sayaçları ayrıldı: geçerli set, toplam mum, REST set, JSON set ve coin veri yaşı artık tarama sırasında gerçek mumlardan hesaplanır. Kur yaşı sadece TL çevirisidir; coin teknik veri yaşıyla karıştırılmaz.</div>`
+  scan.passedTech=pool.length;scan.btPassed=eligLong.length+eligShort.length;
+  $("summary").innerHTML=`<div class="dash"><div><b>${SYMBOLS.length}</b><span>coin evreni</span></div><div><b>${scan.done}/${scan.total}</b><span>sembol/TF analiz</span></div><div><b>${scan.dirChecks}</b><span>yön kontrolü</span></div><div><b>${long.length}</b><span>LONG teknik havuz</span></div><div><b>${short.length}</b><span>SHORT teknik havuz</span></div><div><b>${eligLong.length}+${eligShort.length}</b><span>BT uygun</span></div><div><b>${topLong.length}+${topShort.length}</b><span>final 5+5</span></div><div><b>${scan.rest}</b><span>REST set</span></div><div><b>${scan.json}</b><span>JSON set</span></div><div><b>${scan.candles}</b><span>toplam mum</span></div><div><b>${scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec}</b><span>coin veri yaşı sn</span></div><div><b>${scan.stale}</b><span>canlı alınamadı</span></div></div><div class="note"><b>v16.12 aynalı backtest:</b> Canlı adayda kullanılan teknik çekirdek, geçmiş mumlarda da aynı eşiklerle çalışır. Teknik havuz ayrı tutulur; final 5+5 listesine yalnızca tradeCount≥${BACKTEST_GATE.minCount}, win≥${BACKTEST_GATE.minWin}%, PF≥${BACKTEST_GATE.minPf}, hızlı stop≤${BACKTEST_GATE.maxFast}%, MFE/MAE≥${BACKTEST_GATE.minMfeMae} ve backtest sağlık≥${BACKTEST_GATE.minHealth} olan adaylar girer.</div>`
 }
 function card(x,i){
   const cls=x.dir==="SHORT"?"short":"long";
   const sc=Math.round(x.rankScore);
-  return `<div class="candidate ${cls}" onclick="selectCandidate('${x.key}')"><div class="top"><div><div class="sym">${i+1}) ${x.sym} / ${x.tf}</div><div class="model">${x.dir} — ${x.model.replace(/^LONG — |^SHORT — /,'')}</div></div><div class="score ${x.dir.toLowerCase()}">${sc}<br><span style="font-size:16px">BT</span></div></div><div class="line">Liste modu: ${x.listMode||"BACKTEST EN İYİ"} | Yön: ${x.dir} | Teknik geçiş: ${x.layerHits}/14 | Sınıf: ${x.quality}<br>Teknik bağlam: Teknik ${Math.round(x.tech)} / İcra ${Math.round(x.exec)} / Backtest sağlık ${Math.round(x.back)} / Veri ${x.dataScore}<br>Bağlam: Trend ${Math.round(x.context?.trendCtx??0)} / Yapı-Lokasyon ${Math.round(x.context?.structureCtx??0)} / Tetik ${Math.round(x.context?.triggerCtx??0)} / İcra ${Math.round(x.context?.executionCtx??0)}<br>Giriş ${dual(x.entry)}<br>Stop ${dual(x.stop)} | stopATR ${fmt(x.stopAtr,2)} | Stop ${pct(x.stopPct,2)} | TP2 alanı ${fmt(x.tp2Area,2)}R<br>TP1 ${dual(x.t1)} | TP2 ${dual(x.t2)} | TP3 ${dual(x.t3)}<br><b>Backtest:</b> İşlem ${x.bt.count} | Win ${pct(x.bt.win,1)} | PF ${x.bt.pf>=20?'20+':fmt(x.bt.pf,2)} | Hızlı stop ${pct(x.bt.fast,1)} | Net ${fmt(x.bt.net,2)}R | Beklenti ${fmt(x.bt.expectancy||0,2)}R | MFE/MAE ${fmt(x.bt.avgMfe,2)}R/${fmt(x.bt.avgMae,2)}R<br>Veri: ${x.ageSec} sn | Kaynak: ${x.source}</div><div><span class="pill ${x.dir==='LONG'?'green':'red'}">${x.dir} TEKNİK ADAY</span><span class="pill blue">${VERSION}</span><span class="pill amber">BACKTEST SIRALAMA</span><span class="pill amber">${x.quality}</span></div></div>`
+  return `<div class="candidate ${cls}" onclick="selectCandidate('${x.key}')"><div class="top"><div><div class="sym">${i+1}) ${x.sym} / ${x.tf}</div><div class="model">${x.dir} — ${x.model.replace(/^LONG — |^SHORT — /,'')}</div></div><div class="score ${x.dir.toLowerCase()}">${sc}<br><span style="font-size:16px">BT</span></div></div><div class="line">Liste modu: ${x.listMode||"BACKTEST EN İYİ"} | Yön: ${x.dir} | Teknik geçiş: ${x.layerHits}/14 | Sınıf: ${x.quality}<br>Teknik bağlam: Teknik ${Math.round(x.tech)} / İcra ${Math.round(x.exec)} / Backtest sağlık ${Math.round(x.back)} / BT uygun: ${x.btOk?"EVET":"HAYIR"} / Veri ${x.dataScore}<br>Bağlam: Trend ${Math.round(x.context?.trendCtx??0)} / Yapı-Lokasyon ${Math.round(x.context?.structureCtx??0)} / Tetik ${Math.round(x.context?.triggerCtx??0)} / İcra ${Math.round(x.context?.executionCtx??0)}<br>Giriş ${dual(x.entry)}<br>Stop ${dual(x.stop)} | stopATR ${fmt(x.stopAtr,2)} | Stop ${pct(x.stopPct,2)} | TP2 alanı ${fmt(x.tp2Area,2)}R<br>TP1 ${dual(x.t1)} | TP2 ${dual(x.t2)} | TP3 ${dual(x.t3)}<br><b>Backtest:</b> İşlem ${x.bt.count} | Win ${pct(x.bt.win,1)} | PF ${x.bt.pf>=20?'20+':fmt(x.bt.pf,2)} | Hızlı stop ${pct(x.bt.fast,1)} | Net ${fmt(x.bt.net,2)}R | Beklenti ${fmt(x.bt.expectancy||0,2)}R | MFE/MAE ${fmt(x.bt.avgMfe,2)}R/${fmt(x.bt.avgMae,2)}R<br>Veri: ${x.ageSec} sn | Kaynak: ${x.source}</div><div><span class="pill ${x.dir==='LONG'?'green':'red'}">${x.dir} TEKNİK ADAY</span><span class="pill blue">${VERSION}</span><span class="pill amber">AYNALI BACKTEST</span><span class="pill amber">${x.quality}</span></div></div>`
 }
 function renderList(){
   renderSummary();
@@ -275,7 +341,7 @@ function renderList(){
   const topShort=selectTopByDir("SHORT");
   const map=new Map(pool.map(x=>[x.key,x]));
   window.__candMap=map;
-  $("list").innerHTML=`<div class="listSection long"><h3>Backtest En İyi 5 LONG</h3><p>Önce teknik kapıdan geçen LONG adayları teknik havuza alınır; bu havuzun içinde backtest dayanıklılığı en yüksek ilk 5 sıralanır.</p>${topLong.length?topLong.map((x,i)=>card(x,i)).join(''):'<p>LONG tarafında teknik + backtest barajını geçen aday yok.</p>'}</div><div class="listSection short"><h3>Backtest En İyi 5 SHORT</h3><p>Önce teknik kapıdan geçen SHORT adayları teknik havuza alınır; bu havuzun içinde backtest dayanıklılığı en yüksek ilk 5 sıralanır.</p>${topShort.length?topShort.map((x,i)=>card(x,i)).join(''):'<p>SHORT tarafında teknik + backtest barajını geçen aday yok.</p>'}</div>`;
+  $("list").innerHTML=`<div class="listSection long"><h3>Aynalı Backtest En İyi 5 LONG</h3><p>Önce teknik kapıdan geçen LONG adayları teknik havuza alınır; bu havuzun içinde backtest dayanıklılığı en yüksek ilk 5 sıralanır.</p>${topLong.length?topLong.map((x,i)=>card(x,i)).join(''):'<p>LONG tarafında teknik havuzdan aynalı backtest uygunluk kilidini geçen aday yok.</p>'}</div><div class="listSection short"><h3>Aynalı Backtest En İyi 5 SHORT</h3><p>Önce teknik kapıdan geçen SHORT adayları teknik havuza alınır; bu havuzun içinde backtest dayanıklılığı en yüksek ilk 5 sıralanır.</p>${topShort.length?topShort.map((x,i)=>card(x,i)).join(''):'<p>SHORT tarafında teknik havuzdan aynalı backtest uygunluk kilidini geçen aday yok.</p>'}</div>`;
   const first=topLong[0]||topShort[0];
   if(first&&!selected)selectCandidate(first.key,true)
 }
