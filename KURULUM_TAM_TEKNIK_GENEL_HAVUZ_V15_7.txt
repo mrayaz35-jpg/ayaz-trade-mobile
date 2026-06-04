@@ -1,0 +1,41 @@
+AYAZ TRADE v15.7 — TAM TEKNIK GENEL HAVUZ MOTORU
+
+YUKLEME:
+1) Zip'i doğrudan GitHub'a yükleme.
+2) Zip'i aç.
+3) İçindeki dosyaları repo ana dizinine yükle:
+   - index.html
+   - script.js
+   - update-crypto-data.js
+   - .github/workflows/update-market.yml
+   - KURULUM_TAM_TEKNIK_GENEL_HAVUZ_V15_7.txt
+4) GitHub Actions sekmesinden veri güncelleme workflow'unu bir kez çalıştır.
+
+LINK:
+https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=tam-teknik-genel-havuz-v15-7
+
+V15.7 OZET:
+- Genel havuz motoru güçlendirildi.
+- LONG ve SHORT aynı teknik standartla seçilir.
+- Spot/vadeli ayrımı kalite hesabına katılmaz.
+- Genel havuz 12+ teknik katmandan geçer:
+  1) Trend
+  2) Üst zaman
+  3) Market structure
+  4) Smart Money Concepts
+  5) Destek/direnç
+  6) Supply-demand
+  7) Likidite / sweep / reclaim
+  8) Lokasyon
+  9) Momentum
+  10) Hacim / para akışı
+  11) Mum formasyonu / tetik
+  12) Volatilite
+  13) Stop/TP alanı
+  14) Kanal / trend alanı
+- Genel havuz sınıfları: H1, H2, H3.
+- Ana kadro seçici: A+, A, A-.
+- B+ ve altı yedek/izleme olarak ayrılır.
+
+NOT:
+Bu sürüm önce genel havuzu güçlendirir. Sonraki aşamada milli takım seçici ayrıca daha ince ayarlanabilir.
