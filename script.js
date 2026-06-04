@@ -1,4 +1,4 @@
-const VERSION="v16.3 teknik + backtest top10";
+const VERSION="v16.4 teknik + backtest 7 LONG + 7 SHORT";
 const TFS=["15m","30m","1h","2h","4h"];
 const TFMS={"15m":900000,"30m":1800000,"1h":3600000,"2h":7200000,"4h":14400000};
 const NEXT_TF={"15m":"1h","30m":"2h","1h":"4h","2h":"4h","4h":"4h"};
@@ -10,7 +10,7 @@ const RULE={
   maxAgeMs:300000,
   limit:700,
   spotTry:10000,
-  // v16.3: Teknik argümanlar eksiksiz ölçülür ama havuza giriş için aşırı sert AND kapısı kullanılmaz.
+  // v16.4: Teknik argümanlar eksiksiz ölçülür ama havuza giriş için aşırı sert AND kapısı kullanılmaz.
   // Amaç: önce teknik bağlamı olan adayları yakalamak, finalde backtest dayanıklılığına göre sıralamak.
   techMin:45,
   execMin:55,
@@ -21,7 +21,7 @@ const RULE={
   minBtWin:45,
   minBtPf:1.15,
   maxBtFast:45,
-  showTop:10
+  showEach:7
 };
 let SYMBOLS=[...DEFAULT_SYMBOLS],market={data:{},generatedAt:null},fx={rate:null,source:"-",ageSec:null},scan={done:0,total:0,dirChecks:0,passedTech:0,btPassed:0,out:0,json:0,rest:0,stale:0,invalid:0},pool=[],selected=null;
 const $=id=>document.getElementById(id),now=()=>Date.now();
@@ -38,7 +38,7 @@ function dual(n){return fmt(n,priceDecimals(n))+" USDT / "+tlPrice(n)}
 function money(n){return fmt(n,2)+"$"+(fx.rate?" / "+fmt(n*fx.rate,2)+" TL":"")}
 function setMeta(t){$("meta").textContent=t}
 function setBar(p){$("bar").style.width=clamp(p,0,100)+"%"}
-function setDataBox(){const ok=market&&Object.keys(market.data||{}).length;$("dataBox").innerHTML=`Veri: <b class="${ok?'ok':'bad'}">${ok?'BAĞLI':'BEKLEMEDE'}</b> | Coin: ${SYMBOLS.length} | Mum: ${Object.values(market.data||{}).reduce((s,v)=>s+TFS.reduce((a,tf)=>a+((v&&v[tf]&&v[tf].length)||0),0),0)} | v16.3 teknik+backtest top10`}
+function setDataBox(){const ok=market&&Object.keys(market.data||{}).length;$("dataBox").innerHTML=`Veri: <b class="${ok?'ok':'bad'}">${ok?'BAĞLI':'BEKLEMEDE'}</b> | Coin: ${SYMBOLS.length} | Mum: ${Object.values(market.data||{}).reduce((s,v)=>s+TFS.reduce((a,tf)=>a+((v&&v[tf]&&v[tf].length)||0),0),0)} | v16.4 teknik+backtest 7+7`}
 function setFxBox(){if(fx.rate)$("fxBox").innerHTML=`Kur: <b>1 USDT ≈ ${fmt(fx.rate,4)} TL</b> | Kaynak: ${fx.source} | Yaş: ${fx.ageSec??'-'} sn`;else $("fxBox").textContent="USDT/TRY kuru alınamadı."}
 async function jfetch(url,timeout=12000){const ctrl=new AbortController();const id=setTimeout(()=>ctrl.abort(),timeout);try{const r=await fetch(url,{cache:"no-store",signal:ctrl.signal});if(!r.ok)throw new Error(r.status);return await r.json()}finally{clearTimeout(id)}}
 async function loadMarket(){try{const j=await jfetch("data/market.json?v="+Date.now(),9000);market=j||{data:{}};if(j.symbols&&Array.isArray(j.symbols))SYMBOLS=j.symbols.map(cleanSymbol).filter(Boolean).slice(0,UNIVERSE_LIMIT);if(j.fx&&j.fx.usdtTry){fx={rate:Number(j.fx.usdtTry),source:j.fx.source||"market.json",ageSec:Math.floor((now()-Date.parse(j.fx.generatedAt||j.generatedAt||new Date()))/1000)}}sanitizeMarket();setFxBox();setDataBox();return true}catch(e){market={data:{}};setDataBox();return false}}
@@ -85,7 +85,7 @@ function analyzeLast(sym,tf,raw,dir){
   const layerHits=Object.values(scores).filter(v=>v>=55).length;
   const tech=clamp(avg([scores.trend,scores.regime,scores.upper,scores.structure,scores.smc,scores.sr,scores.supplyDemand,scores.liquidity,scores.location,scores.momentum,scores.flow,scores.candle,scores.volatility]),0,100);
   const exec=clamp(avg([scores.location,scores.sr,scores.supplyDemand,scores.liquidity,scores.candle,scores.stopTp,scores.volatility])+Math.min(st.tp2Area,3.2)*4,0,100);
-  // v16.3 teknik geçiş: tüm argümanlar ölçülür; havuza girişte yalnızca bağlamsız adaylar elenir.
+  // v16.4 teknik geçiş: tüm argümanlar ölçülür; havuza girişte yalnızca bağlamsız adaylar elenir.
   // Final liste puan/kaliteye göre değil, backtest dayanıklılığına göre sıralanır.
   if(layerHits<RULE.minLayerHits||tech<RULE.techMin||exec<RULE.execMin)return null;
   const bt=backtest(c,dir);
@@ -101,7 +101,7 @@ function analyzeLast(sym,tf,raw,dir){
 function poolClass(score,hits){if(score>=76&&hits>=9)return"H1";if(score>=65&&hits>=7)return"H2";return"H3"}
 function backScore(b){if(!b||b.count<10)return 50;let s=0;s+=clamp((b.count-15)*1.2,0,20);s+=clamp((b.win-45)*1.15,0,30);s+=clamp((b.pf-1)*15,0,30);s+=clamp((25-b.fast)*.8,0,20);return clamp(s,0,100)}
 function backtestRank(bt,st,hits,tech,exec,dataScore){
-  // v16.3: Final sıralama ana olarak backtest dayanıklılığıdır.
+  // v16.4: Final sıralama ana olarak backtest dayanıklılığıdır.
   // Teknik katman sadece güvenlik kemeridir; teknik bağlamı geçen adaylar arasında kralı backtest seçer.
   const countScore=clamp((bt.count-12)*0.72,0,34);
   const winScore=clamp((bt.win-45)*1.15,0,44);
@@ -128,42 +128,45 @@ function rankScore(poolScore,tech,exec,back,bt,st,hits,cls,main){const q={"A+":1
 function longModel(s){const a=[];if(s.sr>=55)a.push("destek");if(s.supplyDemand>=55)a.push("demand");if(s.smc>=55)a.push("bullish OB/FVG");if(s.liquidity>=55)a.push("likidite reclaim");if(s.structure>=60)a.push("BOS/CHOCH");if(s.location>=65)a.push("lokasyon");if(s.momentum>=65)a.push("momentum");return"LONG — "+(a.slice(0,5).join(" + ")||"teknik bağlam")}
 function shortModel(s){const a=[];if(s.sr>=55)a.push("direnç");if(s.supplyDemand>=55)a.push("supply");if(s.smc>=55)a.push("bearish OB/FVG");if(s.liquidity>=55)a.push("likidite rejection");if(s.structure>=60)a.push("BOS/CHOCH");if(s.location>=65)a.push("lokasyon");if(s.momentum>=65)a.push("momentum");return"SHORT — "+(a.slice(0,5).join(" + ")||"teknik bağlam")}
 function backtest(c,dir){let trades=[],cool=0;for(let i=150;i<c.length-25;i++){if(cool>0){cool--;continue}const st=stopTp(c,i,dir);if(st.stopPct>4.2||st.tp2Area<1.2)continue;const sc=trendScore(c,i,dir)+structureScore(c,i,dir)+momentumScore(c,i,dir)+candleScore(c,i,dir)+volumeScore(c,i,dir);if(sc<220)continue;let hit=null,mfe=0,mae=0;for(let j=i+1;j<Math.min(c.length,i+28);j++){const hi=c[j].high,lo=c[j].low;const fav=dir==="LONG"?(hi-st.entry)/st.risk:(st.entry-lo)/st.risk;const adv=dir==="LONG"?(st.entry-lo)/st.risk:(hi-st.entry)/st.risk;mfe=Math.max(mfe,fav);mae=Math.max(mae,adv);if(dir==="LONG"){if(lo<=st.stop){hit="STOP";break}if(hi>=st.t2){hit="TP2";break}if(hi>=st.t1&&!hit)hit="TP1"}else{if(hi>=st.stop){hit="STOP";break}if(lo<=st.t2){hit="TP2";break}if(lo<=st.t1&&!hit)hit="TP1"}}let r=hit==="TP2"?1.85:hit==="TP1"?1.05:hit==="STOP"?-1:(mfe>1?0.4:-0.3);trades.push({r,hit,mfe,mae,fast:hit==="STOP"&&mae<0.75});cool=5}if(!trades.length)return{count:0,win:0,pf:0,fast:100,net:0,avgMfe:0,avgMae:0,trades:[]};const wins=trades.filter(t=>t.r>0),losses=trades.filter(t=>t.r<0);const gp=wins.reduce((a,b)=>a+b.r,0),gl=-losses.reduce((a,b)=>a+b.r,0);return{count:trades.length,win:wins.length/trades.length*100,pf:gp/(gl||.01),fast:trades.filter(t=>t.fast).length/trades.length*100,net:trades.reduce((a,b)=>a+b.r,0),avgMfe:avg(trades.map(t=>t.mfe)),avgMae:avg(trades.map(t=>t.mae)),trades:trades.slice(-10)}}
-function selectTop10(){
-  const arr=pool.slice().sort((a,b)=>b.rankScore-a.rankScore);
+function selectTopByDir(dir){
+  const arr=pool.filter(x=>x.dir===dir).sort((a,b)=>b.rankScore-a.rankScore);
   const selected=[],used=new Set();
   for(const x of arr){
-    if(selected.length>=RULE.showTop)break;
-    const key=x.sym+"_"+x.dir;
+    if(selected.length>=RULE.showEach)break;
+    const key=x.sym+"_"+dir;
     if(used.has(key))continue;
-    selected.push({...x,listMode:"BACKTEST EN İYİ"});
+    x.listMode=`BACKTEST EN İYİ 7 ${dir}`;
+    selected.push(x);
     used.add(key);
   }
   return selected;
 }
 function renderSummary(){
   const long=pool.filter(x=>x.dir==="LONG"),short=pool.filter(x=>x.dir==="SHORT");
-  const top=selectTop10();
+  const topLong=selectTopByDir("LONG"),topShort=selectTopByDir("SHORT");
   scan.passedTech=pool.length;
-  $("summary").innerHTML=`<div class="dash"><div><b>${SYMBOLS.length}</b><span>coin evreni</span></div><div><b>${scan.done}/${scan.total}</b><span>sembol/TF analiz</span></div><div><b>${scan.dirChecks}</b><span>yön kontrolü</span></div><div><b>${long.length}</b><span>LONG teknik+BT geçti</span></div><div><b>${short.length}</b><span>SHORT teknik+BT geçti</span></div><div><b>${top.length}</b><span>ilk 10 backtest</span></div><div><b>${scan.rest}</b><span>REST</span></div><div><b>${scan.json}</b><span>JSON</span></div><div><b>${scan.stale}</b><span>canlı alınamadı</span></div><div><b>${scan.out}</b><span>elenen yön</span></div></div><div class="note"><b>v16.3 kuralı:</b> Önce tüm teknik analiz argümanları ve bağlamları geçilir: trend, üst zaman, piyasa yapısı, Smart Money, destek/direnç, supply-demand, order block/FVG, likidite, lokasyon, momentum, hacim/para akışı, mum tetik, volatilite ve stop/TP alanı. Bu teknik kapıdan geçen adaylar arasında final sıralama yalnızca profesyonel backtest dayanıklılığıyla yapılır: işlem sayısı, win, PF, hızlı stop düşüklüğü, net R, MFE/MAE ve TP2 alanı.</div>`
+  $("summary").innerHTML=`<div class="dash"><div><b>${SYMBOLS.length}</b><span>coin evreni</span></div><div><b>${scan.done}/${scan.total}</b><span>sembol/TF analiz</span></div><div><b>${scan.dirChecks}</b><span>yön kontrolü</span></div><div><b>${long.length}</b><span>LONG teknik+BT geçti</span></div><div><b>${short.length}</b><span>SHORT teknik+BT geçti</span></div><div><b>${topLong.length}+${topShort.length}</b><span>ilk 7+7 backtest</span></div><div><b>${scan.rest}</b><span>REST</span></div><div><b>${scan.json}</b><span>JSON</span></div><div><b>${scan.stale}</b><span>canlı alınamadı</span></div><div><b>${scan.out}</b><span>elenen yön</span></div></div><div class="note"><b>v16.4 kuralı:</b> Teknik ve backtest motoru v16.3 ile aynı kalır. Önce tüm teknik analiz argümanları ve bağlamları geçilir: trend, üst zaman, piyasa yapısı, Smart Money, destek/direnç, supply-demand, order block/FVG, likidite, lokasyon, momentum, hacim/para akışı, mum tetik, volatilite ve stop/TP alanı. Sonra final yayın iki ayrı listeye bölünür: backtest dayanıklılığı en iyi 7 LONG ve en iyi 7 SHORT ayrı ayrı sıralanır.</div>`
 }
 function card(x,i){
   const cls=x.dir==="SHORT"?"short":"long";
   const sc=Math.round(x.rankScore);
-  return `<div class="candidate ${cls}" onclick="selectCandidate('${x.key}')"><div class="top"><div><div class="sym">${i+1}) ${x.sym} / ${x.tf}</div><div class="model">${x.dir} — ${x.model.replace(/^LONG — |^SHORT — /,'')}</div></div><div class="score ${x.dir.toLowerCase()}">${sc}<br><span style="font-size:16px">BT</span></div></div><div class="line">Liste modu: BACKTEST EN İYİ | Yön: ${x.dir} | Teknik geçiş: ${x.layerHits}/14 | Sınıf: ${x.quality}<br>Teknik bağlam: Teknik ${Math.round(x.tech)} / İcra ${Math.round(x.exec)} / Backtest sağlık ${Math.round(x.back)} / Veri ${x.dataScore}<br>Giriş ${dual(x.entry)}<br>Stop ${dual(x.stop)} | Stop ${pct(x.stopPct,2)} | TP2 alanı ${fmt(x.tp2Area,2)}R<br>TP1 ${dual(x.t1)} | TP2 ${dual(x.t2)} | TP3 ${dual(x.t3)}<br><b>Backtest:</b> İşlem ${x.bt.count} | Win ${pct(x.bt.win,1)} | PF ${x.bt.pf>=20?'20+':fmt(x.bt.pf,2)} | Hızlı stop ${pct(x.bt.fast,1)} | Net ${fmt(x.bt.net,2)}R | MFE/MAE ${fmt(x.bt.avgMfe,2)}R/${fmt(x.bt.avgMae,2)}R<br>Veri: ${x.ageSec} sn | Kaynak: ${x.source}</div><div><span class="pill ${x.dir==='LONG'?'green':'red'}">${x.dir} TEKNİK ADAY</span><span class="pill blue">${VERSION}</span><span class="pill amber">BACKTEST SIRALAMA</span><span class="pill amber">${x.quality}</span></div></div>`
+  return `<div class="candidate ${cls}" onclick="selectCandidate('${x.key}')"><div class="top"><div><div class="sym">${i+1}) ${x.sym} / ${x.tf}</div><div class="model">${x.dir} — ${x.model.replace(/^LONG — |^SHORT — /,'')}</div></div><div class="score ${x.dir.toLowerCase()}">${sc}<br><span style="font-size:16px">BT</span></div></div><div class="line">Liste modu: ${x.listMode||"BACKTEST EN İYİ"} | Yön: ${x.dir} | Teknik geçiş: ${x.layerHits}/14 | Sınıf: ${x.quality}<br>Teknik bağlam: Teknik ${Math.round(x.tech)} / İcra ${Math.round(x.exec)} / Backtest sağlık ${Math.round(x.back)} / Veri ${x.dataScore}<br>Giriş ${dual(x.entry)}<br>Stop ${dual(x.stop)} | Stop ${pct(x.stopPct,2)} | TP2 alanı ${fmt(x.tp2Area,2)}R<br>TP1 ${dual(x.t1)} | TP2 ${dual(x.t2)} | TP3 ${dual(x.t3)}<br><b>Backtest:</b> İşlem ${x.bt.count} | Win ${pct(x.bt.win,1)} | PF ${x.bt.pf>=20?'20+':fmt(x.bt.pf,2)} | Hızlı stop ${pct(x.bt.fast,1)} | Net ${fmt(x.bt.net,2)}R | MFE/MAE ${fmt(x.bt.avgMfe,2)}R/${fmt(x.bt.avgMae,2)}R<br>Veri: ${x.ageSec} sn | Kaynak: ${x.source}</div><div><span class="pill ${x.dir==='LONG'?'green':'red'}">${x.dir} TEKNİK ADAY</span><span class="pill blue">${VERSION}</span><span class="pill amber">BACKTEST SIRALAMA</span><span class="pill amber">${x.quality}</span></div></div>`
 }
 function renderList(){
   renderSummary();
   pool.forEach((x,idx)=>x.key=x.key||`${x.sym}_${x.tf}_${x.dir}_${idx}`);
-  const top=selectTop10();
+  const topLong=selectTopByDir("LONG");
+  const topShort=selectTopByDir("SHORT");
   const map=new Map(pool.map(x=>[x.key,x]));
   window.__candMap=map;
-  $("list").innerHTML=`<div class="listSection"><h3>Backtest En İyi 10 — LONG/SHORT Karışık</h3><p>Teknik analiz kapısından geçen adaylar içinde, backtest dayanıklılığı en yüksek ilk 10 sıralanır. Yön fark etmez; LONG ve SHORT aynı standarttadır.</p>${top.length?top.map((x,i)=>card(x,i)).join(''):'<p>Teknik + backtest barajını geçen aday yok.</p>'}</div>`;
-  if(top.length&&!selected)selectCandidate(top[0].key,true)
+  $("list").innerHTML=`<div class="listSection long"><h3>Backtest En İyi 7 LONG</h3><p>Teknik analiz kapısından geçen LONG adayları içinde, backtest dayanıklılığı en yüksek ilk 7 sıralanır.</p>${topLong.length?topLong.map((x,i)=>card(x,i)).join(''):'<p>LONG tarafında teknik + backtest barajını geçen aday yok.</p>'}</div><div class="listSection short"><h3>Backtest En İyi 7 SHORT</h3><p>Teknik analiz kapısından geçen SHORT adayları içinde, backtest dayanıklılığı en yüksek ilk 7 sıralanır.</p>${topShort.length?topShort.map((x,i)=>card(x,i)).join(''):'<p>SHORT tarafında teknik + backtest barajını geçen aday yok.</p>'}</div>`;
+  const first=topLong[0]||topShort[0];
+  if(first&&!selected)selectCandidate(first.key,true)
 }
 
 function selectCandidate(key,silent=false){const x=window.__candMap&&window.__candMap.get(key);if(!x)return;selected=x;$("decision").className="decision "+(x.dir==="LONG"?"long":"short");$("decision").textContent=`${x.sym} ${x.dir} / ${x.tf} — ${x.listMode}`;function m(k,v){return `<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`}$("metrics").innerHTML=m("BT Sınıf",x.quality)+m("BT Endeks",Math.round(x.btRank))+m("Katman",`${x.layerHits}/14`)+m("Giriş",dual(x.entry))+m("Stop",dual(x.stop))+m("Stop %",pct(x.stopPct,2))+m("TP1",dual(x.t1))+m("TP2",dual(x.t2))+m("TP3",dual(x.t3))+m("Win",pct(x.bt.win,1))+m("PF",x.bt.pf>=20?"20+":fmt(x.bt.pf,2))+m("Hızlı stop",pct(x.bt.fast,1));const qty=RULE.spotTry/(x.entry*(fx.rate||1));const riskTry=Math.abs(x.entry-x.stop)*qty*(fx.rate||1);$("tryPlan").innerHTML=`<b>${x.dir} teknik plan</b><br>Teknik kapı geçilmiş adaydır; final sıralama backtest dayanıklılığına göre yapılır. 10.000 TL varsayımıyla yaklaşık miktar: ${fmt(qty,2)} ${base(x.sym)}. Tahmini risk: ${fmt(riskTry,2)} TL. TP1/TP2/TP3 fiyatları yukarıda.`;$("reasons").innerHTML=Object.entries(x.scores).map(([k,v])=>`<span class="pill ${v>=65?'green':v>=50?'amber':'gray'}">${k}: ${Math.round(v)}</span>`).join('');renderChart(x);renderBt(x);if(!silent)document.getElementById('planBox').scrollIntoView({behavior:'smooth',block:'start'})}
 function renderBt(x){const trs=(x.bt.trades||[]).slice(-8);$("bt").innerHTML=`<div class="grid"><div class="metric"><div class="k">İşlem</div><div class="v">${x.bt.count}</div></div><div class="metric"><div class="k">Win</div><div class="v">${pct(x.bt.win,1)}</div></div><div class="metric"><div class="k">PF</div><div class="v">${x.bt.pf>=20?'20+':fmt(x.bt.pf,2)}</div></div><div class="metric"><div class="k">Net R</div><div class="v">${fmt(x.bt.net,2)}</div></div><div class="metric"><div class="k">MFE/MAE</div><div class="v">${fmt(x.bt.avgMfe,2)}R / ${fmt(x.bt.avgMae,2)}R</div></div><div class="metric"><div class="k">Hızlı stop</div><div class="v">${pct(x.bt.fast,1)}</div></div></div><div class="note">Bu sürümde final sıra backtest dayanıklılığına göre verilir: işlem sayısı, win, PF, hızlı stop, net R ve MFE/MAE birlikte okunur.</div>`}
 function renderChart(x){const raw=market.data&&market.data[x.sym]&&market.data[x.sym][x.tf];const c=raw?raw.slice(-80):[];const canvas=$("chart"),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);if(!c.length)return;const vals=c.flatMap(z=>[z.high,z.low,x.entry,x.stop,x.t1,x.t2,x.t3]);const mn=Math.min(...vals),mx=Math.max(...vals),pad=(mx-mn)*.08||1;const y=v=>h-20-(v-(mn-pad))/(mx-mn+pad*2)*(h-40),xpos=i=>20+i*(w-40)/(c.length-1);ctx.lineWidth=3;ctx.strokeStyle="#89aaff";ctx.beginPath();c.forEach((z,i)=>{const xx=xpos(i),yy=y(z.close);if(i)ctx.lineTo(xx,yy);else ctx.moveTo(xx,yy)});ctx.stroke();function line(v,col,txt){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(20,y(v));ctx.lineTo(w-20,y(v));ctx.stroke();ctx.fillStyle=col;ctx.font="18px Arial";ctx.fillText(txt,24,y(v)-5)}line(x.entry,"#ffd166","Giriş");line(x.stop,"#ff6b8a","Stop");line(x.t1,"#7cff9f","TP1");line(x.t2,"#7cff9f","TP2");line(x.t3,"#7cff9f","TP3")}
-async function oneClickScan(){pool=[];selected=null;scan={done:0,total:0,dirChecks:0,passedTech:0,btPassed:0,out:0,json:0,rest:0,stale:0,invalid:0};$("mainBtn").disabled=true;setMeta("Veri bağlantısı kuruluyor...");setBar(0);await loadMarket();await loadFx();await getUniverse();scan.total=SYMBOLS.length*TFS.length;setDataBox();for(const sym of SYMBOLS){for(const tf of TFS){const raw=await getCandles(sym,tf);scan.done++;setBar(scan.done/scan.total*100);if(raw&&raw.length>=220){for(const dir of ["LONG","SHORT"]){scan.dirChecks++;const c=analyzeLast(sym,tf,raw,dir);if(c)pool.push(c);else scan.out++}}else{scan.dirChecks+=2;scan.out+=2}setMeta(`Tarama ${scan.done}/${scan.total} | ${sym} ${tf} | Teknik+BT geçen ${pool.length} | LONG ${pool.filter(x=>x.dir==='LONG').length} | SHORT ${pool.filter(x=>x.dir==='SHORT').length}`);if(scan.done%8===0){renderList();await new Promise(r=>setTimeout(r,0))}}}pool=dedup(pool).sort((a,b)=>b.rankScore-a.rankScore);renderList();setMeta(`Tarama bitti: ${scan.done}/${scan.total} sembol/TF | Yön kontrolü ${scan.dirChecks} | Teknik+BT geçen ${pool.length} | Backtest en iyi 10 hazır`);$("mainBtn").disabled=false}
+async function oneClickScan(){pool=[];selected=null;scan={done:0,total:0,dirChecks:0,passedTech:0,btPassed:0,out:0,json:0,rest:0,stale:0,invalid:0};$("mainBtn").disabled=true;setMeta("Veri bağlantısı kuruluyor...");setBar(0);await loadMarket();await loadFx();await getUniverse();scan.total=SYMBOLS.length*TFS.length;setDataBox();for(const sym of SYMBOLS){for(const tf of TFS){const raw=await getCandles(sym,tf);scan.done++;setBar(scan.done/scan.total*100);if(raw&&raw.length>=220){for(const dir of ["LONG","SHORT"]){scan.dirChecks++;const c=analyzeLast(sym,tf,raw,dir);if(c)pool.push(c);else scan.out++}}else{scan.dirChecks+=2;scan.out+=2}setMeta(`Tarama ${scan.done}/${scan.total} | ${sym} ${tf} | Teknik+BT geçen ${pool.length} | LONG ${pool.filter(x=>x.dir==='LONG').length} | SHORT ${pool.filter(x=>x.dir==='SHORT').length}`);if(scan.done%8===0){renderList();await new Promise(r=>setTimeout(r,0))}}}pool=dedup(pool).sort((a,b)=>b.rankScore-a.rankScore);renderList();setMeta(`Tarama bitti: ${scan.done}/${scan.total} sembol/TF | Yön kontrolü ${scan.dirChecks} | Teknik+BT geçen ${pool.length} | Backtest en iyi 7 LONG + 7 SHORT hazır`);$("mainBtn").disabled=false}
 function dedup(arr){const seen=new Map();for(const x of arr){const key=x.sym+"_"+x.tf+"_"+x.dir;const old=seen.get(key);if(!old||x.rankScore>old.rankScore)seen.set(key,x)}return [...seen.values()]}
 loadMarket().then(loadFx);
