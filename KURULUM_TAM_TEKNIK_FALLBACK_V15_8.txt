@@ -1,0 +1,15 @@
+AYAZ TRADE v15.8 — TAM TEKNIK HAVUZ + FALLBACK ILK 7
+
+Yenilikler:
+1) Coin evreni 100'den 150'ye çıkarıldı.
+2) Evren Binance USDT piyasasında en yüksek hacimli/trade edilebilir coinlerden dinamik seçilir.
+3) v15.7 teknik genel havuz katmanları korunur: SMC, destek/direnç, likidite, supply-demand, market structure, mum, hacim, momentum, volatilite, stop/TP alanı.
+4) LONG ve SHORT aynı teknik standarttan geçer.
+5) Bir yönde A-/A/A+ ana kadro varsa sadece ana kadro gösterilir.
+6) Bir yönde ana kadro hiç yoksa ekran boş kalmaz; genel havuzdan kalite sıralamasına göre en iyi 7 aday gösterilir.
+7) Fallback adaylar “HAVUZDAN EN İYİ / GÖZLEM” etiketiyle ayrılır.
+8) Fallback sıralaması selectorScore, teknik/işlem/backtest/veri skorları, H1/H2/H3 havuz sınıfı, PF, win, hızlı stop, TP2 alanı, tetik yaşı ve stop kalitesine göre yapılır.
+
+GitHub'a zip olarak değil, içindeki dosyaları repo ana dizinine yükleyin.
+Açılış linki:
+https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=tam-teknik-havuz-fallback-v15-8

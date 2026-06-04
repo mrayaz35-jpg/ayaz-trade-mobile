@@ -1,7 +1,7 @@
 
 const DEFAULT_SYMBOLS=["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","ADAUSDT","DOGEUSDT","AVAXUSDT","LINKUSDT","DOTUSDT","TRXUSDT","ATOMUSDT","NEARUSDT","APTUSDT","OPUSDT","ARBUSDT","BCHUSDT","LTCUSDT","INJUSDT","RNDRUSDT","SUIUSDT","FILUSDT","UNIUSDT","AAVEUSDT","ETCUSDT","MATICUSDT","TONUSDT","PEPEUSDT","WIFUSDT","FETUSDT"];
 let SYMBOLS=[...DEFAULT_SYMBOLS];
-const UNIVERSE_LIMIT=100;
+const UNIVERSE_LIMIT=150;
 const EXCLUDED_BASES=new Set(["USDC","FDUSD","TUSD","BUSD","DAI","USDP","EUR","TRY","BRL","GBP","UAH","AEUR","EURI","PAX","USTC"]);
 const BAD_SUFFIX=["UP","DOWN","BULL","BEAR","3L","3S","5L","5S"];
 const TFS=["15m","30m","1h","2h","4h"];
@@ -397,7 +397,7 @@ async function loadDynamicUniverse(){
       if(EXCLUDED_BASES.has(base))return false;
       if(BAD_SUFFIX.some(s=>base.endsWith(s)))return false;
       const qv=Number(t.quoteVolume||0),last=Number(t.lastPrice||0),trades=Number(t.count||0);
-      return qv>2500000 && last>0 && trades>1000;
+      return qv>1000000 && last>0 && trades>500;
     }).sort((a,b)=>Number(b.quoteVolume||0)-Number(a.quoteVolume||0)).slice(0,UNIVERSE_LIMIT).map(t=>t.symbol);
     if(picked.length>=40){SYMBOLS=picked;setMeta(`Dinamik evren hazır: ${SYMBOLS.length} likit USDT coin seçildi.`);return;}
   }catch(e){/* fallback aşağıda */}
@@ -3709,8 +3709,124 @@ function binanceTryPlan(x){
   return `<b>${x.dir} TEKNİK ANA KADRO — v15.7</b><div class="tryline">Bu plan teknik kalite planıdır. LONG ve SHORT aynı standartla üretilir; hangi piyasada uygulanacağı kullanıcı tercihidir.</div><div class="tryline">Giriş referansı: ${tlInput(x.entry)} TL | Stop: ${tlInput(x.stop)} TL | TP1: ${tlInput(x.t1)} TL | TP2: ${tlInput(x.t2)} TL.</div><div class="tryline"><b>Güvenli kullanım:</b> TP1 görülmeden tüm pozisyonu TP2’ye bağlama. TP1 sonrası stopu girişe/az kâra çekip kalan kısmı TP2’ye taşı.</div><div class="tryline">Referans ${fmt(RULE.spotTry,0)} TL için tahmini risk: ${fmt(riskTry,2)} TL | TP1/TP2/TP3 tahmini: ${fmt(p1,2)} / ${fmt(p2,2)} / ${fmt(p3,2)} TL.</div>`;
 }
 async function scanAll(){
-  setMeta('v15.7 Tam Teknik Genel Havuz taraması başladı: SMC + destek/direnç + likidite + supply/demand + mum + hacim katmanları aktif...');
+  setMeta('v15.8 Tam Teknik Havuz + Fallback İlk 7 taraması başladı: 150 trade edilebilir coin, güçlü teknik havuz ve ana kadro yoksa havuzdan en iyi 7 kuralı aktif...');
   candidates=[]; scanLog.lowQuality=0; const total=SYMBOLS.length*TFS.length; scanLog.total=total; scanLog.done=0; let done=0;
-  for(const s0 of SYMBOLS){const s=cleanSymbol(s0); if(!s){scanLog.skipped+=TFS.length;continue;} for(const tf of TFS){await ensureCandles(s,tf); const arr=getCandles(s,tf); const key=s+'|'+tf; const pairLive=liveMap[key]||pairSourceTime(s,tf,arr); if(arr&&arr.length>=245&&pairLive&&sourceAgeMs(pairLive)<=RULE.maxLiveAgeMs){const before=candidates.length; const b=backtest(s,tf); if(b){for(const dir of ['LONG','SHORT']){const cand=buildCandidateForDir(s,tf,b,dir); if(cand)candidates.push(cand); else scanLog.lowQuality=(scanLog.lowQuality||0)+1;}} if(candidates.length>before||done%8===0){sortCandidates();renderList();}} else {scanLog.skipped++; if(pairLive&&sourceAgeMs(pairLive)>RULE.maxLiveAgeMs)scanLog.stale++;} done++; scanLog.done=done; setBar(done/total*100); setMeta(`${liveText()} | v15.7 genel havuz ${done}/${total} | Coin: ${symbolLabel(s)} | TF: ${tf} | LONG havuz: ${candidates.filter(x=>x.dir==='LONG').length} | SHORT havuz: ${candidates.filter(x=>x.dir==='SHORT').length} | Ana: ${rankedList('LONG',7).length}+${rankedList('SHORT',7).length} | H1: ${candidates.filter(x=>x.poolStage==='H1').length}`); await delay(16);}}
-  sortCandidates(); renderList(); const autoIdx=firstAutoCandidateIndex(); if(autoIdx>=0)setTimeout(()=>selectCandidate(autoIdx,true),50); setMeta(`${liveText()} | Tarama bitti: ${done}/${total} | LONG havuz ${candidates.filter(x=>x.dir==='LONG').length} / ana ${rankedList('LONG',7).length} / yedek ${reserveList('LONG',99).length} | SHORT havuz ${candidates.filter(x=>x.dir==='SHORT').length} / ana ${rankedList('SHORT',7).length} / yedek ${reserveList('SHORT',99).length} | v15.7 Tam Teknik Genel Havuz aktif`);
+  for(const s0 of SYMBOLS){const s=cleanSymbol(s0); if(!s){scanLog.skipped+=TFS.length;continue;} for(const tf of TFS){await ensureCandles(s,tf); const arr=getCandles(s,tf); const key=s+'|'+tf; const pairLive=liveMap[key]||pairSourceTime(s,tf,arr); if(arr&&arr.length>=245&&pairLive&&sourceAgeMs(pairLive)<=RULE.maxLiveAgeMs){const before=candidates.length; const b=backtest(s,tf); if(b){for(const dir of ['LONG','SHORT']){const cand=buildCandidateForDir(s,tf,b,dir); if(cand)candidates.push(cand); else scanLog.lowQuality=(scanLog.lowQuality||0)+1;}} if(candidates.length>before||done%8===0){sortCandidates();renderList();}} else {scanLog.skipped++; if(pairLive&&sourceAgeMs(pairLive)>RULE.maxLiveAgeMs)scanLog.stale++;} done++; scanLog.done=done; setBar(done/total*100); setMeta(`${liveText()} | v15.8 genel havuz ${done}/${total} | Coin: ${symbolLabel(s)} | TF: ${tf} | LONG havuz: ${candidates.filter(x=>x.dir==='LONG').length} | SHORT havuz: ${candidates.filter(x=>x.dir==='SHORT').length} | Ana: ${rankedList('LONG',7).length}+${rankedList('SHORT',7).length} | H1: ${candidates.filter(x=>x.poolStage==='H1').length}`); await delay(16);}}
+  sortCandidates(); renderList(); const autoIdx=firstAutoCandidateIndex(); if(autoIdx>=0)setTimeout(()=>selectCandidate(autoIdx,true),50); setMeta(`${liveText()} | Tarama bitti: ${done}/${total} | LONG havuz ${candidates.filter(x=>x.dir==='LONG').length} / ana ${rankedList('LONG',7).length} / yedek ${reserveList('LONG',99).length} | SHORT havuz ${candidates.filter(x=>x.dir==='SHORT').length} / ana ${rankedList('SHORT',7).length} / yedek ${reserveList('SHORT',99).length} | v15.8 Tam Teknik Havuz + Fallback İlk 7 aktif`);
+}
+
+
+/* ============================================================
+   v15.8 GENEL HAVUZ 150 COIN + FALLBACK ILK 7
+   Teknik taraf bozulmadı. Sadece evren 150 coine çıkarıldı ve
+   ana kadro boş kalırsa aynı yön genel havuzdan en iyi 7 gösterilir.
+============================================================ */
+Object.assign(RULE,{
+  universeTarget:150,
+  fallbackPoolLimit:7,
+  fallbackMinPoolStage:'H2',
+  fallbackMinScore:57
+});
+function v158PoolRankScore(x){
+  const bd=x.scoreBreakdown||{}, st=x.stat||{}, d=x.techDetail||{};
+  const stageBonus=x.poolStage==='H1'?28:x.poolStage==='H2'?14:x.poolStage==='H3'?3:0;
+  const gradeBonus=x.poolGrade==='A+'?60:x.poolGrade==='A'?48:x.poolGrade==='A-'?36:x.poolGrade==='B+'?18:x.poolGrade==='B'?5:0;
+  const evidence=Math.min(14,v157EvidenceCount(x)*1.6);
+  const statSafe=Math.min(28,Math.max(0,(st.pf||0))*4.5)+Math.max(0,(st.win||0)-50)*0.55-Math.max(0,(st.fast||0)-18)*0.9+Math.min(12,(st.count||0)/8);
+  const technical=(bd.tech||0)*0.34+(bd.execution||0)*0.36+(bd.backtest||0)*0.30;
+  const room=Math.min(12,(x.tp2RoomR||0)*3.2);
+  const source=sourcePriority(x.source)*2;
+  const weakPenalty=Math.max(0,v156WeakDimensionCount(x))*10;
+  const stopPenalty=Math.max(0,(x.stopPct||0)-2.5)*4;
+  const agePenalty=Math.max(0,(x.usedK||0)-v156FreshLimit(x.tf))*5;
+  return (x.selectorScore||0)*0.85+technical*0.60+stageBonus+gradeBonus+evidence+statSafe+room+source-weakPenalty-stopPenalty-agePenalty;
+}
+function v158PoolEligible(x){
+  if(!x||!validCandidateSymbol(x))return false;
+  if((x.ageSec||9999)>RULE.maxLiveAgeMs/1000)return false;
+  if((x.selectorScore||0)<RULE.fallbackMinScore)return false;
+  if(!['H1','H2','H3'].includes(x.poolStage||''))return false;
+  if((x.poolStage==='H3') && (x.selectorScore||0)<68)return false;
+  if((x.tp2RoomR||0)<RULE.minTp2RoomR)return false;
+  if(!v156StopOk(x,false))return false;
+  if(x.riskClass==='Yüksek')return false;
+  return true;
+}
+function v158UniqueTop(arr,limit=7){
+  const out=[], seen=new Set();
+  for(const x of arr){
+    const key=(x.sym||'')+'|'+(x.dir||'');
+    if(seen.has(key))continue;
+    seen.add(key); out.push(x);
+    if(out.length>=limit)break;
+  }
+  return out;
+}
+function v158PoolSort(a,b){
+  return v158PoolRankScore(b)-v158PoolRankScore(a) || candidateRank(a,b);
+}
+function v158MainList(dir,limit=7){
+  const main=v158UniqueTop(candidates.filter(x=>x&&x.dir===dir&&v156MainEligible(x)).sort(candidateRank),limit);
+  return main;
+}
+function v158FallbackList(dir,limit=7){
+  return v158UniqueTop(candidates.filter(x=>x&&x.dir===dir&&v158PoolEligible(x)).sort(v158PoolSort),limit);
+}
+function rankedList(dir,limit=7){
+  const main=v158MainList(dir,limit);
+  if(main.length>0)return main;
+  return v158FallbackList(dir,limit);
+}
+function reserveList(dir,limit=10){
+  const shown=new Set(rankedList(dir,999).map(x=>x.sym+'|'+x.dir));
+  const all=candidates.filter(x=>x&&x.dir===dir&&!shown.has(x.sym+'|'+x.dir)&&v158PoolEligible(x)).sort(v158PoolSort);
+  return v158UniqueTop(all,limit);
+}
+function countByDir(dir){return rankedList(dir,999).length}
+function firstAutoCandidateIndex(){const x=rankedList('LONG',1)[0]||rankedList('SHORT',1)[0];return x?candidates.indexOf(x):-1}
+function v158ListMode(dir){return v158MainList(dir,7).length>0?'ANA KADRO':'HAVUZDAN EN İYİ 7';}
+function v158CandidateStatus(x){return v156MainEligible(x)?v156BandLabel(x):'HAVUZDAN EN İYİ / GÖZLEM';}
+function renderList(){
+  const box=$('list');
+  const longs=rankedList('LONG',7), shorts=rankedList('SHORT',7), longRes=reserveList('LONG',10), shortRes=reserveList('SHORT',10);
+  const rawLong=candidates.filter(x=>x&&x.dir==='LONG').length, rawShort=candidates.filter(x=>x&&x.dir==='SHORT').length;
+  const mainLong=v158MainList('LONG',7).length, mainShort=v158MainList('SHORT',7).length;
+  const h1L=candidates.filter(x=>x.dir==='LONG'&&x.poolStage==='H1').length, h1S=candidates.filter(x=>x.dir==='SHORT'&&x.poolStage==='H1').length;
+  const summary=`<div class="dash"><div><b>${SYMBOLS.length}</b><span>coin evreni</span></div><div><b>${rawLong}</b><span>LONG genel havuz</span></div><div><b>${rawShort}</b><span>SHORT genel havuz</span></div><div><b>${mainLong}+${mainShort}</b><span>ana kadro</span></div><div><b>${h1L+h1S}</b><span>H1 güçlü havuz</span></div><div><b>${scanLog.lowQuality||0}</b><span>havuz dışı</span></div></div>
+  <div class="note"><b>v15.8:</b> Teknik motor v15.7 ile aynı güçlü katmanları kullanır. Coin evreni en çok trade edilen <b>150 USDT</b> coine çıkarıldı. Kural: Bir yönde A-/A/A+ ana kadro varsa o gösterilir; <b>ana kadro hiç yoksa</b> ekran boş kalmaz, aynı yöndeki genel havuzdan kalite sıralamasına göre en iyi 7 aday gösterilir. Bu adaylar “HAVUZDAN EN İYİ / GÖZLEM” etiketiyle ayrılır.</div>`;
+  const dirPill=x=>`<span class="pill ${x.dir==='LONG'?'green':'red'}">${x.dir} TEKNİK ADAY</span>`;
+  const modePill=x=>v156MainEligible(x)?`<span class="pill green">ANA KADRO</span>`:`<span class="pill amber">HAVUZDAN EN İYİ / GÖZLEM</span>`;
+  const card=(x,i)=>{const idx=candidates.indexOf(x),bd=x.scoreBreakdown||{},d=x.techDetail||{};const bt=`İşlem ${x.stat.count||0} | Win ${pct(x.stat.win||0,1)} | PF ${x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2)} | Hızlı stop ${pct(x.stat.fast||0,1)}`;const band=`<span class="pill ${x.poolGrade==='A+'?'green':x.poolGrade==='A'?'blue':x.poolGrade==='A-'?'amber':'gray'}">${v156BandLabel(x)}</span>`;return `<div class="candidate ${x.dir==='SHORT'?'short':'long'}" onclick="selectCandidate(${idx})"><div class="top"><div><div class="sym">${i+1}) ${symbolLabel(x.sym)} / ${x.tf}</div><div class="model">${x.model}${x.sub?' — '+x.sub:''}</div></div><div class="score ${x.dir==='LONG'?'long':'short'}">${Math.round(v158PoolRankScore(x))}<br><span style="font-size:14px">SIRA</span></div></div><div class="line">Liste modu: <b>${v158CandidateStatus(x)}</b> | Havuz: <b>${x.poolStage||'-'}</b> | Kalite: <b>${x.poolGrade}</b> | Kadro puanı ${x.selectorScore}<br>Skor: Teknik ${bd.tech||'-'} / İcra ${bd.execution||'-'} / Backtest ${bd.backtest||'-'} / Veri ${bd.source||'-'} | Tetik: ${x.usedK||0} mum<br>Katman: Trend ${fmt(d.trend?.score||0,0)} | SMC ${fmt(d.smc?.score||0,0)} | S/R ${fmt(d.sr?.score||0,0)} | Likidite ${fmt(d.liq?.score||0,0)} | Mum ${fmt(d.candle?.score||0,0)} | Hacim ${fmt(d.volumeQual?.score||0,0)}<br>Giriş ${dualPrice(x.entry)}<br>Stop ${dualPrice(x.stop)} | Stop ${pct(x.stopPct,2)} | TP2 alanı ${fmt(x.tp2RoomR||0,2)}R<br>TP1 ${dualPrice(x.t1)} | TP2 ${dualPrice(x.t2)} | TP3 ${dualPrice(x.t3)}<br>Backtest: ${bt}<br>Veri: ${x.ageSec} sn | Mum: ${x.candleSource||x.source} | Fiyat: ${x.priceSource||x.source}<br>Teknik: ${(x.why||[]).join(' + ')}</div><div>${dirPill(x)}${modePill(x)}${band}<span class="pill blue">v15.8 150 coin + fallback</span>${(x.capNotes||[]).slice(0,5).map(n=>`<span class="pill amber">${n}</span>`).join('')}</div></div>`};
+  const section=(title,arr,dir,desc,empty)=>`<div class="listSection ${dir.toLowerCase()}"><h3>${title}</h3><p class="dim">${desc}</p>${arr.length?arr.map(card).join(''):empty}</div>`;
+  box.innerHTML=summary+
+    section(`En İyi 7 LONG — ${v158ListMode('LONG')}`,longs,'LONG','Önce A-/A/A+ ana kadro aranır. Ana kadro yoksa genel havuzdan en iyi 7 LONG kalite sırasıyla gösterilir.','<p>LONG havuzda da uygun aday yok.</p>')+
+    section(`En İyi 7 SHORT — ${v158ListMode('SHORT')}`,shorts,'SHORT','LONG ile aynı standarttadır. Ana kadro yoksa genel havuzdan en iyi 7 SHORT kalite sırasıyla gösterilir.','<p>SHORT havuzda da uygun aday yok.</p>')+
+    section('Yedek LONG İzleme Havuzu',longRes,'LONG','Gösterilen ilk 7 dışında kalan izleme adayları.','<p>Yedek LONG yok.</p>')+
+    section('Yedek SHORT İzleme Havuzu',shortRes,'SHORT','Gösterilen ilk 7 dışında kalan izleme adayları.','<p>Yedek SHORT yok.</p>');
+}
+function selectCandidate(i,auto=false){
+  const x=candidates[i]; if(!x)return; selected=x;
+  const bd=x.scoreBreakdown||{},d=x.techDetail||{};
+  const status=v158CandidateStatus(x);
+  $('decision').className='decision '+(x.dir==='LONG'?'long':'short'); $('decision').textContent=`${x.dir} ${status} — v15.8 PUAN ${x.selectorScore} / ${x.poolGrade}`;
+  $('metrics').innerHTML=metric('Sembol / TF',`${symbolLabel(x.sym)} / ${x.tf}`)+metric('Yön',`${x.dir} teknik işlem`)+metric('Liste modu',status)+metric('Havuz sınıfı',x.poolStage||'-')+metric('Kalite sınıfı',x.poolGrade||'-')+metric('Kadro puanı',x.selectorScore||'-')+metric('Fallback sıra puanı',Math.round(v158PoolRankScore(x)))+metric('Teknik / İcra',`${bd.tech||'-'} / ${bd.execution||'-'}`)+metric('Backtest / Veri',`${bd.backtest||'-'} / ${bd.source||'-'}`)+metric('Canlı veri',`${x.ageSec} sn`)+metric('Tetik yaşı',`${x.usedK||0} mum`)+metric('Trend / MTF',`${fmt(d.trend?.score||0,0)} / ${fmt(d.mtf?.score||0,0)}`)+metric('Yapı / SMC',`${fmt(d.st?.score||0,0)} / ${fmt(d.smc?.score||0,0)}`)+metric('S/R / Supply-Demand',`${fmt(d.sr?.score||0,0)} / ${fmt(d.sd?.score||0,0)}`)+metric('Likidite / Lokasyon',`${fmt(d.liq?.score||0,0)} / ${fmt(d.loc?.score||0,0)}`)+metric('Momentum / Para akışı',`${fmt(d.mom?.score||0,0)} / ${fmt(d.flow?.score||0,0)}`)+metric('Hacim / Mum',`${fmt(d.volumeQual?.score||0,0)} / ${fmt(d.candle?.score||0,0)}`)+metric('Tetik / Volatilite',`${fmt(d.trig?.score||0,0)} / ${fmt(d.vol?.score||0,0)}`)+metric('Kanal / TP2',`${fmt(d.channel?.score||0,0)} / ${fmt(x.tp2RoomR||0,2)}R`)+metric('Giriş',dualPrice(x.entry))+metric('Stop',dualPrice(x.stop))+metric('Stop %',pct(x.stopPct,2))+metric('TP1',dualPrice(x.t1))+metric('TP2',dualPrice(x.t2))+metric('TP3',dualPrice(x.t3))+metric('PF',x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2));
+  $('tryPlan').innerHTML=binanceTryPlan(x); $('reasons').innerHTML=(x.why||[]).map(r=>`<span class="pill ${x.dir==='LONG'?'green':'red'}">${r}</span>`).join('')+`<span class="pill blue">Win ${pct(x.stat.win||0,1)}</span><span class="pill blue">PF ${x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2)}</span><span class="pill blue">Hızlı stop ${pct(x.stat.fast||0,1)}</span><span class="pill blue">Katman ${v157EvidenceCount(x)}</span>`+(x.capNotes&&x.capNotes.length?x.capNotes.slice(0,8).map(n=>`<span class="pill amber">${n}</span>`).join(''):'');
+  drawChart(x.candles,x); renderBacktest(x); if(!auto)$('planBox').scrollIntoView({behavior:'smooth'});
+}
+function binanceTryPlan(x){
+  if(!fxReady())return 'USDT/TRY kuru alınamadı. TL fiyatları görünmeden işlem planı girme.';
+  const isMain=v156MainEligible(x), isLong=x.dir==='LONG';
+  const riskTry=RULE.spotTry*(x.stopPct/100);
+  const p1=RULE.spotTry*(isLong?((x.t1-x.entry)/x.entry):((x.entry-x.t1)/x.entry));
+  const p2=RULE.spotTry*(isLong?((x.t2-x.entry)/x.entry):((x.entry-x.t2)/x.entry));
+  const p3=RULE.spotTry*(isLong?((x.t3-x.entry)/x.entry):((x.entry-x.t3)/x.entry));
+  const head=isMain?`${x.dir} TEKNİK ANA KADRO — v15.8`:`${x.dir} HAVUZDAN EN İYİ / GÖZLEM — v15.8`;
+  const warn=isMain?'Ana kadro kalite filtresinden geçti.':'Bu aday ana kadro standardına çıkmadı; sadece ana kadro boş kaldığı için havuzdan kalite sırasıyla gösterildi. İşlem açmadan önce ek teyit gerekir.';
+  return `<b>${head}</b><div class="tryline">${warn}</div><div class="tryline">LONG ve SHORT aynı teknik standartla üretilir; uygulanacak piyasa kullanıcı tercihidir.</div><div class="tryline">Giriş referansı: ${tlInput(x.entry)} TL | Stop: ${tlInput(x.stop)} TL | TP1: ${tlInput(x.t1)} TL | TP2: ${tlInput(x.t2)} TL.</div><div class="tryline"><b>Güvenli kullanım:</b> TP1 görülmeden tüm pozisyonu TP2’ye bağlama. TP1 sonrası stopu girişe/az kâra çekip kalan kısmı TP2’ye taşı.</div><div class="tryline">Referans ${fmt(RULE.spotTry,0)} TL için tahmini risk: ${fmt(riskTry,2)} TL | TP1/TP2/TP3 tahmini: ${fmt(p1,2)} / ${fmt(p2,2)} / ${fmt(p3,2)} TL.</div>`;
+}
+async function scanAll(){
+  setMeta('v15.8 taraması başladı: 150 coin evreni + tam teknik genel havuz + ana kadro yoksa havuzdan en iyi 7 fallback aktif...');
+  candidates=[]; scanLog.lowQuality=0; const total=SYMBOLS.length*TFS.length; scanLog.total=total; scanLog.done=0; let done=0;
+  for(const s0 of SYMBOLS){const s=cleanSymbol(s0); if(!s){scanLog.skipped+=TFS.length;continue;} for(const tf of TFS){await ensureCandles(s,tf); const arr=getCandles(s,tf); const key=s+'|'+tf; const pairLive=liveMap[key]||pairSourceTime(s,tf,arr); if(arr&&arr.length>=245&&pairLive&&sourceAgeMs(pairLive)<=RULE.maxLiveAgeMs){const before=candidates.length; const b=backtest(s,tf); if(b){for(const dir of ['LONG','SHORT']){const cand=buildCandidateForDir(s,tf,b,dir); if(cand)candidates.push(cand); else scanLog.lowQuality=(scanLog.lowQuality||0)+1;}} if(candidates.length>before||done%8===0){sortCandidates();renderList();}} else {scanLog.skipped++; if(pairLive&&sourceAgeMs(pairLive)>RULE.maxLiveAgeMs)scanLog.stale++;} done++; scanLog.done=done; setBar(done/total*100); setMeta(`${liveText()} | v15.8 genel havuz ${done}/${total} | Coin: ${symbolLabel(s)} | TF: ${tf} | Evren: ${SYMBOLS.length} | LONG havuz: ${candidates.filter(x=>x.dir==='LONG').length} | SHORT havuz: ${candidates.filter(x=>x.dir==='SHORT').length} | Liste: ${rankedList('LONG',7).length}+${rankedList('SHORT',7).length} | Ana: ${v158MainList('LONG',7).length}+${v158MainList('SHORT',7).length}`); await delay(16);}}
+  sortCandidates(); renderList(); const autoIdx=firstAutoCandidateIndex(); if(autoIdx>=0)setTimeout(()=>selectCandidate(autoIdx,true),50); setMeta(`${liveText()} | Tarama bitti: ${done}/${total} | Evren ${SYMBOLS.length} coin | LONG havuz ${candidates.filter(x=>x.dir==='LONG').length} / ana ${v158MainList('LONG',7).length} / liste ${rankedList('LONG',7).length} | SHORT havuz ${candidates.filter(x=>x.dir==='SHORT').length} / ana ${v158MainList('SHORT',7).length} / liste ${rankedList('SHORT',7).length} | v15.8 aktif`);
 }
