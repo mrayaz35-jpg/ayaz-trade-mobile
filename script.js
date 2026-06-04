@@ -2519,3 +2519,613 @@ async function scanAll(){
   for(const s0 of SYMBOLS){const s=cleanSymbol(s0); if(!s){scanLog.skipped+=TFS.length;continue;} for(const tf of TFS){await ensureCandles(s,tf); const arr=getCandles(s,tf); const key=s+'|'+tf; const pairLive=liveMap[key]||pairSourceTime(s,tf,arr); if(arr&&arr.length>=235&&pairLive&&sourceAgeMs(pairLive)<=RULE.maxLiveAgeMs){const before=candidates.length; const b=backtest(s,tf); if(b){for(const dir of ['LONG','SHORT']){const cand=buildCandidateForDir(s,tf,b,dir); if(cand)candidates.push(cand); else scanLog.lowQuality=(scanLog.lowQuality||0)+1;}} if(candidates.length>before||done%8===0){sortCandidates();renderList();}} else {scanLog.skipped++; if(pairLive&&sourceAgeMs(pairLive)>RULE.maxLiveAgeMs)scanLog.stale++;} done++; scanLog.done=done; setBar(done/total*100); setMeta(`${liveText()} | v15.3 havuz ${done}/${total} | Coin: ${symbolLabel(s)} | TF: ${tf} | LONG havuz: ${candidates.filter(x=>x.dir==='LONG').length} | SHORT havuz: ${candidates.filter(x=>x.dir==='SHORT').length} | Kadro: ${rankedList('LONG',7).length}+${rankedList('SHORT',7).length}`); await delay(16);}}
   sortCandidates(); renderList(); const autoIdx=firstAutoCandidateIndex(); if(autoIdx>=0)setTimeout(()=>selectCandidate(autoIdx,true),50); setMeta(`${liveText()} | Tarama bitti: ${done}/${total} | LONG havuz ${candidates.filter(x=>x.dir==='LONG').length} / kadro ${rankedList('LONG',7).length} | SHORT havuz ${candidates.filter(x=>x.dir==='SHORT').length} / kadro ${rankedList('SHORT',7).length} | v15.3 Güçlü Kadro Seçici aktif`);
 }
+
+/* =========================================================
+   v15.4 SAMPIYON KALITE SECICI
+   Temel karar: Bol havuz kalır; ilk 7 artık sadece A/A+ ana kadro.
+   B+ adaylar işlem önerisi değil, yedek/izleme havuzudur.
+========================================================= */
+Object.assign(RULE,{
+  versionName:'v15.4 Şampiyon Kalite Seçici',
+  poolMinScore:40,
+  reserveMinScore:66,
+  championMinScore:78,
+  eliteMinScore:88,
+  nationalTeamSize:7,
+  minConf:58,
+  // Ana kadro minimumları: dünya şampiyonu kadrosu standardı
+  rosterMinTrades:45,
+  rosterMinPF:2.20,
+  rosterMinWin:58,
+  rosterMaxFastStop:20,
+  rosterMinBacktestScore:78,
+  rosterMinExecutionScore:80,
+  rosterMinTechScore:68,
+  // A+ eşiği
+  aPlusMinTrades:55,
+  aPlusMinPF:2.80,
+  aPlusMinWin:62,
+  aPlusMaxFastStop:15,
+  aPlusMinTp2RoomR:2.25,
+  // İşlem geometrisi
+  minTp2RoomR:2.00,
+  mainMinTp2RoomR:2.00,
+  reserveMinTp2RoomR:1.65,
+  maxMainStopPct:2.85,
+  maxStopPct:3.40,
+  minMainStopPct:0.75,
+  maxFreshSignalBars15m:2,
+  maxFreshSignalBars30m:2,
+  maxFreshSignalBars1h:3,
+  maxFreshSignalBars2h:3,
+  maxFreshSignalBars4h:4,
+  // Teknik alt eşikler
+  minMainLocScore:60,
+  minMainTrigScore:55,
+  minMainStructScore:56,
+  minMainMomScore:52,
+  minMainFlowScore:48,
+  minMainMtfScore:52,
+  minMainTrendScore:54
+});
+
+function v154FreshLimit(tf){
+  if(tf==='15m')return RULE.maxFreshSignalBars15m;
+  if(tf==='30m')return RULE.maxFreshSignalBars30m;
+  if(tf==='1h')return RULE.maxFreshSignalBars1h;
+  if(tf==='2h')return RULE.maxFreshSignalBars2h;
+  if(tf==='4h')return RULE.maxFreshSignalBars4h;
+  return 2;
+}
+function v154EvidenceCount(x){
+  const d=x?.techDetail||{}, arr=[d.trend,d.mtf,d.st,d.loc,d.mom,d.flow,d.trig,d.vol];
+  return arr.filter(o=>(o?.score||0)>=55).length + ((x?.tp2RoomR||0)>=RULE.mainMinTp2RoomR?1:0);
+}
+function v154WeakDimensionCount(x){
+  const d=x?.techDetail||{};
+  const vals=[d.trend?.score||0,d.mtf?.score||0,d.st?.score||0,d.loc?.score||0,d.mom?.score||0,d.flow?.score||0,d.trig?.score||0];
+  return vals.filter(v=>v>0&&v<50).length;
+}
+function v154StopOk(x,main=true){
+  const stop=x?.stopPct||999, tf=x?.tf||'15m';
+  const max = tf==='4h'?3.15:tf==='2h'?3.05:tf==='1h'?2.95:RULE.maxMainStopPct;
+  const min = main?RULE.minMainStopPct:0.60;
+  return stop>=min && stop<=max;
+}
+function v154BacktestMainOk(x){
+  const s=x?.stat||{}, bd=x?.scoreBreakdown||{};
+  return (s.count||0)>=RULE.rosterMinTrades && (s.pf||0)>=RULE.rosterMinPF && (s.win||0)>=RULE.rosterMinWin && (s.fast||0)<=RULE.rosterMaxFastStop && (bd.backtest||0)>=RULE.rosterMinBacktestScore;
+}
+function v154TechMainOk(x){
+  const d=x?.techDetail||{}, bd=x?.scoreBreakdown||{};
+  if((bd.tech||0)<RULE.rosterMinTechScore)return false;
+  if((bd.execution||0)<RULE.rosterMinExecutionScore)return false;
+  if((d.loc?.score||0)<RULE.minMainLocScore)return false;
+  if((d.trig?.score||0)<RULE.minMainTrigScore)return false;
+  if((d.st?.score||0)<RULE.minMainStructScore)return false;
+  if((d.mom?.score||0)<RULE.minMainMomScore)return false;
+  if((d.flow?.score||0)<RULE.minMainFlowScore)return false;
+  if((d.mtf?.score||0)<RULE.minMainMtfScore)return false;
+  if((d.trend?.score||0)<RULE.minMainTrendScore)return false;
+  return true;
+}
+function v154NotChased(x){
+  const d=x?.techDetail||{};
+  if(d.loc?.chase)return false;
+  if((x?.usedK||0)>v154FreshLimit(x?.tf))return false;
+  return true;
+}
+function v154MainEligible(x){
+  if(!x||!validCandidateSymbol(x))return false;
+  if((x.ageSec||9999)>RULE.maxLiveAgeMs/1000)return false;
+  if(x.riskClass==='Yüksek')return false;
+  if((x.selectorScore||0)<RULE.championMinScore)return false;
+  if((x.tp2RoomR||0)<RULE.mainMinTp2RoomR)return false;
+  if(!v154StopOk(x,true))return false;
+  if(!v154BacktestMainOk(x))return false;
+  if(!v154TechMainOk(x))return false;
+  if(!v154NotChased(x))return false;
+  if(v154EvidenceCount(x)<7)return false;
+  if(v154WeakDimensionCount(x)>0)return false;
+  return true;
+}
+function v154ReserveEligible(x){
+  if(!x||!validCandidateSymbol(x))return false;
+  const s=x.stat||{}, bd=x.scoreBreakdown||{}, d=x.techDetail||{};
+  if((x.ageSec||9999)>RULE.maxLiveAgeMs/1000)return false;
+  if(x.riskClass==='Yüksek')return false;
+  if((x.selectorScore||0)<RULE.reserveMinScore)return false;
+  if((x.tp2RoomR||0)<RULE.reserveMinTp2RoomR)return false;
+  if(!v154StopOk(x,false))return false;
+  if((s.count||0)<30 || (s.pf||0)<1.70 || (s.win||0)<52 || (s.fast||0)>27)return false;
+  if((bd.backtest||0)<66 || (bd.execution||0)<72 || (bd.tech||0)<58)return false;
+  if((d.loc?.score||0)<52 || (d.trig?.score||0)<48)return false;
+  return true;
+}
+function v154Grade(sel,sig,stat,tf,usedK=0){
+  const n=stat?.count||0, pf=stat?.pf||0, win=stat?.win||0, fast=stat?.fast||0, room=sig?.tp2RoomR||0;
+  const bd={tech:sel.tech||0,execution:sel.execution||0,backtest:sel.stat||0};
+  if(sel.weak?.hard || pf<1.60 || win<50 || fast>30 || n<24 || room<1.50 || bd.backtest<60)return 'C';
+  const fresh=usedK<=v154FreshLimit(tf);
+  const aplus=fresh && n>=RULE.aPlusMinTrades && pf>=RULE.aPlusMinPF && win>=RULE.aPlusMinWin && fast<=RULE.aPlusMaxFastStop && room>=RULE.aPlusMinTp2RoomR && bd.execution>=84 && bd.backtest>=84 && bd.tech>=72 && sel.score>=RULE.eliteMinScore;
+  if(aplus)return 'A+';
+  const a=fresh && n>=RULE.rosterMinTrades && pf>=RULE.rosterMinPF && win>=RULE.rosterMinWin && fast<=RULE.rosterMaxFastStop && room>=RULE.mainMinTp2RoomR && bd.execution>=RULE.rosterMinExecutionScore && bd.backtest>=RULE.rosterMinBacktestScore && bd.tech>=RULE.rosterMinTechScore && sel.score>=RULE.championMinScore;
+  if(a)return 'A';
+  if(sel.score>=RULE.reserveMinScore && pf>=1.70 && win>=52 && fast<=27 && n>=30 && room>=RULE.reserveMinTp2RoomR)return 'B+';
+  return 'B';
+}
+function v154ScorePenalty(sig,stat,sel,source,usedK,tf){
+  let p=0;
+  const d=sig.techDetail||{}, room=sig.tp2RoomR||0, stop=sig.stopPct||0;
+  if((stat.count||0)<45)p+=8;
+  if((stat.win||0)<58)p+=8;
+  if((stat.pf||0)<2.2)p+=10;
+  if((stat.fast||0)>20)p+=8;
+  if(room<2)p+=8;
+  if(stop<0.75)p+=6;
+  if(stop>2.85)p+=6;
+  if(usedK>v154FreshLimit(tf))p+=10;
+  if((d.trend?.score||0)<RULE.minMainTrendScore)p+=5;
+  if((d.mtf?.score||0)<RULE.minMainMtfScore)p+=5;
+  if((d.loc?.score||0)<RULE.minMainLocScore)p+=6;
+  if((d.trig?.score||0)<RULE.minMainTrigScore)p+=5;
+  if(String(source||'').includes('JSON'))p+=4;
+  return p;
+}
+function v152SelectorScore(sig,stat,source,usedK=0,tf='15m'){
+  const tech=Number(sig.q)||45, statInfo=v152StatScore(stat), exe=v152ExecutionScore(sig), src=44+sourcePriority(source)*12;
+  const d=sig.techDetail||{};
+  // v15.4: backtest + icra + taze tetik ana seçicidir; teknik etiket tek başına yetmez.
+  let s=tech*.22+exe.score*.34+statInfo.score*.34+src*.10;
+  if((d.loc?.labels||[]).length>=2)s+=2;
+  if(d.mtf?.strong)s+=2;
+  if(d.flow?.volStrong)s+=1;
+  if((sig.tp2RoomR||0)>=2.25)s+=3;
+  if((sig.tp2RoomR||0)<2.00)s-=7;
+  s-=v154ScorePenalty(sig,stat,{},source,usedK,tf)*0.85;
+  const base={score:v152Score(s),tech,execution:exe.score,stat:statInfo.score,source:src,notes:[...new Set([...exe.notes,...statInfo.notes])],statInfo,exe};
+  const weak=v153WeakLinkCaps(sig,stat,source,base,tf);
+  let finalScore=weak.hard?Math.min(base.score,24):Math.min(base.score,weak.cap);
+  return {score:v152Score(finalScore),tech,execution:exe.score,stat:statInfo.score,source:src,notes:[...new Set([...base.notes,...weak.notes])],statInfo,exe,weak};
+}
+function v152Confidence(sel,stat,source){
+  let cap=sourceCap(source);
+  const n=stat&&stat.count?stat.count:0;
+  if(n<24)cap=Math.min(cap,68); else if(n<45)cap=Math.min(cap,78); else if(n<55)cap=Math.min(cap,86);
+  if((stat&&stat.fast||0)>20)cap=Math.min(cap,78);
+  if((stat&&stat.pf||0)<RULE.rosterMinPF)cap=Math.min(cap,76);
+  if((stat&&stat.win||0)<RULE.rosterMinWin)cap=Math.min(cap,76);
+  return Math.round(Math.max(50,Math.min(cap,sel.score)));
+}
+function buildCandidateForDir(sym,tf,b,dir){
+  sym=cleanSymbol(sym); if(!sym||!b)return null;
+  const c=b.candles,last=c[c.length-1],key=sym+'|'+tf,pairLive=liveMap[key]||pairSourceTime(sym,tf,c),ageMs=sourceAgeMs(pairLive);
+  if(!pairLive||ageMs>RULE.maxLiveAgeMs)return null;
+  let sig=null,usedK=0;
+  for(let k=0;k<=7;k++){
+    const s=signalForSymbol(c,c.length-1-k,'BAGLI '+dir,sym,tf);
+    if(!s)continue;
+    const driftPct=Math.abs(last.close-s.entry)/Math.max(Math.abs(s.entry),1)*100;
+    const driftAtr=Math.abs(last.close-s.entry)/Math.max(last.atr||0,1e-9);
+    if(driftPct<=RULE.maxEntryDriftPct&&driftAtr<=RULE.maxEntryDriftAtr){sig=s;usedK=k;break;}
+  }
+  if(!sig)return null;
+  const stat=v152SafeStat((b.stats||[]).find(s=>String(s.model||'').includes(dir)),dir);
+  const source=sourceMap[key]||'Taze veri';
+  const sel=v152SelectorScore(sig,stat,source,usedK,tf);
+  if(sel.score<RULE.poolMinScore)return null;
+  const conf=v152Confidence(sel,stat,source),lev=leverage(sig,conf),rClass=riskClass(sig.stopPct,lev.lev);
+  if(sig.stopPct>RULE.maxStopPct||rClass==='Yüksek')return null;
+  const grade=v154Grade(sel,sig,stat,tf,usedK);
+  const notes=['geniş havuzdan geldi','v15.4 seçici'];
+  if(grade==='A+'||grade==='A')notes.push('ana kadro'); else if(grade==='B+')notes.push('yedek/izleme'); else notes.push('havuz dışı kalite');
+  if(usedK>0)notes.push(`${usedK} mum önce tetik`);
+  notes.push(...sel.notes.slice(0,3));
+  const obj={sym,tf,model:'v15.4 Şampiyon Kalite '+dir,sub:sig.sub,dir:sig.dir,conf,rawConf:Math.round(sel.score),cap:conf,capNotes:[...new Set(notes)],riskClass:rClass,entry:last.close,stop:sig.stop,t1:sig.t1,t2:sig.t2,t3:sig.t3,stopPct:sig.stopPct,rr:sig.rr,tp2RoomR:sig.tp2RoomR,why:sig.why,techDetail:sig.techDetail,stat,lev,candles:c,ageSec:Math.max(0,Math.round(ageMs/1000)),source,liveOnly:stat.count<1,stale:false,selectorScore:Math.round(sel.score),poolGrade:grade,usedK,scoreBreakdown:{tech:Math.round(sel.tech),execution:Math.round(sel.execution),backtest:Math.round(sel.stat),source:Math.round(sel.source)}};
+  return adjustRiskConfidence(obj);
+}
+function candidateRank(a,b){
+  const gradeW={"A+":400,"A":300,"B+":120,"B":40,"C":0};
+  const ga=gradeW[a.poolGrade]||0, gb=gradeW[b.poolGrade]||0;
+  if(gb!==ga)return gb-ga;
+  const sa=b.selectorScore||b.qualityScore||b.conf||0, sb=a.selectorScore||a.qualityScore||a.conf||0;
+  if(Math.abs(sa-sb)>0.001)return sa-sb;
+  const ea=(b.scoreBreakdown?.execution||0)-(a.scoreBreakdown?.execution||0); if(ea)return ea;
+  const ba=(b.scoreBreakdown?.backtest||0)-(a.scoreBreakdown?.backtest||0); if(ba)return ba;
+  return sourcePriority(b.source)-sourcePriority(a.source) || (a.stopPct||0)-(b.stopPct||0);
+}
+function rankedList(dir,limit=7){
+  const all=candidates.filter(x=>x&&x.dir===dir);
+  return v152UniqueTop(all.filter(v154MainEligible),limit);
+}
+function reserveList(dir,limit=10){
+  const mainKeys=new Set(rankedList(dir,999).map(x=>x.sym+'|'+x.dir));
+  const all=candidates.filter(x=>x&&x.dir===dir&&!mainKeys.has(x.sym+'|'+x.dir));
+  return v152UniqueTop(all.filter(v154ReserveEligible),limit);
+}
+function countByDir(dir){return rankedList(dir,999).length;}
+function firstAutoCandidateIndex(){const x=rankedList('LONG',1)[0]||rankedList('SHORT',1)[0]||reserveList('LONG',1)[0]||reserveList('SHORT',1)[0];return x?candidates.indexOf(x):-1;}
+function v154RejectStats(dir){
+  const arr=candidates.filter(x=>x&&x.dir===dir);
+  const rejected=arr.filter(x=>!v154MainEligible(x));
+  const badFast=rejected.filter(x=>(x.stat?.fast||0)>RULE.rosterMaxFastStop).length;
+  const badBt=rejected.filter(x=>(x.scoreBreakdown?.backtest||0)<RULE.rosterMinBacktestScore||(x.stat?.pf||0)<RULE.rosterMinPF||(x.stat?.win||0)<RULE.rosterMinWin).length;
+  const badTech=rejected.filter(x=>!v154TechMainOk(x)).length;
+  const badTp=rejected.filter(x=>(x.tp2RoomR||0)<RULE.mainMinTp2RoomR).length;
+  const oldTrig=rejected.filter(x=>(x.usedK||0)>v154FreshLimit(x.tf)).length;
+  return {all:arr.length,rejected:rejected.length,badFast,badBt,badTech,badTp,oldTrig};
+}
+function renderList(){
+  const box=$('list'),longs=rankedList('LONG',7),shorts=rankedList('SHORT',7),longRes=reserveList('LONG',8),shortRes=reserveList('SHORT',8);
+  const poolLong=candidates.filter(x=>x&&x.dir==='LONG').length,poolShort=candidates.filter(x=>x&&x.dir==='SHORT').length;
+  const champLong=longs.length,champShort=shorts.length,elite=candidates.filter(x=>x&&(x.poolGrade==='A+'||x.poolGrade==='A')).length;
+  const rL=v154RejectStats('LONG'),rS=v154RejectStats('SHORT');
+  const summary=`<div class="dash"><div><b>${poolLong}</b><span>LONG havuz</span></div><div><b>${poolShort}</b><span>SHORT havuz</span></div><div><b>${champLong}</b><span>ana LONG</span></div><div><b>${champShort}</b><span>ana SHORT</span></div><div><b>${longRes.length}+${shortRes.length}</b><span>yedek izleme</span></div><div><b>${elite}</b><span>A/A+ havuz</span></div></div>
+  <div class="note"><b>v15.4 standardı:</b> İlk 7’ye B+ alınmaz. Aday; backtest, icra, teknik bağlam, taze tetik, TP2 alanı ve stop kalitesinden birlikte geçerse ana kadroya girer. Kalite yetmezse yedek havuza düşer. LONG eleme: ${rL.rejected}/${rL.all} | SHORT eleme: ${rS.rejected}/${rS.all}</div>`;
+  const card=(x,i)=>{const idx=candidates.indexOf(x),bd=x.scoreBreakdown||{};const bt=`İşlem ${x.stat.count||0} | Win ${pct(x.stat.win||0,1)} | PF ${x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2)} | Hızlı stop ${pct(x.stat.fast||0,1)}`;const spot=x.dir==='LONG'?'<span class="pill green">spot AL adayı</span>':'<span class="pill red">spotta short değil</span>';return `<div class="candidate ${x.dir==='SHORT'?'short':'long'}" onclick="selectCandidate(${idx})"><div class="top"><div><div class="sym">${i+1}) ${symbolLabel(x.sym)} / ${x.tf}</div><div class="model">${x.model}${x.sub?' — '+x.sub:''}</div></div><div class="score ${x.dir==='LONG'?'long':'short'}">${x.selectorScore}<br><span style="font-size:15px">PUAN</span></div></div><div class="line">Kalite sınıfı: <b>${x.poolGrade}</b> | Güven: ${x.conf}% | Tetik: ${x.usedK||0} mum<br>Skor kırılımı: Teknik ${bd.tech||'-'} / İcra ${bd.execution||'-'} / Backtest ${bd.backtest||'-'} / Veri ${bd.source||'-'}<br>Giriş ${dualPrice(x.entry)}<br>Stop ${dualPrice(x.stop)} | Stop ${pct(x.stopPct,2)} | TP2 alanı ${fmt(x.tp2RoomR||0,2)}R<br>TP1 ${dualPrice(x.t1)} | TP2 ${dualPrice(x.t2)} | TP3 ${dualPrice(x.t3)}<br>Backtest: ${bt}<br>Veri: ${x.ageSec} sn | Mum: ${x.candleSource||x.source} | Fiyat: ${x.priceSource||x.source}<br>Teknik: ${(x.why||[]).join(' + ')}</div><div>${spot}<span class="pill blue">v15.4 şampiyon kalite</span>${(x.capNotes||[]).slice(0,5).map(n=>`<span class="pill amber">${n}</span>`).join('')}</div></div>`};
+  const section=(title,arr,dir,desc,empty)=>`<div class="listSection ${dir.toLowerCase()}"><h3>${title}</h3><p class="dim">${desc}</p>${arr.length?arr.map(card).join(''):empty}</div>`;
+  box.innerHTML=summary+
+    section('Ana Kadro LONG — Yalnız A/A+',longs,'LONG','Binance TR spot için AL yönünde kullanılabilecek ana kadro. B+ burada görünmez.','<p>LONG havuz var ama A/A+ ana kadro eşiğini geçen aday yok. İşlem açma, yedekleri sadece izle.</p>')+
+    section('Ana Kadro SHORT — Yalnız A/A+',shorts,'SHORT','Spotta emir değil; vadeli/izleme-çıkış yönüdür. Sadece A/A+ short bağlamları gelir.','<p>SHORT havuz var ama A/A+ short kadro eşiğini geçen aday yok.</p>')+
+    section('Yedek LONG İzleme Havuzu',longRes,'LONG','B+ kalite: teknik olarak izlenir ama ana işlem kadrosu değildir.','<p>Yedek LONG yok.</p>')+
+    section('Yedek SHORT İzleme Havuzu',shortRes,'SHORT','B+ kalite: izleme/çıkış uyarısı; ana short kadrosu değildir.','<p>Yedek SHORT yok.</p>');
+}
+function selectCandidate(i,auto=false){
+  const x=candidates[i]; if(!x)return; selected=x;
+  const bd=x.scoreBreakdown||{},d=x.techDetail||{};
+  const status=v154MainEligible(x)?'ANA KADRO':'YEDEK / İZLEME';
+  $('decision').className='decision '+(x.dir==='LONG'?'long':'short'); $('decision').textContent=`${x.dir} ${status} — PUAN ${x.selectorScore} / ${x.poolGrade}`;
+  $('metrics').innerHTML=metric('Sembol / TF',`${symbolLabel(x.sym)} / ${x.tf}`)+metric('Kalite sınıfı',x.poolGrade||'-')+metric('Kadro durumu',status)+metric('Kadro puanı',x.selectorScore||'-')+metric('Teknik / İcra',`${bd.tech||'-'} / ${bd.execution||'-'}`)+metric('Backtest / Veri',`${bd.backtest||'-'} / ${bd.source||'-'}`)+metric('Model',x.model+(x.sub?' — '+x.sub:''))+metric('Canlı veri',`${x.ageSec} sn`)+metric('Tetik yaşı',`${x.usedK||0} mum`)+metric('Mum/Fiyat kaynağı',`${x.candleSource||x.source} / ${x.priceSource||x.source}`)+metric('Risk sınıfı',x.riskClass)+metric('Güven',`${x.conf}%`)+metric('Trend / MTF',`${fmt(d.trend?.score||0,0)} / ${fmt(d.mtf?.score||0,0)}`)+metric('Yapı / Lokasyon',`${fmt(d.st?.score||0,0)} / ${fmt(d.loc?.score||0,0)}`)+metric('Momentum / Para akışı',`${fmt(d.mom?.score||0,0)} / ${fmt(d.flow?.score||0,0)}`)+metric('Tetik / Volatilite',`${fmt(d.trig?.score||0,0)} / ${fmt(d.vol?.score||0,0)}`)+metric('TP2 alanı',`${fmt(x.tp2RoomR||0,2)}R`)+metric('Giriş',dualPrice(x.entry))+metric('Stop',dualPrice(x.stop))+metric('Stop %',pct(x.stopPct,2))+metric('TP1',dualPrice(x.t1))+metric('TP2',dualPrice(x.t2))+metric('TP3',dualPrice(x.t3))+metric('Spot tutar',fmt(RULE.spotTry,0)+' TL')+metric('Risk',dualMoney(x.lev.riskD))+metric('PF',x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2));
+  $('tryPlan').innerHTML=binanceTryPlan(x); $('reasons').innerHTML=(x.why||[]).map(r=>`<span class="pill ${x.dir==='LONG'?'green':'red'}">${r}</span>`).join('')+`<span class="pill blue">Win ${pct(x.stat.win||0,1)}</span><span class="pill blue">PF ${x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2)}</span><span class="pill blue">Hızlı stop ${pct(x.stat.fast||0,1)}</span><span class="pill blue">MFE/MAE ${fmt(x.stat.avgMfe||0,2)}R / ${fmt(x.stat.avgMae||0,2)}R</span>`+(x.capNotes&&x.capNotes.length?x.capNotes.slice(0,8).map(n=>`<span class="pill amber">${n}</span>`).join(''):'');
+  drawChart(x.candles,x); renderBacktest(x); if(!auto)$('planBox').scrollIntoView({behavior:'smooth'});
+}
+function binanceTryPlan(x){
+  if(!fxReady())return 'USDT/TRY kuru alınamadı. TL fiyatları görünmeden Binance TR emri girme.';
+  if(!v154MainEligible(x))return `<b>YEDEK / İZLEME</b><div class="tryline">Bu aday ana kadro kalitesinde değil. İşlem açma; sadece takip et. Ana kadro için A/A+ standardı, taze tetik, TP2 alanı, güçlü backtest ve teknik bağlam gerekir.</div>`;
+  const entryTL=x.entry*fx.rate, qty=RULE.spotTry/Math.max(entryTL,1e-9);
+  function qtyFmt(q){return Number(q).toLocaleString('tr-TR',{minimumFractionDigits:q>=1?3:5,maximumFractionDigits:q>=1?4:8})}
+  if(x.dir==='LONG'){
+    const stopLimit=x.stop*0.9975, riskTry=RULE.spotTry*(x.stopPct/100), p1=RULE.spotTry*((x.t1-x.entry)/x.entry),p2=RULE.spotTry*((x.t2-x.entry)/x.entry),p3=RULE.spotTry*((x.t3-x.entry)/x.entry);
+    return `<b>Binance TR SPOT LONG — v15.4 ANA KADRO</b><div class="tryline">Parite: ${symbolLabel(x.sym).replace('USDT','')}/TRY varsa kullan. Yoksa bu adayı spotta uygulama.</div><div class="tryline">Limit AL referansı: ${tlInput(x.entry)} TL | Yaklaşık miktar: ${qtyFmt(qty)} ${symbolLabel(x.sym).replace('USDT','')}.</div><div class="tryline"><b>Güvenli OCO:</b> TP1 ${tlInput(x.t1)} TL | Stop ${tlInput(x.stop)} TL | Stop-limit ${tlInput(stopLimit)} TL.</div><div class="tryline"><b>TP2 modu:</b> TP1 görülmeden tüm pozisyonu TP2’ye bağlama. TP1 sonrası stopu girişe/az kâra çekip kalan miktarı TP2’ye taşı.</div><div class="tryline">Tahmini risk: ${fmt(riskTry,2)} TL | TP1/TP2/TP3 tahmini: ${fmt(p1,2)} / ${fmt(p2,2)} / ${fmt(p3,2)} TL.</div>`;
+  }
+  return `<b>SHORT planı — spot işlem değildir</b><div class="tryline">Binance TR spotta doğrudan short açılamaz. Bu liste vadeli/marjin veya eldeki longdan çıkış-dikkat yönüdür.</div><div class="tryline">Giriş: ${tlInput(x.entry)} TL | Stop: ${tlInput(x.stop)} TL | TP1: ${tlInput(x.t1)} TL | TP2 alanı: ${fmt(x.tp2RoomR||0,2)}R</div>`;
+}
+async function scanAll(){
+  setMeta(`v15.4 Şampiyon Kalite tarama başladı: geniş havuz + ana kadro/yedek ayrımı...`);
+  candidates=[]; scanLog.lowQuality=0; const total=SYMBOLS.length*TFS.length; scanLog.total=total; scanLog.done=0; let done=0;
+  for(const s0 of SYMBOLS){const s=cleanSymbol(s0); if(!s){scanLog.skipped+=TFS.length;continue;} for(const tf of TFS){await ensureCandles(s,tf); const arr=getCandles(s,tf); const key=s+'|'+tf; const pairLive=liveMap[key]||pairSourceTime(s,tf,arr); if(arr&&arr.length>=235&&pairLive&&sourceAgeMs(pairLive)<=RULE.maxLiveAgeMs){const before=candidates.length; const b=backtest(s,tf); if(b){for(const dir of ['LONG','SHORT']){const cand=buildCandidateForDir(s,tf,b,dir); if(cand)candidates.push(cand); else scanLog.lowQuality=(scanLog.lowQuality||0)+1;}} if(candidates.length>before||done%8===0){sortCandidates();renderList();}} else {scanLog.skipped++; if(pairLive&&sourceAgeMs(pairLive)>RULE.maxLiveAgeMs)scanLog.stale++;} done++; scanLog.done=done; setBar(done/total*100); setMeta(`${liveText()} | v15.4 havuz ${done}/${total} | Coin: ${symbolLabel(s)} | TF: ${tf} | LONG havuz: ${candidates.filter(x=>x.dir==='LONG').length} | SHORT havuz: ${candidates.filter(x=>x.dir==='SHORT').length} | Ana kadro: ${rankedList('LONG',7).length}+${rankedList('SHORT',7).length} | Yedek: ${reserveList('LONG',99).length}+${reserveList('SHORT',99).length}`); await delay(16);}}
+  sortCandidates(); renderList(); const autoIdx=firstAutoCandidateIndex(); if(autoIdx>=0)setTimeout(()=>selectCandidate(autoIdx,true),50); setMeta(`${liveText()} | Tarama bitti: ${done}/${total} | LONG havuz ${candidates.filter(x=>x.dir==='LONG').length} / ana ${rankedList('LONG',7).length} / yedek ${reserveList('LONG',99).length} | SHORT havuz ${candidates.filter(x=>x.dir==='SHORT').length} / ana ${rankedList('SHORT',7).length} / yedek ${reserveList('SHORT',99).length} | v15.4 Şampiyon Kalite Seçici aktif`);
+}
+
+
+/* =========================================================
+   v15.5 MILLI TAKIM KALITE ANAYASASI
+   Amaç: Havuz bol kalsın; ilk 7 işlem ise ne çok gevşek ne de kör sıkı seçilsin.
+   Ana kadroya A+, A ve güçlü A- alınır. B+ yalnız izleme/yedek havuzdur.
+========================================================= */
+Object.assign(RULE,{
+  versionName:'v15.5 Milli Takım Kalite Anayasası',
+  poolMinScore:38,
+  reserveMinScore:60,
+  championMinScore:70,
+  eliteMinScore:86,
+  nationalTeamSize:7,
+  minConf:58,
+  // Ölümcül veto kapısı
+  hardMinTrades:25,
+  hardMinPF:1.55,
+  hardMinWin:50,
+  hardMaxFastStop:30,
+  hardMinBacktestScore:60,
+  hardMinExecutionScore:68,
+  hardMinTechScore:50,
+  hardMinTp2RoomR:1.45,
+  // Ana kadro alt standardı: A- dahil ama B+ değil
+  rosterMinTrades:35,
+  rosterMinPF:1.90,
+  rosterMinWin:55,
+  rosterMaxFastStop:23,
+  rosterMinBacktestScore:72,
+  rosterMinExecutionScore:76,
+  rosterMinTechScore:60,
+  rosterMinTp2RoomR:1.75,
+  // A standardı
+  aMinTrades:45,
+  aMinPF:2.10,
+  aMinWin:58,
+  aMaxFastStop:20,
+  aMinBacktestScore:76,
+  aMinExecutionScore:80,
+  aMinTechScore:65,
+  aMinTp2RoomR:1.90,
+  // A+ standardı
+  aPlusMinTrades:55,
+  aPlusMinPF:2.60,
+  aPlusMinWin:62,
+  aPlusMaxFastStop:15,
+  aPlusMinBacktestScore:82,
+  aPlusMinExecutionScore:84,
+  aPlusMinTechScore:72,
+  aPlusMinTp2RoomR:2.25,
+  // Stop/TP alanı
+  minTp2RoomR:1.45,
+  mainMinTp2RoomR:1.75,
+  reserveMinTp2RoomR:1.50,
+  maxMainStopPct:3.10,
+  maxStopPct:3.60,
+  minMainStopPct:0.55,
+  // Tetik tazeliği: ana kadro için ana zaman dilimine göre esnek ama sınırsız değil
+  maxFreshSignalBars15m:3,
+  maxFreshSignalBars30m:3,
+  maxFreshSignalBars1h:4,
+  maxFreshSignalBars2h:4,
+  maxFreshSignalBars4h:5,
+  // Teknik alt kapılar: A- için minimum bağlam
+  minMainLocScore:52,
+  minMainTrigScore:48,
+  minMainStructScore:50,
+  minMainMomScore:46,
+  minMainFlowScore:42,
+  minMainMtfScore:46,
+  minMainTrendScore:48,
+  // A/A+ için daha güçlü bağlam
+  strongLocScore:58,
+  strongTrigScore:54,
+  strongStructScore:56,
+  strongMomScore:52,
+  strongFlowScore:48,
+  strongMtfScore:52,
+  strongTrendScore:54
+});
+
+function v155FreshLimit(tf){
+  if(tf==='15m')return RULE.maxFreshSignalBars15m;
+  if(tf==='30m')return RULE.maxFreshSignalBars30m;
+  if(tf==='1h')return RULE.maxFreshSignalBars1h;
+  if(tf==='2h')return RULE.maxFreshSignalBars2h;
+  if(tf==='4h')return RULE.maxFreshSignalBars4h;
+  return 3;
+}
+function v154FreshLimit(tf){return v155FreshLimit(tf)}
+function v155EvidenceCount(x){
+  const d=x?.techDetail||{}, arr=[d.trend,d.mtf,d.st,d.loc,d.mom,d.flow,d.trig,d.vol];
+  return arr.filter(o=>(o?.score||0)>=52).length + ((x?.tp2RoomR||0)>=RULE.rosterMinTp2RoomR?1:0);
+}
+function v154EvidenceCount(x){return v155EvidenceCount(x)}
+function v155WeakDimensionCount(x){
+  const d=x?.techDetail||{};
+  const vals=[d.trend?.score||0,d.mtf?.score||0,d.st?.score||0,d.loc?.score||0,d.mom?.score||0,d.flow?.score||0,d.trig?.score||0];
+  return vals.filter(v=>v>0&&v<44).length;
+}
+function v154WeakDimensionCount(x){return v155WeakDimensionCount(x)}
+function v155StopOk(x,main=true){
+  const stop=x?.stopPct||999, tf=x?.tf||'15m';
+  const max = tf==='4h'?3.40:tf==='2h'?3.30:tf==='1h'?3.20:RULE.maxMainStopPct;
+  const min = main?RULE.minMainStopPct:0.45;
+  return stop>=min && stop<=max;
+}
+function v154StopOk(x,main=true){return v155StopOk(x,main)}
+function v155HardVeto(x){
+  const s=x?.stat||{}, bd=x?.scoreBreakdown||{}, room=x?.tp2RoomR||0;
+  const reasons=[];
+  if(!x||!validCandidateSymbol(x))reasons.push('sembol hatalı');
+  if((x?.ageSec||9999)>RULE.maxLiveAgeMs/1000)reasons.push('veri eski');
+  if(x?.riskClass==='Yüksek')reasons.push('risk yüksek');
+  if((s.count||0)<RULE.hardMinTrades)reasons.push('örneklem düşük');
+  if((s.pf||0)<RULE.hardMinPF)reasons.push('PF veto');
+  if((s.win||0)<RULE.hardMinWin)reasons.push('win veto');
+  if((s.fast||0)>RULE.hardMaxFastStop)reasons.push('hızlı stop veto');
+  if((bd.backtest||0)<RULE.hardMinBacktestScore)reasons.push('backtest veto');
+  if((bd.execution||0)<RULE.hardMinExecutionScore)reasons.push('icra veto');
+  if((bd.tech||0)<RULE.hardMinTechScore)reasons.push('teknik veto');
+  if(room<RULE.hardMinTp2RoomR)reasons.push('TP2 alan veto');
+  if(!v155StopOk(x,false))reasons.push('stop geometrisi veto');
+  return {ok:reasons.length===0,reasons};
+}
+function v155BacktestMainOk(x){
+  const s=x?.stat||{}, bd=x?.scoreBreakdown||{};
+  if(!v155HardVeto(x).ok)return false;
+  return (s.count||0)>=RULE.rosterMinTrades && (s.pf||0)>=RULE.rosterMinPF && (s.win||0)>=RULE.rosterMinWin && (s.fast||0)<=RULE.rosterMaxFastStop && (bd.backtest||0)>=RULE.rosterMinBacktestScore;
+}
+function v154BacktestMainOk(x){return v155BacktestMainOk(x)}
+function v155TechMainOk(x){
+  const d=x?.techDetail||{}, bd=x?.scoreBreakdown||{};
+  if((bd.tech||0)<RULE.rosterMinTechScore)return false;
+  if((bd.execution||0)<RULE.rosterMinExecutionScore)return false;
+  if((d.loc?.score||0)<RULE.minMainLocScore)return false;
+  if((d.trig?.score||0)<RULE.minMainTrigScore)return false;
+  if((d.st?.score||0)<RULE.minMainStructScore)return false;
+  if((d.mom?.score||0)<RULE.minMainMomScore)return false;
+  if((d.flow?.score||0)<RULE.minMainFlowScore)return false;
+  if((d.mtf?.score||0)<RULE.minMainMtfScore)return false;
+  if((d.trend?.score||0)<RULE.minMainTrendScore)return false;
+  return true;
+}
+function v154TechMainOk(x){return v155TechMainOk(x)}
+function v155StrongTechOk(x){
+  const d=x?.techDetail||{}, bd=x?.scoreBreakdown||{};
+  return (bd.tech||0)>=RULE.aMinTechScore && (bd.execution||0)>=RULE.aMinExecutionScore &&
+    (d.loc?.score||0)>=RULE.strongLocScore && (d.trig?.score||0)>=RULE.strongTrigScore &&
+    (d.st?.score||0)>=RULE.strongStructScore && (d.mom?.score||0)>=RULE.strongMomScore &&
+    (d.flow?.score||0)>=RULE.strongFlowScore && (d.mtf?.score||0)>=RULE.strongMtfScore &&
+    (d.trend?.score||0)>=RULE.strongTrendScore;
+}
+function v155NotChased(x){
+  const d=x?.techDetail||{};
+  if(d.loc?.chase)return false;
+  if((x?.usedK||0)>v155FreshLimit(x?.tf))return false;
+  return true;
+}
+function v154NotChased(x){return v155NotChased(x)}
+function v155RosterBand(x){
+  const s=x?.stat||{}, bd=x?.scoreBreakdown||{}, room=x?.tp2RoomR||0, score=x?.selectorScore||0;
+  const used=x?.usedK||0, fresh=used<=v155FreshLimit(x?.tf);
+  if(!v155HardVeto(x).ok)return 'C';
+  if(!fresh)return 'B+';
+  const aplus=(s.count||0)>=RULE.aPlusMinTrades && (s.pf||0)>=RULE.aPlusMinPF && (s.win||0)>=RULE.aPlusMinWin && (s.fast||0)<=RULE.aPlusMaxFastStop && room>=RULE.aPlusMinTp2RoomR && (bd.execution||0)>=RULE.aPlusMinExecutionScore && (bd.backtest||0)>=RULE.aPlusMinBacktestScore && (bd.tech||0)>=RULE.aPlusMinTechScore && score>=RULE.eliteMinScore && v155StrongTechOk(x);
+  if(aplus)return 'A+';
+  const a=(s.count||0)>=RULE.aMinTrades && (s.pf||0)>=RULE.aMinPF && (s.win||0)>=RULE.aMinWin && (s.fast||0)<=RULE.aMaxFastStop && room>=RULE.aMinTp2RoomR && (bd.execution||0)>=RULE.aMinExecutionScore && (bd.backtest||0)>=RULE.aMinBacktestScore && (bd.tech||0)>=RULE.aMinTechScore && score>=RULE.championMinScore && v155TechMainOk(x) && v155EvidenceCount(x)>=6;
+  if(a)return 'A';
+  const aminus=(s.count||0)>=RULE.rosterMinTrades && (s.pf||0)>=RULE.rosterMinPF && (s.win||0)>=RULE.rosterMinWin && (s.fast||0)<=RULE.rosterMaxFastStop && room>=RULE.rosterMinTp2RoomR && (bd.execution||0)>=RULE.rosterMinExecutionScore && (bd.backtest||0)>=RULE.rosterMinBacktestScore && (bd.tech||0)>=RULE.rosterMinTechScore && score>=RULE.championMinScore && v155TechMainOk(x) && v155EvidenceCount(x)>=6;
+  if(aminus)return 'A-';
+  const reserve=(s.count||0)>=30 && (s.pf||0)>=1.70 && (s.win||0)>=52 && (s.fast||0)<=27 && room>=RULE.reserveMinTp2RoomR && (bd.execution||0)>=72 && (bd.backtest||0)>=66 && (bd.tech||0)>=56;
+  if(reserve)return 'B+';
+  return 'B';
+}
+function v154Grade(sel,sig,stat,tf,usedK=0){
+  // BuildCandidate aşamasında henüz obj yok; geçici obj ile v15.5 bandını hesapla.
+  const temp={stat,scoreBreakdown:{tech:Math.round(sel.tech||0),execution:Math.round(sel.execution||0),backtest:Math.round(sel.stat||0),source:Math.round(sel.source||0)},tp2RoomR:sig?.tp2RoomR||0,stopPct:sig?.stopPct||0,selectorScore:Math.round(sel.score||0),usedK,tf,techDetail:sig?.techDetail||{},riskClass:'Dengeli',ageSec:0,sym:'TMPUSDT'};
+  return v155RosterBand(temp);
+}
+function v155MainEligible(x){
+  if(!x||!validCandidateSymbol(x))return false;
+  const band=x.poolGrade||v155RosterBand(x);
+  if(!['A+','A','A-'].includes(band))return false;
+  if(!v155HardVeto(x).ok)return false;
+  if(!v155StopOk(x,true))return false;
+  if(!v155BacktestMainOk(x))return false;
+  if(!v155TechMainOk(x))return false;
+  if(!v155NotChased(x))return false;
+  if(v155EvidenceCount(x)<6)return false;
+  if(v155WeakDimensionCount(x)>0)return false;
+  return true;
+}
+function v154MainEligible(x){return v155MainEligible(x)}
+function v155ReserveEligible(x){
+  if(!x||!validCandidateSymbol(x))return false;
+  if(v155MainEligible(x))return false;
+  if((x.ageSec||9999)>RULE.maxLiveAgeMs/1000)return false;
+  if(x.riskClass==='Yüksek')return false;
+  const s=x.stat||{}, bd=x.scoreBreakdown||{}, d=x.techDetail||{};
+  if((x.selectorScore||0)<RULE.reserveMinScore)return false;
+  if((x.tp2RoomR||0)<RULE.reserveMinTp2RoomR)return false;
+  if(!v155StopOk(x,false))return false;
+  if((s.count||0)<30 || (s.pf||0)<1.70 || (s.win||0)<52 || (s.fast||0)>27)return false;
+  if((bd.backtest||0)<66 || (bd.execution||0)<72 || (bd.tech||0)<56)return false;
+  if((d.loc?.score||0)<48 || (d.trig?.score||0)<44)return false;
+  return true;
+}
+function v154ReserveEligible(x){return v155ReserveEligible(x)}
+function v155ScorePenalty(sig,stat,sel,source,usedK,tf){
+  let p=0; const d=sig.techDetail||{}, room=sig.tp2RoomR||0, stop=sig.stopPct||0;
+  if((stat.count||0)<RULE.rosterMinTrades)p+=7;
+  if((stat.win||0)<RULE.rosterMinWin)p+=8;
+  if((stat.pf||0)<RULE.rosterMinPF)p+=9;
+  if((stat.fast||0)>RULE.rosterMaxFastStop)p+=9;
+  if(room<RULE.rosterMinTp2RoomR)p+=10;
+  if(stop<RULE.minMainStopPct)p+=6;
+  if(stop>RULE.maxMainStopPct)p+=6;
+  if(usedK>v155FreshLimit(tf))p+=10;
+  if((d.trend?.score||0)<RULE.minMainTrendScore)p+=4;
+  if((d.mtf?.score||0)<RULE.minMainMtfScore)p+=4;
+  if((d.loc?.score||0)<RULE.minMainLocScore)p+=6;
+  if((d.trig?.score||0)<RULE.minMainTrigScore)p+=5;
+  if(String(source||'').includes('JSON'))p+=3;
+  return p;
+}
+function v154ScorePenalty(sig,stat,sel,source,usedK,tf){return v155ScorePenalty(sig,stat,sel,source,usedK,tf)}
+function v152SelectorScore(sig,stat,source,usedK=0,tf='15m'){
+  const tech=Number(sig.q)||45, statInfo=v152StatScore(stat), exe=v152ExecutionScore(sig), src=44+sourcePriority(source)*12;
+  const d=sig.techDetail||{};
+  let s=tech*.20+exe.score*.32+statInfo.score*.38+src*.10;
+  if((d.loc?.labels||[]).length>=2)s+=2;
+  if(d.mtf?.strong)s+=2;
+  if(d.flow?.volStrong)s+=1;
+  if((sig.tp2RoomR||0)>=2.25)s+=3;
+  if((sig.tp2RoomR||0)<RULE.rosterMinTp2RoomR)s-=8;
+  s-=v155ScorePenalty(sig,stat,{},source,usedK,tf)*0.80;
+  const base={score:v152Score(s),tech,execution:exe.score,stat:statInfo.score,source:src,notes:[...new Set([...exe.notes,...statInfo.notes])],statInfo,exe};
+  const weak=v153WeakLinkCaps(sig,stat,source,base,tf);
+  let finalScore=weak.hard?Math.min(base.score,24):Math.min(base.score,weak.cap);
+  // v15.5 zayıf halka tavanları
+  if((stat?.pf||0)<RULE.rosterMinPF)finalScore=Math.min(finalScore,72);
+  if((stat?.win||0)<RULE.rosterMinWin)finalScore=Math.min(finalScore,72);
+  if((stat?.fast||0)>RULE.rosterMaxFastStop)finalScore=Math.min(finalScore,72);
+  if((stat?.count||0)<RULE.rosterMinTrades)finalScore=Math.min(finalScore,70);
+  if((sig.tp2RoomR||0)<RULE.rosterMinTp2RoomR)finalScore=Math.min(finalScore,68);
+  if((exe.score||0)<RULE.rosterMinExecutionScore)finalScore=Math.min(finalScore,72);
+  if(usedK>v155FreshLimit(tf))finalScore=Math.min(finalScore,68);
+  return {score:v152Score(finalScore),tech,execution:exe.score,stat:statInfo.score,source:src,notes:[...new Set([...base.notes,...weak.notes])],statInfo,exe,weak};
+}
+function v152Confidence(sel,stat,source){
+  let cap=sourceCap(source); const n=stat&&stat.count?stat.count:0;
+  if(n<25)cap=Math.min(cap,66); else if(n<35)cap=Math.min(cap,72); else if(n<45)cap=Math.min(cap,78); else if(n<55)cap=Math.min(cap,86);
+  if((stat&&stat.fast||0)>RULE.rosterMaxFastStop)cap=Math.min(cap,76);
+  if((stat&&stat.pf||0)<RULE.rosterMinPF)cap=Math.min(cap,74);
+  if((stat&&stat.win||0)<RULE.rosterMinWin)cap=Math.min(cap,74);
+  return Math.round(Math.max(50,Math.min(cap,sel.score)));
+}
+function candidateRank(a,b){
+  const gradeW={"A+":520,"A":440,"A-":360,"B+":150,"B":40,"C":0};
+  const ga=gradeW[a.poolGrade]||0, gb=gradeW[b.poolGrade]||0; if(gb!==ga)return gb-ga;
+  const sa=b.selectorScore||b.qualityScore||b.conf||0, sb=a.selectorScore||a.qualityScore||a.conf||0; if(Math.abs(sa-sb)>0.001)return sa-sb;
+  const fast=(a.stat?.fast||0)-(b.stat?.fast||0); if(Math.abs(fast)>0.01)return fast;
+  const ba=(b.scoreBreakdown?.backtest||0)-(a.scoreBreakdown?.backtest||0); if(ba)return ba;
+  const ea=(b.scoreBreakdown?.execution||0)-(a.scoreBreakdown?.execution||0); if(ea)return ea;
+  const ta=(b.scoreBreakdown?.tech||0)-(a.scoreBreakdown?.tech||0); if(ta)return ta;
+  return ((b.tp2RoomR||0)-(a.tp2RoomR||0)) || sourcePriority(b.source)-sourcePriority(a.source) || (a.stopPct||0)-(b.stopPct||0);
+}
+function rankedList(dir,limit=7){
+  const all=candidates.filter(x=>x&&x.dir===dir&&v155MainEligible(x));
+  return v152UniqueTop(all.sort(candidateRank),limit);
+}
+function reserveList(dir,limit=10){
+  const mainKeys=new Set(rankedList(dir,999).map(x=>x.sym+'|'+x.dir));
+  const all=candidates.filter(x=>x&&x.dir===dir&&!mainKeys.has(x.sym+'|'+x.dir)&&v155ReserveEligible(x));
+  return v152UniqueTop(all.sort(candidateRank),limit);
+}
+function countByDir(dir){return rankedList(dir,999).length;}
+function firstAutoCandidateIndex(){const x=rankedList('LONG',1)[0]||rankedList('SHORT',1)[0]||reserveList('LONG',1)[0]||reserveList('SHORT',1)[0];return x?candidates.indexOf(x):-1;}
+function v155RejectStats(dir){
+  const arr=candidates.filter(x=>x&&x.dir===dir), rejected=arr.filter(x=>!v155MainEligible(x));
+  const badHard=rejected.filter(x=>!v155HardVeto(x).ok).length;
+  const badFast=rejected.filter(x=>(x.stat?.fast||0)>RULE.rosterMaxFastStop).length;
+  const badBt=rejected.filter(x=>(x.scoreBreakdown?.backtest||0)<RULE.rosterMinBacktestScore||(x.stat?.pf||0)<RULE.rosterMinPF||(x.stat?.win||0)<RULE.rosterMinWin).length;
+  const badTech=rejected.filter(x=>!v155TechMainOk(x)).length;
+  const badTp=rejected.filter(x=>(x.tp2RoomR||0)<RULE.rosterMinTp2RoomR).length;
+  const oldTrig=rejected.filter(x=>(x.usedK||0)>v155FreshLimit(x.tf)).length;
+  return {all:arr.length,rejected:rejected.length,badHard,badFast,badBt,badTech,badTp,oldTrig};
+}
+function v154RejectStats(dir){return v155RejectStats(dir)}
+function v155BandLabel(x){return x.poolGrade==='A+'?'KAPTAN':x.poolGrade==='A'?'ANA KADRO':x.poolGrade==='A-'?'ANA KADRO SINIR':'YEDEK / İZLEME'}
+function renderList(){
+  const box=$('list'),longs=rankedList('LONG',7),shorts=rankedList('SHORT',7),longRes=reserveList('LONG',8),shortRes=reserveList('SHORT',8);
+  const poolLong=candidates.filter(x=>x&&x.dir==='LONG').length,poolShort=candidates.filter(x=>x&&x.dir==='SHORT').length;
+  const elite=candidates.filter(x=>x&&(x.poolGrade==='A+'||x.poolGrade==='A'||x.poolGrade==='A-')).length;
+  const rL=v155RejectStats('LONG'),rS=v155RejectStats('SHORT');
+  const summary=`<div class="dash"><div><b>${poolLong}</b><span>LONG havuz</span></div><div><b>${poolShort}</b><span>SHORT havuz</span></div><div><b>${longs.length}</b><span>ana LONG</span></div><div><b>${shorts.length}</b><span>ana SHORT</span></div><div><b>${longRes.length}+${shortRes.length}</b><span>yedek izleme</span></div><div><b>${elite}</b><span>A-/A/A+ havuz</span></div></div>
+  <div class="note"><b>v15.5 Milli Takım Kalite Anayasası:</b> Havuz geniş kalır; ilk 7’ye yalnız A+, A ve güçlü A- alınır. B+ işlem değil yedektir. Seçim sırası: ölümcül veto → backtest sağlık → giriş/stop/TP2 icrası → teknik bağlam → veri/tetik tazeliği. LONG eleme: ${rL.rejected}/${rL.all} | SHORT eleme: ${rS.rejected}/${rS.all}</div>`;
+  const card=(x,i)=>{const idx=candidates.indexOf(x),bd=x.scoreBreakdown||{};const bt=`İşlem ${x.stat.count||0} | Win ${pct(x.stat.win||0,1)} | PF ${x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2)} | Hızlı stop ${pct(x.stat.fast||0,1)}`;const spot=x.dir==='LONG'?'<span class="pill green">spot AL adayı</span>':'<span class="pill red">spotta short değil</span>';const band=`<span class="pill ${x.poolGrade==='A+'?'green':x.poolGrade==='A'?'blue':x.poolGrade==='A-'?'amber':'gray'}">${v155BandLabel(x)}</span>`;return `<div class="candidate ${x.dir==='SHORT'?'short':'long'}" onclick="selectCandidate(${idx})"><div class="top"><div><div class="sym">${i+1}) ${symbolLabel(x.sym)} / ${x.tf}</div><div class="model">${x.model}${x.sub?' — '+x.sub:''}</div></div><div class="score ${x.dir==='LONG'?'long':'short'}">${x.selectorScore}<br><span style="font-size:15px">PUAN</span></div></div><div class="line">Kalite: <b>${x.poolGrade}</b> | ${v155BandLabel(x)} | Güven: ${x.conf}% | Tetik: ${x.usedK||0} mum<br>Skor: Teknik ${bd.tech||'-'} / İcra ${bd.execution||'-'} / Backtest ${bd.backtest||'-'} / Veri ${bd.source||'-'}<br>Giriş ${dualPrice(x.entry)}<br>Stop ${dualPrice(x.stop)} | Stop ${pct(x.stopPct,2)} | TP2 alanı ${fmt(x.tp2RoomR||0,2)}R<br>TP1 ${dualPrice(x.t1)} | TP2 ${dualPrice(x.t2)} | TP3 ${dualPrice(x.t3)}<br>Backtest: ${bt}<br>Veri: ${x.ageSec} sn | Mum: ${x.candleSource||x.source} | Fiyat: ${x.priceSource||x.source}<br>Teknik: ${(x.why||[]).join(' + ')}</div><div>${spot}${band}<span class="pill blue">v15.5 kalite anayasası</span>${(x.capNotes||[]).slice(0,4).map(n=>`<span class="pill amber">${n}</span>`).join('')}</div></div>`};
+  const section=(title,arr,dir,desc,empty)=>`<div class="listSection ${dir.toLowerCase()}"><h3>${title}</h3><p class="dim">${desc}</p>${arr.length?arr.map(card).join(''):empty}</div>`;
+  box.innerHTML=summary+
+    section('En İyi 7 LONG — Ana Kadro',longs,'LONG','Havuzdan seçilen A+/A/A- spot LONG adayları. İlk 3 kaptan, 4–7 ana kadro/sınır kadrodur.','<p>LONG havuz var ama ana kadro standardını geçen aday yok. Yedekleri izle, işlem açma.</p>')+
+    section('En İyi 7 SHORT — Ana Kadro',shorts,'SHORT','Spotta emir değil; vadeli/izleme-çıkış yönüdür. Yalnız en sağlam short bağlamları gelir.','<p>SHORT havuz var ama ana short standardını geçen aday yok.</p>')+
+    section('Yedek LONG İzleme Havuzu',longRes,'LONG','B+ kalite: takip edilir ama işlem açma listesi değildir.','<p>Yedek LONG yok.</p>')+
+    section('Yedek SHORT İzleme Havuzu',shortRes,'SHORT','B+ kalite: izleme/çıkış uyarısıdır; ana kadro değildir.','<p>Yedek SHORT yok.</p>');
+}
+function selectCandidate(i,auto=false){
+  const x=candidates[i]; if(!x)return; selected=x;
+  const bd=x.scoreBreakdown||{},d=x.techDetail||{};
+  const status=v155MainEligible(x)?v155BandLabel(x):'YEDEK / İZLEME';
+  $('decision').className='decision '+(x.dir==='LONG'?'long':'short'); $('decision').textContent=`${x.dir} ${status} — PUAN ${x.selectorScore} / ${x.poolGrade}`;
+  $('metrics').innerHTML=metric('Sembol / TF',`${symbolLabel(x.sym)} / ${x.tf}`)+metric('Kalite sınıfı',x.poolGrade||'-')+metric('Kadro durumu',status)+metric('Kadro puanı',x.selectorScore||'-')+metric('Teknik / İcra',`${bd.tech||'-'} / ${bd.execution||'-'}`)+metric('Backtest / Veri',`${bd.backtest||'-'} / ${bd.source||'-'}`)+metric('Model',x.model+(x.sub?' — '+x.sub:''))+metric('Canlı veri',`${x.ageSec} sn`)+metric('Tetik yaşı',`${x.usedK||0} mum`)+metric('Mum/Fiyat kaynağı',`${x.candleSource||x.source} / ${x.priceSource||x.source}`)+metric('Risk sınıfı',x.riskClass)+metric('Güven',`${x.conf}%`)+metric('Trend / MTF',`${fmt(d.trend?.score||0,0)} / ${fmt(d.mtf?.score||0,0)}`)+metric('Yapı / Lokasyon',`${fmt(d.st?.score||0,0)} / ${fmt(d.loc?.score||0,0)}`)+metric('Momentum / Para akışı',`${fmt(d.mom?.score||0,0)} / ${fmt(d.flow?.score||0,0)}`)+metric('Tetik / Volatilite',`${fmt(d.trig?.score||0,0)} / ${fmt(d.vol?.score||0,0)}`)+metric('TP2 alanı',`${fmt(x.tp2RoomR||0,2)}R`)+metric('Giriş',dualPrice(x.entry))+metric('Stop',dualPrice(x.stop))+metric('Stop %',pct(x.stopPct,2))+metric('TP1',dualPrice(x.t1))+metric('TP2',dualPrice(x.t2))+metric('TP3',dualPrice(x.t3))+metric('Spot tutar',fmt(RULE.spotTry,0)+' TL')+metric('Risk',dualMoney(x.lev.riskD))+metric('PF',x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2));
+  $('tryPlan').innerHTML=binanceTryPlan(x); $('reasons').innerHTML=(x.why||[]).map(r=>`<span class="pill ${x.dir==='LONG'?'green':'red'}">${r}</span>`).join('')+`<span class="pill blue">Win ${pct(x.stat.win||0,1)}</span><span class="pill blue">PF ${x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2)}</span><span class="pill blue">Hızlı stop ${pct(x.stat.fast||0,1)}</span><span class="pill blue">MFE/MAE ${fmt(x.stat.avgMfe||0,2)}R / ${fmt(x.stat.avgMae||0,2)}R</span>`+(x.capNotes&&x.capNotes.length?x.capNotes.slice(0,8).map(n=>`<span class="pill amber">${n}</span>`).join(''):'');
+  drawChart(x.candles,x); renderBacktest(x); if(!auto)$('planBox').scrollIntoView({behavior:'smooth'});
+}
+function binanceTryPlan(x){
+  if(!fxReady())return 'USDT/TRY kuru alınamadı. TL fiyatları görünmeden Binance TR emri girme.';
+  if(!v155MainEligible(x))return `<b>YEDEK / İZLEME</b><div class="tryline">Bu aday ana kadro kalitesinde değil. İşlem açma; sadece takip et. Ana kadro için en az A- standardı, sağlam backtest, taze tetik, TP2 alanı, stop kalitesi ve teknik bağlam birlikte geçmelidir.</div>`;
+  const entryTL=x.entry*fx.rate, qty=RULE.spotTry/Math.max(entryTL,1e-9);
+  function qtyFmt(q){return Number(q).toLocaleString('tr-TR',{minimumFractionDigits:q>=1?3:5,maximumFractionDigits:q>=1?4:8})}
+  if(x.dir==='LONG'){
+    const stopLimit=x.stop*0.9975, riskTry=RULE.spotTry*(x.stopPct/100), p1=RULE.spotTry*((x.t1-x.entry)/x.entry),p2=RULE.spotTry*((x.t2-x.entry)/x.entry),p3=RULE.spotTry*((x.t3-x.entry)/x.entry);
+    return `<b>Binance TR SPOT LONG — v15.5 ANA KADRO</b><div class="tryline">Parite: ${symbolLabel(x.sym).replace('USDT','')}/TRY varsa kullan. Yoksa bu adayı spotta uygulama.</div><div class="tryline">Limit AL referansı: ${tlInput(x.entry)} TL | Yaklaşık miktar: ${qtyFmt(qty)} ${symbolLabel(x.sym).replace('USDT','')}.</div><div class="tryline"><b>Güvenli OCO:</b> TP1 ${tlInput(x.t1)} TL | Stop ${tlInput(x.stop)} TL | Stop-limit ${tlInput(stopLimit)} TL.</div><div class="tryline"><b>TP2 modu:</b> TP1 görülmeden tüm pozisyonu TP2’ye bağlama. TP1 sonrası stopu girişe/az kâra çekip kalan miktarı TP2’ye taşı.</div><div class="tryline">Tahmini risk: ${fmt(riskTry,2)} TL | TP1/TP2/TP3 tahmini: ${fmt(p1,2)} / ${fmt(p2,2)} / ${fmt(p3,2)} TL.</div>`;
+  }
+  return `<b>SHORT planı — spot işlem değildir</b><div class="tryline">Binance TR spotta doğrudan short açılamaz. Bu liste vadeli/marjin veya eldeki longdan çıkış-dikkat yönüdür.</div><div class="tryline">Giriş: ${tlInput(x.entry)} TL | Stop: ${tlInput(x.stop)} TL | TP1: ${tlInput(x.t1)} TL | TP2 alanı: ${fmt(x.tp2RoomR||0,2)}R</div>`;
+}
+async function scanAll(){
+  setMeta(`v15.5 Milli Takım Kalite tarama başladı: geniş havuz + kaliteli 7 seçimi...`);
+  candidates=[]; scanLog.lowQuality=0; const total=SYMBOLS.length*TFS.length; scanLog.total=total; scanLog.done=0; let done=0;
+  for(const s0 of SYMBOLS){const s=cleanSymbol(s0); if(!s){scanLog.skipped+=TFS.length;continue;} for(const tf of TFS){await ensureCandles(s,tf); const arr=getCandles(s,tf); const key=s+'|'+tf; const pairLive=liveMap[key]||pairSourceTime(s,tf,arr); if(arr&&arr.length>=235&&pairLive&&sourceAgeMs(pairLive)<=RULE.maxLiveAgeMs){const before=candidates.length; const b=backtest(s,tf); if(b){for(const dir of ['LONG','SHORT']){const cand=buildCandidateForDir(s,tf,b,dir); if(cand)candidates.push(cand); else scanLog.lowQuality=(scanLog.lowQuality||0)+1;}} if(candidates.length>before||done%8===0){sortCandidates();renderList();}} else {scanLog.skipped++; if(pairLive&&sourceAgeMs(pairLive)>RULE.maxLiveAgeMs)scanLog.stale++;} done++; scanLog.done=done; setBar(done/total*100); setMeta(`${liveText()} | v15.5 havuz ${done}/${total} | Coin: ${symbolLabel(s)} | TF: ${tf} | LONG havuz: ${candidates.filter(x=>x.dir==='LONG').length} | SHORT havuz: ${candidates.filter(x=>x.dir==='SHORT').length} | Ana: ${rankedList('LONG',7).length}+${rankedList('SHORT',7).length} | Yedek: ${reserveList('LONG',99).length}+${reserveList('SHORT',99).length}`); await delay(16);}}
+  sortCandidates(); renderList(); const autoIdx=firstAutoCandidateIndex(); if(autoIdx>=0)setTimeout(()=>selectCandidate(autoIdx,true),50); setMeta(`${liveText()} | Tarama bitti: ${done}/${total} | LONG havuz ${candidates.filter(x=>x.dir==='LONG').length} / ana ${rankedList('LONG',7).length} / yedek ${reserveList('LONG',99).length} | SHORT havuz ${candidates.filter(x=>x.dir==='SHORT').length} / ana ${rankedList('SHORT',7).length} / yedek ${reserveList('SHORT',99).length} | v15.5 Milli Takım Kalite Anayasası aktif`);
+}

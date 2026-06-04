@@ -1,0 +1,15 @@
+Ayaz Trade v15.5 — Milli Takım Kalite Anayasası
+
+Yükleme:
+1) Zip'i aç.
+2) index.html, script.js, update-crypto-data.js ve .github/workflows/update-market.yml dosyalarını repo ana dizinine yükle.
+3) GitHub Actions sekmesinden Update Ayaz Trade Market Data v15.5 workflow'unu çalıştır.
+4) Açılış linki:
+https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=milli-takim-kalite-v15-5
+
+Kalite mantığı:
+- Önce geniş LONG/SHORT havuzu oluşur.
+- İlk 7’ye yalnız A+, A ve güçlü A- adaylar alınır.
+- B+ adaylar işlem değil, yedek/izleme havuzudur.
+- Ölümcül veto: PF çok düşük, win düşük, hızlı stop yüksek, örneklem zayıf, TP2 alanı yetersiz, teknik/icra zayıf veya veri eskiyse aday ana kadroya giremez.
+- LONG Binance TR spotta AL adayıdır. SHORT spot emir değildir; vadeli/izleme/çıkış yönüdür.
