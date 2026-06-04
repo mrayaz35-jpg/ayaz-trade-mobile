@@ -1,0 +1,45 @@
+AYAZ TRADE v15.3 - GÜÇLÜ KADRO SEÇİCİ
+
+Yükleme:
+1) Zip'i aç.
+2) İçindeki dosyaları GitHub repo ana dizinine yükle.
+3) index.html ana dizinde olmalı.
+4) GitHub Actions > Update Ayaz Trade Market Data v15.3 > Run workflow.
+5) Açılış linki:
+   https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=guclu-kadro-v15-3
+
+v15.3 ana mantık:
+- Sistem önce geniş LONG/SHORT aday havuzu üretir.
+- İlk 7 artık zorla doldurulmaz. Kalite geçmeyen aday listede görünmez.
+- Seçici zayıf halka mantığı kullanır: teknik puan iyi olsa bile backtest, PF, win, hızlı stop, TP2 alanı veya icra zayıfsa aday kadroya giremez.
+
+Ana kadro minimumları:
+- İşlem sayısı: en az 30
+- PF: en az 1.80
+- Win: en az %53
+- Hızlı stop: en fazla %25
+- TP2 alanı: en az 1.70R
+- Backtest skoru: en az 72
+- İcra skoru: en az 76
+- Teknik skor: en az 62
+
+A+ şartları:
+- İşlem sayısı: en az 45
+- PF: en az 2.20
+- Win: en az %58
+- Hızlı stop: en fazla %20
+- TP2 alanı: en az 2.00R
+- İcra skoru: en az 82
+- Backtest skoru: en az 80
+
+Veto örnekleri:
+- PF < 1.20 ise direkt veto
+- Win < %45 ise direkt veto
+- Hızlı stop > %35 ise direkt veto
+- TP2 alanı < 1.35R ise direkt veto
+- Stop çok yakın veya çok genişse veto/puan tavanı uygulanır
+
+Kullanım:
+- LONG Binance TR spot için AL adayıdır.
+- SHORT spotta doğrudan short değildir; vadeli/izleme/çıkış-dikkat yönüdür.
+- Backtest geçmiş veridir, geleceği garanti etmez.

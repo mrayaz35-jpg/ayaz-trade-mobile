@@ -236,11 +236,15 @@ function riskPriority(r){
   return 2;
 }
 function candidateRank(a,b){
-  const qa=candidateQualityScore(a),qb=candidateQualityScore(b);
-  if(Math.abs(qb-qa)>0.001)return qb-qa;
-  if((b.conf||0)!==(a.conf||0))return (b.conf||0)-(a.conf||0);
-  if(Math.abs((a.stopPct||0)-(b.stopPct||0))>0.001)return (a.stopPct||0)-(b.stopPct||0);
-  return (a.ageSec||9999)-(b.ageSec||9999);
+  const sA=(a.selectorScore||0),sB=(b.selectorScore||0);
+  const bdA=a.scoreBreakdown||{},bdB=b.scoreBreakdown||{};
+  const stA=a.stat||{},stB=b.stat||{};
+  const composite=x=>{
+    const bd=x.scoreBreakdown||{}, st=x.stat||{};
+    return (x.selectorScore||0)*1.00 + (bd.execution||0)*0.23 + (bd.backtest||0)*0.28 + Math.min((st.pf||0),8)*1.7 + Math.max(0,(st.win||0)-50)*0.22 - Math.max(0,(st.fast||0)-15)*0.45 + Math.min((x.tp2RoomR||0),4)*2.2 - (x.stopPct||0)*0.9;
+  };
+  const ca=composite(a), cb=composite(b); if(Math.abs(cb-ca)>0.001)return cb-ca;
+  return sourcePriority(b.source)-sourcePriority(a.source) || (a.stopPct||0)-(b.stopPct||0);
 }
 function rankedList(dir,limit=7){
   const valid=candidates.filter(x=>x&&x.dir===dir&&validCandidateSymbol(x)&&!localStopLocked(x)).sort(candidateRank);
@@ -2149,31 +2153,44 @@ async function scanAll(){
 }
 
 /* =========================================================
-   v15.2 DUNYA SAMPIYONU SECICI
+   v15.3 GUCLU KADRO SECICI
    Ana fikir: cok gevsek havuz + cok kaliteli secici.
    50-100 aday olabilir; ilk 7, teknik/icra/backtest/veri karnesiyle secilir.
 ========================================================= */
 Object.assign(RULE,{
-  versionName:'v15.2 Dünya Şampiyonu Seçici',
-  poolMinScore:46,
-  championMinScore:66,
-  eliteMinScore:78,
-  reserveMinScore:58,
+  versionName:'v15.3 Güçlü Kadro Seçici',
+  // Havuz geniş kalır; ilk 7 artık asla zayıf adayla doldurulmaz.
+  poolMinScore:42,
+  championMinScore:74,
+  eliteMinScore:86,
+  reserveMinScore:68,
   nationalTeamSize:7,
-  minConf:54,
+  minConf:58,
   minTrades:0,
   minPF:0,
   minWin:0,
   minMfeMae:0,
-  maxFastStopRate:55,
+  maxFastStopRate:30,
   maxStopPct:4.20,
-  maxMainStopPct:3.70,
+  maxMainStopPct:3.25,
   minRR:1.05,
-  minTp2RoomR:.85,
-  maxEntryDriftPct:1.35,
-  maxEntryDriftAtr:1.75,
+  minTp2RoomR:1.70,
+  maxEntryDriftPct:1.05,
+  maxEntryDriftAtr:1.35,
   cooldown:2,
-  maxFlatBbWidth:.95
+  maxFlatBbWidth:.95,
+  rosterMinTrades:30,
+  rosterMinPF:1.80,
+  rosterMinWin:53,
+  rosterMaxFastStop:25,
+  rosterMinBacktestScore:72,
+  rosterMinExecutionScore:76,
+  rosterMinTechScore:62,
+  aPlusMinTrades:45,
+  aPlusMinPF:2.20,
+  aPlusMinWin:58,
+  aPlusMaxFastStop:20,
+  aPlusMinTp2RoomR:2.00
 });
 
 function v152Score(n){return Math.max(0,Math.min(100,Number(n)||0));}
@@ -2193,44 +2210,81 @@ function v152RecentForm(stat){
   if(stop>=3){out.bad=true;out.notes.push('stop kümelenmesi');}
   out.score=v152Score(s);return out;
 }
+function v153BacktestVeto(stat){
+  const notes=[]; let hard=false, cap=100;
+  const n=stat&&isFinite(stat.count)?stat.count:0, pf=Number(stat&&stat.pf)||0, win=Number(stat&&stat.win)||0, fast=Number(stat&&stat.fast)||0;
+  if(n<12){hard=true;notes.push('örneklem çok az');}
+  else if(n<24){cap=Math.min(cap,68);notes.push('örneklem zayıf');}
+  else if(n<30){cap=Math.min(cap,74);notes.push('örneklem sınırda');}
+  else if(n<45){cap=Math.min(cap,86);}
+  if(pf<1.20){hard=true;notes.push('PF veto');}
+  else if(pf<1.60){cap=Math.min(cap,64);notes.push('PF zayıf');}
+  else if(pf<1.80){cap=Math.min(cap,72);notes.push('PF sınırda');}
+  if(win<45){hard=true;notes.push('win veto');}
+  else if(win<50){cap=Math.min(cap,62);notes.push('win zayıf');}
+  else if(win<RULE.rosterMinWin){cap=Math.min(cap,72);notes.push('win sınırda');}
+  if(fast>35){hard=true;notes.push('hızlı stop veto');}
+  else if(fast>30){cap=Math.min(cap,66);notes.push('hızlı stop çok yüksek');}
+  else if(fast>25){cap=Math.min(cap,76);notes.push('hızlı stop yüksek');}
+  else if(fast>20){cap=Math.min(cap,86);notes.push('hızlı stop dikkat');}
+  return {hard,cap,notes,n,pf,win,fast};
+}
+function v153StopTpVeto(sig,tf){
+  const notes=[]; let hard=false, cap=100;
+  const stop=Number(sig&&sig.stopPct)||0, room=Number(sig&&sig.tp2RoomR)||0;
+  const is15=tf==='15m', is30=tf==='30m';
+  if(room<1.35){hard=true;notes.push('TP2 alanı yok');}
+  else if(room<1.70){cap=Math.min(cap,72);notes.push('TP2 alanı zayıf');}
+  else if(room<2.00){cap=Math.min(cap,84);notes.push('TP2 alanı sınırda');}
+  if(stop<0.55){hard=true;notes.push('stop çok yakın / stop avı');}
+  else if(is15&&stop>3.05){cap=Math.min(cap,78);notes.push('15m stop geniş');}
+  else if(is30&&stop>3.35){cap=Math.min(cap,80);notes.push('30m stop geniş');}
+  else if(stop>3.70){hard=true;notes.push('stop çok geniş');}
+  return {hard,cap,notes,stop,room};
+}
 function v152StatScore(stat){
-  if(!stat||!stat.count){return {score:38,notes:['backtest yok'],reliable:false,form:{score:42,notes:['backtest yok']}};}
+  if(!stat||!stat.count){return {score:12,notes:['backtest yok'],reliable:false,form:{score:42,notes:['backtest yok']},veto:v153BacktestVeto(stat)}};
   const n=stat.count, wins=n*(stat.win||0)/100;
-  const bayes=(wins+8*.54)/(n+8)*100;
+  const bayes=(wins+18*.56)/(n+18)*100;
   const mfeMae=(stat.avgMfe||0)/Math.max(stat.avgMae||0,.05);
   const form=v152RecentForm(stat);
-  let s=34;
-  s+=Math.min(22,bayes*.28);
-  s+=Math.min(20,Math.max(0,(stat.pf||0)-1)*11);
-  s+=Math.min(13,Math.log10(n+1)*17);
-  s+=Math.min(13,mfeMae*7);
-  s+=Math.max(-10,Math.min(10,(stat.net||0)*.22));
-  s-=Math.min(20,(stat.fast||0)*.35);
-  s+=form.score*.10-5;
-  const notes=[];
-  if(n<12)notes.push('örneklem az');
-  if((stat.pf||0)<1.15)notes.push('PF zayıf');
-  if((stat.win||0)<50)notes.push('win orta-alt');
-  if((stat.fast||0)>25)notes.push('hızlı stop dikkat');
+  const veto=v153BacktestVeto(stat);
+  let s=18;
+  s+=Math.min(22,Math.max(0,(bayes-42))*0.72);
+  s+=Math.min(24,Math.max(0,(stat.pf||0)-1)*8.5);
+  s+=Math.min(14,Math.log10(n+1)*15);
+  s+=Math.min(12,mfeMae*6);
+  s+=Math.max(-8,Math.min(8,(stat.net||0)*.16));
+  s-=Math.min(24,(stat.fast||0)*.42);
+  s+=form.score*.12-6;
+  s=Math.min(s,veto.cap);
+  if(veto.hard)s=Math.min(s,24);
+  const notes=[...veto.notes];
+  if(n<RULE.rosterMinTrades)notes.push('ana kadro için örneklem az');
+  if((stat.pf||0)<RULE.rosterMinPF)notes.push('PF ana kadro altı');
+  if((stat.win||0)<RULE.rosterMinWin)notes.push('win ana kadro altı');
+  if((stat.fast||0)>RULE.rosterMaxFastStop)notes.push('hızlı stop ana kadro üstü');
   notes.push(...form.notes);
-  return {score:v152Score(s),notes:[...new Set(notes)],reliable:n>=12&&(stat.pf||0)>=1.15&&(stat.win||0)>=50,form};
+  return {score:v152Score(s),notes:[...new Set(notes)],reliable:!veto.hard&&n>=RULE.rosterMinTrades&&(stat.pf||0)>=RULE.rosterMinPF&&(stat.win||0)>=RULE.rosterMinWin&&(stat.fast||0)<=RULE.rosterMaxFastStop,form,veto};
 }
 function v152ExecutionScore(sig){
   const d=sig.techDetail||{}, stop=Number(sig.stopPct)||0, room=Number(sig.tp2RoomR)||0;
   const loc=d.loc?.score||50, trig=d.trig?.score||50, vol=d.vol?.score||50, flow=d.flow?.score||50;
-  let stopScore=72;
-  if(stop<.45)stopScore=35;
-  else if(stop<.70)stopScore=58;
-  else if(stop<=2.35)stopScore=92;
-  else if(stop<=3.20)stopScore=74;
-  else if(stop<=4.20)stopScore=50;
-  else stopScore=20;
-  let roomScore=room>=2.0?96:room>=1.55?84:room>=1.15?68:room>=.85?52:30;
-  const s=stopScore*.30+roomScore*.28+loc*.18+trig*.12+flow*.07+vol*.05;
+  let stopScore=70;
+  if(stop<.55)stopScore=18;
+  else if(stop<.80)stopScore=55;
+  else if(stop<=2.25)stopScore=94;
+  else if(stop<=2.85)stopScore=82;
+  else if(stop<=3.25)stopScore=66;
+  else if(stop<=3.70)stopScore=48;
+  else stopScore=18;
+  let roomScore=room>=3.0?100:room>=2.35?94:room>=2.0?88:room>=1.70?76:room>=1.35?55:24;
+  const s=stopScore*.28+roomScore*.32+loc*.18+trig*.12+flow*.06+vol*.04;
   const notes=[];
-  if(stop<.70)notes.push('stop çok yakın');
-  if(stop>3.20)notes.push('stop geniş');
-  if(room<1.15)notes.push('TP2 alanı sınırlı');
+  if(stop<.80)notes.push('stop yakın');
+  if(stop>2.85)notes.push('stop geniş');
+  if(room<2.00)notes.push('TP2 alanı A+ değil');
+  if(room<1.70)notes.push('TP2 alanı yetersiz');
   if((d.loc?.labels||[]).length>=2)notes.push('lokasyon güçlü');
   return {score:v152Score(s),notes};
 }
@@ -2271,12 +2325,12 @@ function signalForSymbol(c,i,model,sym,tf){
   const dir=String(model||'').includes('LONG')?'LONG':'SHORT';
   const g=v152TechGate(c,i,dir,sym,tf);
   if(!g||!g.ok)return null;
-  return {model:'v15.2 Dünya Şampiyonu '+dir,sub:g.sub.slice(0,3).join(' + ')||'çoklu teknik seçim',dir,entry:g.entry,stop:g.stop,t1:g.t1,t2:g.t2,t3:g.t3,atr:c[i].atr||0,stopPct:g.stopPct,rr:g.rr,why:g.reasons,q:g.q,techDetail:g.detail,tp2RoomR:g.room.roomR,hardNotes:g.hardNotes||[]};
+  return {model:'v15.3 Güçlü Kadro '+dir,sub:g.sub.slice(0,3).join(' + ')||'çoklu teknik seçim',dir,entry:g.entry,stop:g.stop,t1:g.t1,t2:g.t2,t3:g.t3,atr:c[i].atr||0,stopPct:g.stopPct,rr:g.rr,why:g.reasons,q:g.q,techDetail:g.detail,tp2RoomR:g.room.roomR,hardNotes:g.hardNotes||[]};
 }
 function signal(c,i,model){return signalForSymbol(c,i,model,'BTCUSDT','15m');}
 function backtest(sym,tf){
   const raw=getCandles(sym,tf); if(!raw||raw.length<235)return null;
-  const c=enrich(raw),map={'v15.2 Dünya Şampiyonu LONG':[],'v15.2 Dünya Şampiyonu SHORT':[]}; let cd=0;
+  const c=enrich(raw),map={'v15.3 Güçlü Kadro LONG':[],'v15.3 Güçlü Kadro SHORT':[]}; let cd=0;
   for(let i=195;i<c.length-2;i++){
     if(cd>0){cd--;continue;}
     const sigs=['LONG','SHORT'].map(d=>signalForSymbol(c,i,'BAGLI '+d,sym,tf)).filter(Boolean).filter(s=>s.stopPct<=RULE.maxStopPct).sort((a,b)=>b.q-a.q);
@@ -2287,25 +2341,55 @@ function backtest(sym,tf){
   const stats=Object.keys(map).map(m=>calcStats(m,map[m])).filter(s=>s.count>0).sort((a,b)=>modelScore(b)-modelScore(a));
   return {sym,tf,candles:c,stats};
 }
-function v152SelectorScore(sig,stat,source,usedK=0){
+function v153WeakLinkCaps(sig,stat,source,selBase,tf){
+  const caps=[]; const notes=[]; let hard=false;
+  const bt=v153BacktestVeto(stat), ex=v153StopTpVeto(sig,tf);
+  if(bt.hard){hard=true;notes.push(...bt.notes);} else caps.push(bt.cap);
+  if(ex.hard){hard=true;notes.push(...ex.notes);} else caps.push(ex.cap);
+  if((selBase.stat||0)<RULE.rosterMinBacktestScore){caps.push(74);notes.push('backtest karnesi ana kadro altı');}
+  if((selBase.execution||0)<RULE.rosterMinExecutionScore){caps.push(78);notes.push('icra karnesi ana kadro altı');}
+  if((selBase.tech||0)<RULE.rosterMinTechScore){caps.push(72);notes.push('teknik karnesi ana kadro altı');}
+  if(String(source||'').includes('REST')){caps.push(94);notes.push('REST kaynak tavanı');}
+  if(String(source||'').includes('JSON')){caps.push(88);notes.push('JSON kaynak tavanı');}
+  return {hard,cap:caps.length?Math.min(...caps):100,notes:[...new Set(notes)]};
+}
+function v152SelectorScore(sig,stat,source,usedK=0,tf='15m'){
   const tech=Number(sig.q)||45, statInfo=v152StatScore(stat), exe=v152ExecutionScore(sig), src=44+sourcePriority(source)*12;
   const d=sig.techDetail||{};
-  let s=tech*.43+exe.score*.31+statInfo.score*.18+src*.08;
-  if((d.loc?.labels||[]).length>=2)s+=4;
-  if(d.mtf?.strong)s+=3;
-  if(d.flow?.volStrong)s+=2;
-  if((sig.tp2RoomR||0)>=1.55)s+=4;
-  if((stat.fast||0)>30)s-=6;
-  if((stat.count||0)<6)s-=5;
-  s-=usedK*1.5;
-  return {score:v152Score(s),tech,execution:exe.score,stat:statInfo.score,source:src,notes:[...new Set([...exe.notes,...statInfo.notes])],statInfo,exe};
+  // Dünya şampiyonu seçici: icra + backtest teknik etiketten daha önemli.
+  let s=tech*.26+exe.score*.34+statInfo.score*.30+src*.10;
+  if((d.loc?.labels||[]).length>=2)s+=3;
+  if(d.mtf?.strong)s+=2;
+  if(d.flow?.volStrong)s+=1.5;
+  if((sig.tp2RoomR||0)>=2.00)s+=3.5;
+  if((sig.tp2RoomR||0)<1.70)s-=8;
+  if((stat.fast||0)>25)s-=8;
+  if((stat.count||0)<RULE.rosterMinTrades)s-=8;
+  s-=usedK*2.2;
+  const base={score:v152Score(s),tech,execution:exe.score,stat:statInfo.score,source:src,notes:[...new Set([...exe.notes,...statInfo.notes])],statInfo,exe};
+  const weak=v153WeakLinkCaps(sig,stat,source,base,tf);
+  let finalScore=weak.hard?Math.min(base.score,28):Math.min(base.score,weak.cap);
+  return {score:v152Score(finalScore),tech,execution:exe.score,stat:statInfo.score,source:src,notes:[...new Set([...base.notes,...weak.notes])],statInfo,exe,weak};
 }
 function v152Confidence(sel,stat,source){
   let cap=sourceCap(source);
   const n=stat&&stat.count?stat.count:0;
-  if(n<6)cap=Math.min(cap,70); else if(n<12)cap=Math.min(cap,76); else if(n<24)cap=Math.min(cap,82); else if(n<40)cap=Math.min(cap,87);
-  if((stat&&stat.fast||0)>30)cap=Math.min(cap,78);
+  if(n<12)cap=Math.min(cap,64); else if(n<24)cap=Math.min(cap,72); else if(n<30)cap=Math.min(cap,78); else if(n<45)cap=Math.min(cap,86);
+  if((stat&&stat.fast||0)>25)cap=Math.min(cap,78);
+  if((stat&&stat.pf||0)<RULE.rosterMinPF)cap=Math.min(cap,74);
+  if((stat&&stat.win||0)<RULE.rosterMinWin)cap=Math.min(cap,74);
   return Math.round(Math.max(50,Math.min(cap,sel.score)));
+}
+function v153Grade(sel,sig,stat,tf){
+  const n=stat?.count||0, pf=stat?.pf||0, win=stat?.win||0, fast=stat?.fast||0, room=sig?.tp2RoomR||0;
+  const bd={tech:sel.tech||0,execution:sel.execution||0,backtest:sel.stat||0};
+  if(sel.weak?.hard || pf<1.60 || win<50 || fast>30 || n<24 || room<1.50 || bd.backtest<60)return 'C';
+  const aplus=n>=RULE.aPlusMinTrades && pf>=RULE.aPlusMinPF && win>=RULE.aPlusMinWin && fast<=RULE.aPlusMaxFastStop && room>=RULE.aPlusMinTp2RoomR && bd.execution>=82 && bd.backtest>=80 && bd.tech>=68 && sel.score>=RULE.eliteMinScore;
+  if(aplus)return 'A+';
+  const a=n>=RULE.rosterMinTrades && pf>=RULE.rosterMinPF && win>=RULE.rosterMinWin && fast<=RULE.rosterMaxFastStop && room>=RULE.minTp2RoomR && bd.execution>=RULE.rosterMinExecutionScore && bd.backtest>=RULE.rosterMinBacktestScore && bd.tech>=RULE.rosterMinTechScore && sel.score>=RULE.championMinScore;
+  if(a)return 'A';
+  if(sel.score>=68 && pf>=1.45 && win>=50 && fast<=30 && n>=24 && room>=1.50)return 'B+';
+  return 'B';
 }
 function buildCandidateForDir(sym,tf,b,dir){
   sym=cleanSymbol(sym); if(!sym||!b)return null;
@@ -2322,12 +2406,12 @@ function buildCandidateForDir(sym,tf,b,dir){
   if(!sig)return null;
   const stat=v152SafeStat((b.stats||[]).find(s=>String(s.model||'').includes(dir)),dir);
   const source=sourceMap[key]||'Taze veri';
-  const sel=v152SelectorScore(sig,stat,source,usedK);
+  const sel=v152SelectorScore(sig,stat,source,usedK,tf);
   if(sel.score<RULE.poolMinScore)return null;
   const conf=v152Confidence(sel,stat,source),lev=leverage(sig,conf),rClass=riskClass(sig.stopPct,lev.lev);
   if(sig.stopPct>RULE.maxStopPct||rClass==='Yüksek')return null;
-  const grade=sel.score>=84?'A+':sel.score>=78?'A':sel.score>=70?'B+':sel.score>=64?'B':'C';
-  const notes=['geniş havuzdan geldi','v15.2 seçici'];
+  const grade=v153Grade(sel,sig,stat,tf);
+  const notes=['geniş havuzdan geldi','v15.3 seçici'];
   if(sel.score>=RULE.eliteMinScore)notes.push('dünya kupası adayı'); else if(sel.score>=RULE.championMinScore)notes.push('milli takım adayı'); else notes.push('yedek havuz');
   if(usedK>0)notes.push(`${usedK} mum önce tetik`);
   notes.push(...sel.notes.slice(0,3));
@@ -2352,25 +2436,27 @@ function adjustRiskConfidence(obj){
   obj.qualityScore=Math.round(obj.selectorScore+(obj.tp2RoomR?Math.min(6,obj.tp2RoomR*1.5):0));
   return obj.conf>=RULE.minConf?obj:null;
 }
-function v152ChampionEligible(x){
+function v153CoreRosterOk(x,allowBorder=false){
   if(!x||!validCandidateSymbol(x))return false;
+  const st=x.stat||{}, bd=x.scoreBreakdown||{}, d=x.techDetail||{};
   if((x.ageSec||9999)>RULE.maxLiveAgeMs/1000)return false;
   if((x.stopPct||999)>RULE.maxMainStopPct)return false;
   if(x.riskClass==='Yüksek')return false;
-  if((x.selectorScore||0)<RULE.championMinScore)return false;
-  if((x.tp2RoomR||0)<RULE.minTp2RoomR)return false;
-  const d=x.techDetail||{};
-  if((d.loc?.score||0)<50)return false;
-  if((d.trig?.score||0)<45)return false;
+  if((x.tp2RoomR||0)<(allowBorder?1.55:RULE.minTp2RoomR))return false;
+  if((x.selectorScore||0)<(allowBorder?RULE.reserveMinScore:RULE.championMinScore))return false;
+  if((st.count||0)<(allowBorder?24:RULE.rosterMinTrades))return false;
+  if((st.pf||0)<(allowBorder?1.55:RULE.rosterMinPF))return false;
+  if((st.win||0)<(allowBorder?50:RULE.rosterMinWin))return false;
+  if((st.fast||0)>(allowBorder?30:RULE.rosterMaxFastStop))return false;
+  if((bd.backtest||0)<(allowBorder?64:RULE.rosterMinBacktestScore))return false;
+  if((bd.execution||0)<(allowBorder?70:RULE.rosterMinExecutionScore))return false;
+  if((bd.tech||0)<(allowBorder?58:RULE.rosterMinTechScore))return false;
+  if((d.loc?.score||0)<(allowBorder?52:56))return false;
+  if((d.trig?.score||0)<(allowBorder?47:50))return false;
   return true;
 }
-function v152ReserveEligible(x){
-  if(!x||!validCandidateSymbol(x))return false;
-  if((x.ageSec||9999)>RULE.maxLiveAgeMs/1000)return false;
-  if((x.stopPct||999)>RULE.maxStopPct)return false;
-  if(x.riskClass==='Yüksek')return false;
-  return (x.selectorScore||0)>=RULE.reserveMinScore;
-}
+function v152ChampionEligible(x){return v153CoreRosterOk(x,false);}
+function v152ReserveEligible(x){return v153CoreRosterOk(x,true);}
 function v152UniqueTop(arr,limit){
   const out=[],seen=new Set();
   for(const x of arr.sort(candidateRank)){
@@ -2404,16 +2490,16 @@ function renderList(){
   const champLong=candidates.filter(x=>x&&x.dir==='LONG'&&v152ChampionEligible(x)).length,champShort=candidates.filter(x=>x&&x.dir==='SHORT'&&v152ChampionEligible(x)).length;
   const elite=candidates.filter(x=>x&&(x.selectorScore||0)>=RULE.eliteMinScore).length;
   const summary=`<div class="dash"><div><b>${poolLong}</b><span>LONG havuz</span></div><div><b>${poolShort}</b><span>SHORT havuz</span></div><div><b>${champLong}</b><span>şampiyon LONG</span></div><div><b>${champShort}</b><span>şampiyon SHORT</span></div><div><b>${longs.length}+${shorts.length}</b><span>ilk 7+7</span></div><div><b>${elite}</b><span>A/A+ kalite</span></div></div>`;
-  if(!longs.length&&!shorts.length){box.innerHTML=summary+'<div class="decision wait">HAVUZ VAR AMA ŞAMPİYON KADRO YOK</div><p>v15.2 adayları tamamen kapatmaz; fakat ilk 7 kadroya girmek için lokasyon, tetik, hedef alanı, stop kalitesi ve seçici puan gerekir. Tarama bitimini bekle veya piyasa netleşsin.</p>';return;}
-  const card=(x,i)=>{const idx=candidates.indexOf(x),bd=x.scoreBreakdown||{};const bt=`İşlem ${x.stat.count||0} | Win ${pct(x.stat.win||0,1)} | PF ${x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2)} | Hızlı stop ${pct(x.stat.fast||0,1)}`;const spot=x.dir==='LONG'?'<span class="pill green">spot AL adayı</span>':'<span class="pill red">spotta short değil</span>';return `<div class="candidate ${x.dir==='SHORT'?'short':'long'}" onclick="selectCandidate(${idx})"><div class="top"><div><div class="sym">${i+1}) ${symbolLabel(x.sym)} / ${x.tf}</div><div class="model">${x.model}${x.sub?' — '+x.sub:''}</div></div><div class="score ${x.dir==='LONG'?'long':'short'}">${x.selectorScore}<br><span style="font-size:15px">PUAN</span></div></div><div class="line">Kalite sınıfı: <b>${x.poolGrade}</b> | Güven: ${x.conf}%<br>Skor kırılımı: Teknik ${bd.tech||'-'} / İcra ${bd.execution||'-'} / Backtest ${bd.backtest||'-'} / Veri ${bd.source||'-'}<br>Giriş ${dualPrice(x.entry)}<br>Stop ${dualPrice(x.stop)} | Stop ${pct(x.stopPct,2)} | TP2 alanı ${fmt(x.tp2RoomR||0,2)}R<br>TP1 ${dualPrice(x.t1)} | TP2 ${dualPrice(x.t2)} | TP3 ${dualPrice(x.t3)}<br>Backtest: ${bt}<br>Veri: ${x.ageSec} sn | Mum: ${x.candleSource||x.source} | Fiyat: ${x.priceSource||x.source}<br>Teknik: ${(x.why||[]).join(' + ')}</div><div>${spot}<span class="pill blue">v15.2 şampiyon seçici</span>${(x.capNotes||[]).slice(0,4).map(n=>`<span class="pill amber">${n}</span>`).join('')}</div></div>`};
+  if(!longs.length&&!shorts.length){box.innerHTML=summary+'<div class="decision wait">HAVUZ VAR AMA KALİTE KADROSU YOK</div><p>v15.3 zayıf adayı ilk 7’ye doldurmaz. PF, win, hızlı stop, TP2 alanı, icra ve teknik karnesi geçmezse kadro eksik kalır; bu hata değil kalite filtresidir.</p>';return;}
+  const card=(x,i)=>{const idx=candidates.indexOf(x),bd=x.scoreBreakdown||{};const bt=`İşlem ${x.stat.count||0} | Win ${pct(x.stat.win||0,1)} | PF ${x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2)} | Hızlı stop ${pct(x.stat.fast||0,1)}`;const spot=x.dir==='LONG'?'<span class="pill green">spot AL adayı</span>':'<span class="pill red">spotta short değil</span>';return `<div class="candidate ${x.dir==='SHORT'?'short':'long'}" onclick="selectCandidate(${idx})"><div class="top"><div><div class="sym">${i+1}) ${symbolLabel(x.sym)} / ${x.tf}</div><div class="model">${x.model}${x.sub?' — '+x.sub:''}</div></div><div class="score ${x.dir==='LONG'?'long':'short'}">${x.selectorScore}<br><span style="font-size:15px">PUAN</span></div></div><div class="line">Kalite sınıfı: <b>${x.poolGrade}</b> | Güven: ${x.conf}%<br>Skor kırılımı: Teknik ${bd.tech||'-'} / İcra ${bd.execution||'-'} / Backtest ${bd.backtest||'-'} / Veri ${bd.source||'-'}<br>Giriş ${dualPrice(x.entry)}<br>Stop ${dualPrice(x.stop)} | Stop ${pct(x.stopPct,2)} | TP2 alanı ${fmt(x.tp2RoomR||0,2)}R<br>TP1 ${dualPrice(x.t1)} | TP2 ${dualPrice(x.t2)} | TP3 ${dualPrice(x.t3)}<br>Backtest: ${bt}<br>Veri: ${x.ageSec} sn | Mum: ${x.candleSource||x.source} | Fiyat: ${x.priceSource||x.source}<br>Teknik: ${(x.why||[]).join(' + ')}</div><div>${spot}<span class="pill blue">v15.3 güçlü seçici</span>${(x.capNotes||[]).slice(0,4).map(n=>`<span class="pill amber">${n}</span>`).join('')}</div></div>`};
   const section=(title,arr,dir,desc)=>`<div class="listSection ${dir.toLowerCase()}"><h3>${title}</h3><p class="dim">${desc}</p>${arr.length?arr.map(card).join(''):'<p>Bu yönde havuz var ama şampiyon ilk 7 eşiğine giren aday yok.</p>'}</div>`;
-  box.innerHTML=summary+section('En İyi 7 LONG — Dünya Şampiyonu Kadro',longs,'LONG','Geniş LONG havuzundan sadece en iyi icra + teknik + backtest dengesine sahip adaylar seçilir.')+section('En İyi 7 SHORT — Dünya Şampiyonu Kadro',shorts,'SHORT','Spotta emir değil; vadeli/izleme-çıkış yönüdür. Yalnızca en güçlü short bağlamları ilk 7’ye girer.');
+  box.innerHTML=summary+section('En İyi 7 LONG — Güçlü Kadro',longs,'LONG','Geniş LONG havuzundan sadece en iyi icra + teknik + backtest dengesine sahip adaylar seçilir.')+section('En İyi 7 SHORT — Güçlü Kadro',shorts,'SHORT','Spotta emir değil; vadeli/izleme-çıkış yönüdür. Yalnızca en güçlü short bağlamları ilk 7’ye girer.');
 }
 function selectCandidate(i,auto=false){
   const x=candidates[i]; if(!x)return; selected=x;
   const bd=x.scoreBreakdown||{},d=x.techDetail||{};
-  $('decision').className='decision '+(x.dir==='LONG'?'long':'short'); $('decision').textContent=`${x.dir} İŞLEM — ŞAMPİYON PUAN ${x.selectorScore} / ${x.poolGrade}`;
-  $('metrics').innerHTML=metric('Sembol / TF',`${symbolLabel(x.sym)} / ${x.tf}`)+metric('Kalite sınıfı',x.poolGrade||'-')+metric('Şampiyon puanı',x.selectorScore||'-')+metric('Teknik / İcra',`${bd.tech||'-'} / ${bd.execution||'-'}`)+metric('Backtest / Veri',`${bd.backtest||'-'} / ${bd.source||'-'}`)+metric('Model',x.model+(x.sub?' — '+x.sub:''))+metric('Canlı veri',`${x.ageSec} sn`)+metric('Mum/Fiyat kaynağı',`${x.candleSource||x.source} / ${x.priceSource||x.source}`)+metric('Risk sınıfı',x.riskClass)+metric('Güven',`${x.conf}%`)+metric('Trend / MTF',`${fmt(d.trend?.score||0,0)} / ${fmt(d.mtf?.score||0,0)}`)+metric('Yapı / Lokasyon',`${fmt(d.st?.score||0,0)} / ${fmt(d.loc?.score||0,0)}`)+metric('Momentum / Para akışı',`${fmt(d.mom?.score||0,0)} / ${fmt(d.flow?.score||0,0)}`)+metric('Tetik / Volatilite',`${fmt(d.trig?.score||0,0)} / ${fmt(d.vol?.score||0,0)}`)+metric('TP2 alanı',`${fmt(x.tp2RoomR||0,2)}R`)+metric('Giriş',dualPrice(x.entry))+metric('Stop',dualPrice(x.stop))+metric('Stop %',pct(x.stopPct,2))+metric('TP1',dualPrice(x.t1))+metric('TP2',dualPrice(x.t2))+metric('TP3',dualPrice(x.t3))+metric('Spot tutar',fmt(RULE.spotTry,0)+' TL')+metric('Risk',dualMoney(x.lev.riskD))+metric('PF',x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2));
+  $('decision').className='decision '+(x.dir==='LONG'?'long':'short'); $('decision').textContent=`${x.dir} İŞLEM — KADRO PUAN ${x.selectorScore} / ${x.poolGrade}`;
+  $('metrics').innerHTML=metric('Sembol / TF',`${symbolLabel(x.sym)} / ${x.tf}`)+metric('Kalite sınıfı',x.poolGrade||'-')+metric('Kadro puanı',x.selectorScore||'-')+metric('Teknik / İcra',`${bd.tech||'-'} / ${bd.execution||'-'}`)+metric('Backtest / Veri',`${bd.backtest||'-'} / ${bd.source||'-'}`)+metric('Model',x.model+(x.sub?' — '+x.sub:''))+metric('Canlı veri',`${x.ageSec} sn`)+metric('Mum/Fiyat kaynağı',`${x.candleSource||x.source} / ${x.priceSource||x.source}`)+metric('Risk sınıfı',x.riskClass)+metric('Güven',`${x.conf}%`)+metric('Trend / MTF',`${fmt(d.trend?.score||0,0)} / ${fmt(d.mtf?.score||0,0)}`)+metric('Yapı / Lokasyon',`${fmt(d.st?.score||0,0)} / ${fmt(d.loc?.score||0,0)}`)+metric('Momentum / Para akışı',`${fmt(d.mom?.score||0,0)} / ${fmt(d.flow?.score||0,0)}`)+metric('Tetik / Volatilite',`${fmt(d.trig?.score||0,0)} / ${fmt(d.vol?.score||0,0)}`)+metric('TP2 alanı',`${fmt(x.tp2RoomR||0,2)}R`)+metric('Giriş',dualPrice(x.entry))+metric('Stop',dualPrice(x.stop))+metric('Stop %',pct(x.stopPct,2))+metric('TP1',dualPrice(x.t1))+metric('TP2',dualPrice(x.t2))+metric('TP3',dualPrice(x.t3))+metric('Spot tutar',fmt(RULE.spotTry,0)+' TL')+metric('Risk',dualMoney(x.lev.riskD))+metric('PF',x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2));
   $('tryPlan').innerHTML=binanceTryPlan(x); $('reasons').innerHTML=(x.why||[]).map(r=>`<span class="pill ${x.dir==='LONG'?'green':'red'}">${r}</span>`).join('')+`<span class="pill blue">Win ${pct(x.stat.win||0,1)}</span><span class="pill blue">PF ${x.stat.pf>=20?'20+':fmt(x.stat.pf||0,2)}</span><span class="pill blue">Hızlı stop ${pct(x.stat.fast||0,1)}</span><span class="pill blue">MFE/MAE ${fmt(x.stat.avgMfe||0,2)}R / ${fmt(x.stat.avgMae||0,2)}R</span>`+(x.capNotes&&x.capNotes.length?x.capNotes.slice(0,7).map(n=>`<span class="pill amber">${n}</span>`).join(''):'');
   drawChart(x.candles,x); renderBacktest(x); if(!auto)$('planBox').scrollIntoView({behavior:'smooth'});
 }
@@ -2428,8 +2514,8 @@ function binanceTryPlan(x){
   return `<b>SHORT planı — spot işlem değildir</b><div class="tryline">Binance TR spotta doğrudan short açılamaz. Bu liste vadeli/marjin veya eldeki longdan çıkış-dikkat yönüdür.</div><div class="tryline">Giriş: ${tlInput(x.entry)} TL | Stop: ${tlInput(x.stop)} TL | TP1: ${tlInput(x.t1)} TL | TP2 alanı: ${fmt(x.tp2RoomR||0,2)}R</div>`;
 }
 async function scanAll(){
-  setMeta(`v15.2 Dünya Şampiyonu tarama başladı: geniş havuz kuruluyor, sonra 7+7 kadro seçiliyor...`);
+  setMeta(`v15.3 Güçlü Kadro tarama başladı: geniş havuz kuruluyor, sonra 7+7 kadro seçiliyor...`);
   candidates=[]; scanLog.lowQuality=0; const total=SYMBOLS.length*TFS.length; scanLog.total=total; scanLog.done=0; let done=0;
-  for(const s0 of SYMBOLS){const s=cleanSymbol(s0); if(!s){scanLog.skipped+=TFS.length;continue;} for(const tf of TFS){await ensureCandles(s,tf); const arr=getCandles(s,tf); const key=s+'|'+tf; const pairLive=liveMap[key]||pairSourceTime(s,tf,arr); if(arr&&arr.length>=235&&pairLive&&sourceAgeMs(pairLive)<=RULE.maxLiveAgeMs){const before=candidates.length; const b=backtest(s,tf); if(b){for(const dir of ['LONG','SHORT']){const cand=buildCandidateForDir(s,tf,b,dir); if(cand)candidates.push(cand); else scanLog.lowQuality=(scanLog.lowQuality||0)+1;}} if(candidates.length>before||done%8===0){sortCandidates();renderList();}} else {scanLog.skipped++; if(pairLive&&sourceAgeMs(pairLive)>RULE.maxLiveAgeMs)scanLog.stale++;} done++; scanLog.done=done; setBar(done/total*100); setMeta(`${liveText()} | v15.2 havuz ${done}/${total} | Coin: ${symbolLabel(s)} | TF: ${tf} | LONG havuz: ${candidates.filter(x=>x.dir==='LONG').length} | SHORT havuz: ${candidates.filter(x=>x.dir==='SHORT').length} | Şampiyon: ${rankedList('LONG',7).length}+${rankedList('SHORT',7).length}`); await delay(16);}}
-  sortCandidates(); renderList(); const autoIdx=firstAutoCandidateIndex(); if(autoIdx>=0)setTimeout(()=>selectCandidate(autoIdx,true),50); setMeta(`${liveText()} | Tarama bitti: ${done}/${total} | LONG havuz ${candidates.filter(x=>x.dir==='LONG').length} / kadro ${rankedList('LONG',7).length} | SHORT havuz ${candidates.filter(x=>x.dir==='SHORT').length} / kadro ${rankedList('SHORT',7).length} | v15.2 Dünya Şampiyonu Seçici aktif`);
+  for(const s0 of SYMBOLS){const s=cleanSymbol(s0); if(!s){scanLog.skipped+=TFS.length;continue;} for(const tf of TFS){await ensureCandles(s,tf); const arr=getCandles(s,tf); const key=s+'|'+tf; const pairLive=liveMap[key]||pairSourceTime(s,tf,arr); if(arr&&arr.length>=235&&pairLive&&sourceAgeMs(pairLive)<=RULE.maxLiveAgeMs){const before=candidates.length; const b=backtest(s,tf); if(b){for(const dir of ['LONG','SHORT']){const cand=buildCandidateForDir(s,tf,b,dir); if(cand)candidates.push(cand); else scanLog.lowQuality=(scanLog.lowQuality||0)+1;}} if(candidates.length>before||done%8===0){sortCandidates();renderList();}} else {scanLog.skipped++; if(pairLive&&sourceAgeMs(pairLive)>RULE.maxLiveAgeMs)scanLog.stale++;} done++; scanLog.done=done; setBar(done/total*100); setMeta(`${liveText()} | v15.3 havuz ${done}/${total} | Coin: ${symbolLabel(s)} | TF: ${tf} | LONG havuz: ${candidates.filter(x=>x.dir==='LONG').length} | SHORT havuz: ${candidates.filter(x=>x.dir==='SHORT').length} | Kadro: ${rankedList('LONG',7).length}+${rankedList('SHORT',7).length}`); await delay(16);}}
+  sortCandidates(); renderList(); const autoIdx=firstAutoCandidateIndex(); if(autoIdx>=0)setTimeout(()=>selectCandidate(autoIdx,true),50); setMeta(`${liveText()} | Tarama bitti: ${done}/${total} | LONG havuz ${candidates.filter(x=>x.dir==='LONG').length} / kadro ${rankedList('LONG',7).length} | SHORT havuz ${candidates.filter(x=>x.dir==='SHORT').length} / kadro ${rankedList('SHORT',7).length} | v15.3 Güçlü Kadro Seçici aktif`);
 }
