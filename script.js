@@ -1,4 +1,4 @@
-const VERSION="v16.9 dengeli teknik kapı + backtest top 5";
+const VERSION="v16.10 bilimsel dengeli+ teknik kapı + backtest top 5";
 const TFS=["15m","30m","1h","2h","4h"];
 const TFMS={"15m":900000,"30m":1800000,"1h":3600000,"2h":7200000,"4h":14400000};
 const NEXT_TF={"15m":"1h","30m":"2h","1h":"4h","2h":"4h","4h":"4h"};
@@ -10,9 +10,9 @@ const RULE={
   maxAgeMs:300000,
   limit:700,
   spotTry:10000,
-  // v16.9: SIRA KİLİTLİDİR. Önce SADECE objektif teknik kapı çalışır ve teknik havuz oluşur.
-  // Dengeli teknik kapı: dataAge≤300sn, layer≥7/14, technical≥55, execution≥62, TP2_R≥1.60, 0.70≤stopATR≤2.40.
-  // Canlı veri ve backtest standardı bozulmaz; teknik havuza girenlerin final yayını backtest dayanıklılığı en yüksek 5 LONG + 5 SHORT olur.
+  // v16.10: SIRA KİLİTLİDİR. Önce SADECE objektif teknik kapı çalışır ve teknik havuz oluşur.
+  // Bu RULE değerleri backtest/etiket standardının korunması için bırakıldı.
+  // Teknik havuz kapısı TECH_GATE içinde ölçü birimli olarak Dengeli+ seviyesine alındı.
   techMin:55,
   execMin:62,
   minLayerHits:7,
@@ -26,6 +26,22 @@ const RULE={
   minBtPf:1.50,
   maxBtFast:30,
   showEach:5
+};
+
+const TECH_GATE={
+  // v16.10 Bilimsel Dengeli+ Teknik Kapı: canlı veri ve backtest standardı değişmez.
+  // Sadece teknik havuza giriş eşikleri ölçü birimli olarak kademeli gevşetildi.
+  minLayerHits:6,          // 7/14 -> 6/14; en az 6 bağımsız teknik katman şartı korunur.
+  techMin:52,              // 55 -> 52; teknik skor hâlâ 50 üstü bağlam ister.
+  execMin:60,              // 62 -> 60; giriş/stop/TP icrası alt eşiği.
+  minPoolTp2:1.50,         // 1.60R -> 1.50R; 1.40R altı yine kabul edilmez.
+  stopAtrMin:0.70,         // stop alt bandı korunur; stopTp motoru ve backtest standardı bozulmaz.
+  stopAtrMax:2.60,         // 2.40ATR -> 2.60ATR; 3.20ATR üstü yine kalite dışıdır.
+  trendCtxMin:50,
+  structureCtxMin:50,
+  triggerCtxMin:48,
+  executionCtxMin:56,
+  contextCountMin:3
 };
 let SYMBOLS=[...DEFAULT_SYMBOLS],market={data:{},generatedAt:null},fx={rate:null,source:"-",ageSec:null},scan={done:0,total:0,dirChecks:0,passedTech:0,btPassed:0,out:0,json:0,rest:0,stale:0,invalid:0},pool=[],selected=null;
 const $=id=>document.getElementById(id),now=()=>Date.now();
@@ -42,7 +58,7 @@ function dual(n){return fmt(n,priceDecimals(n))+" USDT / "+tlPrice(n)}
 function money(n){return fmt(n,2)+"$"+(fx.rate?" / "+fmt(n*fx.rate,2)+" TL":"")}
 function setMeta(t){$("meta").textContent=t}
 function setBar(p){$("bar").style.width=clamp(p,0,100)+"%"}
-function setDataBox(){const ok=market&&Object.keys(market.data||{}).length;$("dataBox").innerHTML=`Veri: <b class="${ok?'ok':'bad'}">${ok?'BAĞLI':'BEKLEMEDE'}</b> | Coin: ${SYMBOLS.length} | Mum: ${Object.values(market.data||{}).reduce((s,v)=>s+TFS.reduce((a,tf)=>a+((v&&v[tf]&&v[tf].length)||0),0),0)} | v16.9 dengeli teknik kapı + backtest top 5`}
+function setDataBox(){const ok=market&&Object.keys(market.data||{}).length;$("dataBox").innerHTML=`Veri: <b class="${ok?'ok':'bad'}">${ok?'BAĞLI':'BEKLEMEDE'}</b> | Coin: ${SYMBOLS.length} | Mum: ${Object.values(market.data||{}).reduce((s,v)=>s+TFS.reduce((a,tf)=>a+((v&&v[tf]&&v[tf].length)||0),0),0)} | v16.10 bilimsel dengeli+ teknik kapı + backtest top 5`}
 function setFxBox(){if(fx.rate)$("fxBox").innerHTML=`Kur: <b>1 USDT ≈ ${fmt(fx.rate,4)} TL</b> | Kaynak: ${fx.source} | Yaş: ${fx.ageSec??'-'} sn`;else $("fxBox").textContent="USDT/TRY kuru alınamadı."}
 async function jfetch(url,timeout=12000){const ctrl=new AbortController();const id=setTimeout(()=>ctrl.abort(),timeout);try{const r=await fetch(url,{cache:"no-store",signal:ctrl.signal});if(!r.ok)throw new Error(r.status);return await r.json()}finally{clearTimeout(id)}}
 async function loadMarket(){try{const j=await jfetch("data/market.json?v="+Date.now(),9000);market=j||{data:{}};if(j.symbols&&Array.isArray(j.symbols))SYMBOLS=j.symbols.map(cleanSymbol).filter(Boolean).slice(0,UNIVERSE_LIMIT);if(j.fx&&j.fx.usdtTry){fx={rate:Number(j.fx.usdtTry),source:j.fx.source||"market.json",ageSec:Math.floor((now()-Date.parse(j.fx.generatedAt||j.generatedAt||new Date()))/1000)}}sanitizeMarket();setFxBox();setDataBox();return true}catch(e){market={data:{}};setDataBox();return false}}
@@ -143,13 +159,14 @@ function contextGate(scores,st){
   const triggerCtx=avg([scores.momentum,scores.flow,scores.candle]);
   const executionCtx=avg([scores.volatility,scores.stopTp,scores.location]);
   const passed={
-    trend: trendCtx>=55,
-    structure: structureCtx>=55,
-    trigger: triggerCtx>=50,
-    execution: executionCtx>=60 && st.tp2Area>=RULE.minPoolTp2 && st.stopAtr>=RULE.stopAtrIdealMin && st.stopAtr<=RULE.stopAtrIdealMax
+    trend: trendCtx>=TECH_GATE.trendCtxMin,
+    structure: structureCtx>=TECH_GATE.structureCtxMin,
+    trigger: triggerCtx>=TECH_GATE.triggerCtxMin,
+    execution: executionCtx>=TECH_GATE.executionCtxMin && st.tp2Area>=TECH_GATE.minPoolTp2 && st.stopAtr>=TECH_GATE.stopAtrMin && st.stopAtr<=TECH_GATE.stopAtrMax
   };
   const count=Object.values(passed).filter(Boolean).length;
-  return {trendCtx,structureCtx,triggerCtx,executionCtx,passed,count,ok:count>=3 && passed.execution && passed.structure};
+  // Bilimsel Dengeli+ bağ kuralı: İcra zorunlu; en az 3/4 bağ geçmeli; yön bağı için trend veya yapı-lokasyon bağından biri zorunlu.
+  return {trendCtx,structureCtx,triggerCtx,executionCtx,passed,count,ok:count>=TECH_GATE.contextCountMin && passed.execution && (passed.structure || passed.trend)};
 }
 
 function analyzeLast(sym,tf,raw,dir){
@@ -159,7 +176,7 @@ function analyzeLast(sym,tf,raw,dir){
   if(ageSec>RULE.maxAgeMs/1000)return null;
   if(String(x.source||"").includes("STALE"))return null;
   const st=stopTp(c,i,dir);
-  if(st.stopAtr<RULE.stopAtrIdealMin||st.stopAtr>RULE.stopAtrIdealMax||st.tp2Area<RULE.minPoolTp2)return null;
+  if(st.stopAtr<TECH_GATE.stopAtrMin||st.stopAtr>TECH_GATE.stopAtrMax||st.tp2Area<TECH_GATE.minPoolTp2)return null;
   const scores={
     trend:trendScore(c,i,dir),regime:regimeScore(sym,tf,dir),upper:upperTfScore(sym,tf,dir),
     structure:structureScore(c,i,dir),smc:smcScore(c,i,dir),sr:supportResistanceScore(c,i,dir),
@@ -174,7 +191,7 @@ function analyzeLast(sym,tf,raw,dir){
   const exec=clamp(avg([scores.location,scores.sr,scores.supplyDemand,scores.liquidity,scores.candle,scores.stopTp,scores.volatility])+Math.min(st.tp2Area,3.2)*4,0,100);
   // v16.9 dengeli teknik kapı: önce sadece teknik bağlam ölçülür.
   // Teknik kapı geçilmeden backtest hesaplanıp listeye alınmaz.
-  if(layerHits<RULE.minLayerHits||tech<RULE.techMin||exec<RULE.execMin||!ctx.ok)return null;
+  if(layerHits<TECH_GATE.minLayerHits||tech<TECH_GATE.techMin||exec<TECH_GATE.execMin||!ctx.ok)return null;
   const bt=backtest(c,dir);
   // Backtest artık ikinci kapı değildir; teknik havuzdaki adayların SIRALAMA ölçüsüdür.
   // bt.count düşükse rank doğal olarak düşük kalır; aday teknik havuzdan silinmez.
@@ -243,7 +260,7 @@ function renderSummary(){
   const long=pool.filter(x=>x.dir==="LONG"),short=pool.filter(x=>x.dir==="SHORT");
   const topLong=selectTopByDir("LONG"),topShort=selectTopByDir("SHORT");
   scan.passedTech=pool.length;
-  $("summary").innerHTML=`<div class="dash"><div><b>${SYMBOLS.length}</b><span>coin evreni</span></div><div><b>${scan.done}/${scan.total}</b><span>sembol/TF analiz</span></div><div><b>${scan.dirChecks}</b><span>yön kontrolü</span></div><div><b>${long.length}</b><span>LONG teknik kapı havuzu</span></div><div><b>${short.length}</b><span>SHORT teknik kapı havuzu</span></div><div><b>${topLong.length}+${topShort.length}</b><span>ilk 5+5 backtest</span></div><div><b>${scan.rest}</b><span>REST</span></div><div><b>${scan.json}</b><span>JSON</span></div><div><b>${scan.stale}</b><span>canlı alınamadı</span></div><div><b>${scan.out}</b><span>elenen yön</span></div></div><div class="note"><b>v16.9 kuralı:</b> Teknik kapı Katı moddan Dengeli moda alındı: layer≥7/14, teknik≥55, icra≥62, TP2_R≥1.60, 0.70≤stopATR≤2.40. Önce teknik kapı çalışır, geçenler teknik havuza alınır; backtest bu havuzdaki adayların sıralama ölçüsüdür. Final yayın backtest dayanıklılığı en iyi 5 LONG ve en iyi 5 SHORT olarak ayrı sıralanır.</div>`
+  $("summary").innerHTML=`<div class="dash"><div><b>${SYMBOLS.length}</b><span>coin evreni</span></div><div><b>${scan.done}/${scan.total}</b><span>sembol/TF analiz</span></div><div><b>${scan.dirChecks}</b><span>yön kontrolü</span></div><div><b>${long.length}</b><span>LONG teknik kapı havuzu</span></div><div><b>${short.length}</b><span>SHORT teknik kapı havuzu</span></div><div><b>${topLong.length}+${topShort.length}</b><span>ilk 5+5 backtest</span></div><div><b>${scan.rest}</b><span>REST</span></div><div><b>${scan.json}</b><span>JSON</span></div><div><b>${scan.stale}</b><span>canlı alınamadı</span></div><div><b>${scan.out}</b><span>elenen yön</span></div></div><div class="note"><b>v16.10 kuralı:</b> Teknik kapı Dengeli moddan Bilimsel Dengeli+ moda alındı: layer≥6/14, teknik≥52, icra≥60, TP2_R≥1.50, 0.70≤stopATR≤2.60. Canlı veri ve backtest standardı korunur. Önce teknik kapı çalışır, geçenler teknik havuza alınır; backtest bu havuzdaki adayların sıralama ölçüsüdür. Final yayın backtest dayanıklılığı en iyi 5 LONG ve en iyi 5 SHORT olarak ayrı sıralanır.</div>`
 }
 function card(x,i){
   const cls=x.dir==="SHORT"?"short":"long";
