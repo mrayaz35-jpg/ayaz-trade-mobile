@@ -1,4 +1,4 @@
-const VERSION="v17.8 sadece trend kırılım + CHOCH";
+const VERSION="v18.0 S9 CHOCH bilimsel ATR giriş/çıkış";
 const TFS=["15m","30m","1h","2h","4h"];
 const TFMS={"15m":900000,"30m":1800000,"1h":3600000,"2h":7200000,"4h":14400000};
 const NEXT_TF={"15m":"1h","30m":"2h","1h":"4h","2h":"4h","4h":"4h"};
@@ -99,7 +99,7 @@ const TRADE_GATE={
   minTp1Pct:0.45,
   minTp2Pct:0.80,
   minAtrPct:0.25,
-  maxStopPct:7.50,
+  maxStopPct:8.50,
   totalCostPct:0.20,
   tp1CostMultiple:3,
   tp2CostMultiple:5,
@@ -109,6 +109,20 @@ const TRADE_GATE={
   pegLow:0.98,
   pegHigh:1.02,
   pegMaxAtrPct:0.25
+};
+const CHOCH_TRADE={
+  // v18.0: Sadece trend kırılım + CHOCH stratejisinde işlem planı ATR/R tabanlıdır.
+  // Amaç: karakter değişimi doğruysa girişi bozmayıp stop/TP hesabını bilimsel ve tutarlı yapmak.
+  minStopPct:0.45,
+  maxStopPct:8.50,
+  minAtrStop:0.75,
+  targetAtrStop:1.15,
+  maxAtrStop:1.65,
+  tp1R:1.00,
+  tp2R:2.00,
+  tp3R:3.00,
+  trailAfterTp1:true,
+  maxHoldBars:36
 };
 let SYMBOLS=[...DEFAULT_SYMBOLS],market={data:{},generatedAt:null},fx={rate:null,source:"-",ageSec:null},scan={done:0,total:0,dirChecks:0,passedTech:0,btPassed:0,out:0,json:0,rest:0,stale:0,invalid:0,candles:0,restCandles:0,jsonCandles:0,validSets:0,latestCoinAgeSec:null,lastCoinSource:"-"},pool=[],selected=null;
 const $=id=>document.getElementById(id),now=()=>Date.now();
@@ -126,7 +140,7 @@ function money(n){return fmt(n,2)+"$"+(fx.rate?" / "+fmt(n*fx.rate,2)+" TL":"")}
 function setMeta(t){$("meta").textContent=t}
 function setBar(p){$("bar").style.width=clamp(p,0,100)+"%"}
 function cachedCandleCount(){return Object.values(market.data||{}).reduce((s,v)=>s+TFS.reduce((a,tf)=>a+((v&&v[tf]&&v[tf].length)||0),0),0)}
-function setDataBox(){const liveSets=scan.validSets||0;const liveCandles=scan.candles||0;const cached=cachedCandleCount();const ok=liveSets>0||cached>0;const candleText=liveCandles>0?liveCandles:cached;const ageText=scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec;const srcText=scan.lastCoinSource||"-";$("dataBox").innerHTML=`Veri: <b class="${ok?'ok':'bad'}">${ok?'BAĞLI':'BEKLEMEDE'}</b> | Coin: ${SYMBOLS.length} | Geçerli set: ${liveSets}/${scan.done||0} | Mum: ${candleText} | Coin veri yaşı: ${ageText} sn | Kaynak: ${srcText} | v17.8 sadece trend kırılım + CHOCH`}
+function setDataBox(){const liveSets=scan.validSets||0;const liveCandles=scan.candles||0;const cached=cachedCandleCount();const ok=liveSets>0||cached>0;const candleText=liveCandles>0?liveCandles:cached;const ageText=scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec;const srcText=scan.lastCoinSource||"-";$("dataBox").innerHTML=`Veri: <b class="${ok?'ok':'bad'}">${ok?'BAĞLI':'BEKLEMEDE'}</b> | Coin: ${SYMBOLS.length} | Geçerli set: ${liveSets}/${scan.done||0} | Mum: ${candleText} | Coin veri yaşı: ${ageText} sn | Kaynak: ${srcText} | v18.0 S9 CHOCH + bilimsel ATR plan`}
 function setFxBox(){if(fx.rate)$("fxBox").innerHTML=`Kur: <b>1 USDT ≈ ${fmt(fx.rate,4)} TL</b> | Kaynak: ${fx.source} | Yaş: ${fx.ageSec??'-'} sn`;else $("fxBox").textContent="USDT/TRY kuru alınamadı."}
 async function jfetch(url,timeout=12000){const ctrl=new AbortController();const id=setTimeout(()=>ctrl.abort(),timeout);try{const r=await fetch(url,{cache:"no-store",signal:ctrl.signal});if(!r.ok)throw new Error(r.status);return await r.json()}finally{clearTimeout(id)}}
 async function loadMarket(){try{const j=await jfetch("data/market.json?v="+Date.now(),9000);market=j||{data:{}};if(j.symbols&&Array.isArray(j.symbols))SYMBOLS=j.symbols.map(cleanSymbol).filter(Boolean).slice(0,UNIVERSE_LIMIT);if(j.fx&&j.fx.usdtTry){fx={rate:Number(j.fx.usdtTry),source:j.fx.source||"market.json",ageSec:Math.floor((now()-Date.parse(j.fx.generatedAt||j.generatedAt||new Date()))/1000)}}sanitizeMarket();setFxBox();setDataBox();return true}catch(e){market={data:{}};setDataBox();return false}}
@@ -257,7 +271,26 @@ function momentumScore(c,i,dir){const x=c[i],p3=c[Math.max(0,i-3)]||x;let s=0;if
 function volumeScore(c,i,dir){const x=c[i];let s=0;if(x.volumeRatio>=.90)s+=20;if(x.volumeRatio>=1.20)s+=15;if(x.volumeZ>=-.20)s+=15;if(x.volumeZ>=.50)s+=10;if(x.volumePercentile>=50)s+=10;if(x.volumePercentile>=70)s+=10;if(dir==="LONG"){if(x.cmf>=-.03)s+=15;if(x.cmf>=.05)s+=5;if(x.obvSlope>0)s+=10}else{if(x.cmf<=.03)s+=15;if(x.cmf<=-.05)s+=5;if(x.obvSlope<0)s+=10}return clamp(s,0,100)}
 function trendScore(c,i,dir){const x=c[i];let sc=0;if(dir==="LONG"){if(x.e21>=x.e55)sc+=15;if(x.e21>x.e55&&x.e55>x.e100)sc+=15;if(x.ema55SlopeATR>=0)sc+=15;if(x.ema55SlopeATR>=.10)sc+=10;if(x.close>=x.e55-.50*x.atr)sc+=10;if(x.adx>=18)sc+=15;if(x.adx>=25)sc+=5;if(x.plusDI>x.minusDI)sc+=10;if(x.plusDI-x.minusDI>=2)sc+=5}else{if(x.e21<=x.e55)sc+=15;if(x.e21<x.e55&&x.e55<x.e100)sc+=15;if(x.ema55SlopeATR<=0)sc+=15;if(x.ema55SlopeATR<=-.10)sc+=10;if(x.close<=x.e55+.50*x.atr)sc+=10;if(x.adx>=18)sc+=15;if(x.adx>=25)sc+=5;if(x.minusDI>x.plusDI)sc+=10;if(x.minusDI-x.plusDI>=2)sc+=5}return clamp(sc,0,100)}
 function upperTfScore(sym,tf,dir){const up=NEXT_TF[tf];const raw=market.data&&market.data[sym]&&market.data[sym][up];if(!raw||raw.length<80)return 55;const c=enrich(raw),i=c.length-1,x=c[i];let sc=50;if(dir==="LONG"){if(x.ema55SlopeATR>=0)sc+=25;if(x.e21>=x.e55)sc+=15;if(x.rsi>=45)sc+=10;if(x.ema55SlopeATR<-.10)sc-=30}else{if(x.ema55SlopeATR<=0)sc+=25;if(x.e21<=x.e55)sc+=15;if(x.rsi<=55)sc+=10;if(x.ema55SlopeATR>.10)sc-=30}return clamp(sc,0,100)}
-function stopTp(c,i,dir){const x=c[i],sw=swings(c,i),a=x.atr||Math.max(x.high-x.low,1e-9),entry=x.close;let stop,nearTarget;if(dir==="LONG"){stop=Math.min(sw.lastL-.10*a,entry-RULE.stopAtrIdealMin*a);nearTarget=sw.lastH>entry?sw.lastH:entry+a*2.2}else{stop=Math.max(sw.lastH+.10*a,entry+RULE.stopAtrIdealMin*a);nearTarget=sw.lastL<entry?sw.lastL:entry-a*2.2}const risk=Math.abs(entry-stop)||a,stopPct=risk/entry*100,stopAtr=risk/a;const t1=dir==="LONG"?entry+risk*1.05:entry-risk*1.05,t2=dir==="LONG"?entry+risk*1.85:entry-risk*1.85,t3=dir==="LONG"?entry+risk*2.65:entry-risk*2.65;const area=Math.abs(nearTarget-entry)/risk;const tp1Pct=Math.abs(t1-entry)/entry*100,tp2Pct=Math.abs(t2-entry)/entry*100,tp3Pct=Math.abs(t3-entry)/entry*100;let stopQ=0;if(stopAtr>=RULE.stopAtrIdealMin&&stopAtr<=RULE.stopAtrIdealMax)stopQ=100;else if(stopAtr>=RULE.stopAtrHardMin&&stopAtr<RULE.stopAtrIdealMin)stopQ=60;else if(stopAtr>RULE.stopAtrIdealMax&&stopAtr<=RULE.stopAtrHardMax)stopQ=55;let tpQ=clamp(area/RULE.minPoolTp2*100,0,100);return{entry,stop,t1,t2,t3,risk,stopPct,stopAtr,tp1Pct,tp2Pct,tp3Pct,tp2Area:area,stopQ:clamp(stopQ,0,100),tpQ}}
+function stopTp(c,i,dir,tf=""){
+  // v18.0: CHOCH işlem planı. Eski uzak swing stopu yerine ATR/R tabanlı, sınırlandırılmış risk kullanılır.
+  // Stop = entry ± clamp(ATR*1.15, minStop%, maxStop%). TP1/TP2/TP3 = 1R/2R/3R.
+  const x=c[i],a=x.atr||Math.max(x.high-x.low,1e-9),entry=x.close;
+  const minRisk=entry*(CHOCH_TRADE.minStopPct/100);
+  const maxRisk=entry*(CHOCH_TRADE.maxStopPct/100);
+  const atrRisk=clamp(a*CHOCH_TRADE.targetAtrStop,a*CHOCH_TRADE.minAtrStop,a*CHOCH_TRADE.maxAtrStop);
+  const risk=clamp(atrRisk,minRisk,maxRisk);
+  const stop=dir==="LONG"?entry-risk:entry+risk;
+  const t1=dir==="LONG"?entry+risk*CHOCH_TRADE.tp1R:entry-risk*CHOCH_TRADE.tp1R;
+  const t2=dir==="LONG"?entry+risk*CHOCH_TRADE.tp2R:entry-risk*CHOCH_TRADE.tp2R;
+  const t3=dir==="LONG"?entry+risk*CHOCH_TRADE.tp3R:entry-risk*CHOCH_TRADE.tp3R;
+  const stopPct=risk/entry*100,stopAtr=risk/a;
+  const tp1Pct=Math.abs(t1-entry)/entry*100,tp2Pct=Math.abs(t2-entry)/entry*100,tp3Pct=Math.abs(t3-entry)/entry*100;
+  const stopQ=clamp(100-Math.abs(stopAtr-CHOCH_TRADE.targetAtrStop)*35,0,100);
+  const tpQ=100;
+  const capApplied=atrRisk>maxRisk;
+  const floorApplied=atrRisk<minRisk;
+  return{entry,stop,t1,t2,t3,risk,stopPct,stopAtr,tp1Pct,tp2Pct,tp3Pct,tp2Area:CHOCH_TRADE.tp2R,stopQ,tpQ,capApplied,floorApplied,planNote:capApplied?"ATR yüksek: risk üst sınırla kesildi":floorApplied?"ATR düşük: minimum risk zemini kullanıldı":"ATR plan normal"}
+}
 function volatilityScore(c,i,st){const x=c[i];let s=0;if(x.atrPct>=.30&&x.atrPct<=6.00)s+=25;if(x.atrPercentile>=20&&x.atrPercentile<=85)s+=25;const rangeATR=(x.high-x.low)/(x.atr||1);if(rangeATR<=2.00)s+=20;if(x.bbWidthPercentile>=15&&x.bbWidthPercentile<=85)s+=15;if(st.stopAtr>=RULE.stopAtrIdealMin&&st.stopAtr<=RULE.stopAtrIdealMax)s+=15;return clamp(s,0,100)}
 
 function tradeability(c,i,st,ctx,tech,exec){
@@ -318,11 +351,11 @@ function buildTechnicalScores(c,i,dir,st,sym,tf,mode){
   return scores;
 }
 function technicalEval(c,i,dir,sym="",tf="",mode="live"){
-  // v17.8 SOLO: Teknik bölümde sadece trend kırılımı + karakter değişimi (CHOCH) aranır.
+  // v18.0 SOLO: Teknik bölümde sadece trend kırılımı + karakter değişimi (CHOCH) aranır.
   // Destek/direnç, SMC, hacim, trade kapısı vb. filtreler teknik kapı olarak kullanılmaz.
   // Aynı fonksiyon canlıda da backtestte de çalışır: canlı S9 = geçmiş S9.
   if(!c||i<160||i>=c.length)return null;
-  const st=stopTp(c,i,dir);
+  const st=stopTp(c,i,dir,tf);
   const scores=buildTechnicalScores(c,i,dir,st,sym,tf,mode);
   const choch=scores.choch||0;
   const layerHits=choch>=60?1:0;
@@ -358,8 +391,8 @@ function analyzeLast(sym,tf,raw,dir){
   const microFinalOk=true;
   const localVeto=false;
   const riskOk=false;
-  // v17.8 SOLO: S9'dan geçen her canlı aday listelenir. Trade kapısı/final veto yoktur.
-  const trade={ok:true,reasons:[],totalCostPct:TRADE_GATE.totalCostPct,costR:TRADE_GATE.totalCostPct/Math.max(st.stopPct||0.01,0.01),tp1Need:0,tp2Need:0};
+  // v18.0 SOLO: S9'dan geçen her canlı aday listelenir; giriş/stop/TP ATR/R modeliyle hesaplanır.
+  const trade=tradeability(c,i,st,ctx,tech,exec);
   const btOk=true;
   const btRank=backtestRank(strategyBt,st,1,tech,exec,dataScore);
   const q={cls:"S9 TREND/CHOCH",main:true};
@@ -477,27 +510,37 @@ function chooseBestStrategy(c,dir,scores,st,tech,exec,dataScore){
   return best;
 }
 function simulateTrade(c,i,dir,st){
-  let hit=null,mfe=0,mae=0,bars=0;
-  for(let j=i+1;j<Math.min(c.length,i+28);j++){
+  // v18.0: Backtest, canlıdaki aynı giriş/stop/TP planını kullanır.
+  // Muhafazakâr sıra: aynı mumda önce stop varsayılır; TP1 sonrası stop break-even'a çekilir.
+  let hit=null,mfe=0,mae=0,bars=0,armedBE=false;
+  let activeStop=st.stop;
+  for(let j=i+1;j<Math.min(c.length,i+CHOCH_TRADE.maxHoldBars);j++){
     bars++;
     const hi=c[j].high,lo=c[j].low;
     const fav=dir==="LONG"?(hi-st.entry)/st.risk:(st.entry-lo)/st.risk;
     const adv=dir==="LONG"?(st.entry-lo)/st.risk:(hi-st.entry)/st.risk;
     mfe=Math.max(mfe,fav);mae=Math.max(mae,adv);
     if(dir==="LONG"){
-      if(lo<=st.stop){hit="STOP";break}
+      if(lo<=activeStop){hit=armedBE?"BE":"STOP";break}
+      if(hi>=st.t3){hit="TP3";break}
       if(hi>=st.t2){hit="TP2";break}
-      if(hi>=st.t1&&!hit)hit="TP1"
+      if(hi>=st.t1&&!armedBE){armedBE=true;activeStop=st.entry}
     }else{
-      if(hi>=st.stop){hit="STOP";break}
+      if(hi>=activeStop){hit=armedBE?"BE":"STOP";break}
+      if(lo<=st.t3){hit="TP3";break}
       if(lo<=st.t2){hit="TP2";break}
-      if(lo<=st.t1&&!hit)hit="TP1"
+      if(lo<=st.t1&&!armedBE){armedBE=true;activeStop=st.entry}
     }
   }
-  const grossR=hit==="TP2"?1.85:hit==="TP1"?1.05:hit==="STOP"?-1:(mfe>1?0.4:-0.3);
+  let grossR=0;
+  if(hit==="TP3")grossR=CHOCH_TRADE.tp3R;
+  else if(hit==="TP2")grossR=CHOCH_TRADE.tp2R;
+  else if(hit==="BE")grossR=0;
+  else if(hit==="STOP")grossR=-1;
+  else grossR=mfe>=CHOCH_TRADE.tp1R?0.35:-0.35;
   const costR=TRADE_GATE.totalCostPct/Math.max(st.stopPct||0.01,0.01);
   const r=grossR-costR;
-  return {r,hit,mfe,mae,bars,fast:hit==="STOP"&&bars<=4,costR};
+  return {r,hit:hit||"TIME",mfe,mae,bars,fast:hit==="STOP"&&bars<=4,costR};
 }
 function summarizeTrades(trades){
   if(!trades.length)return{count:0,win:0,pf:0,fast:100,net:0,avgMfe:0,avgMae:0,maxDd:0,tp2Rate:0,expectancy:0,trades:[]};
@@ -583,14 +626,16 @@ function backtest(c,dir,sym="",tf=""){
   return summarizeTrades(trades);
 }
 function selectTopByDir(dir){
-  // Final liste artık teknik havuzun tamamı değil; aynalı backtest uygunluk kilidini geçenlerdir.
-  const arr=pool.filter(x=>x.dir===dir && x.btOk).sort((a,b)=>b.rankScore-a.rankScore);
+  // v18.0: Ekranda SADECE ilk 10 LONG ve ilk 10 SHORT gösterilir.
+  // Teknik kısım yalnızca S9 trend kırılımı + CHOCH'tur.
+  // Bu havuzdaki adaylar strateji/backtest rankScore'a göre sıralanır; ekstra teknik havuz bölümü basılmaz.
+  const arr=pool.filter(x=>x.dir===dir).sort((a,b)=>b.rankScore-a.rankScore);
   const selected=[],used=new Set();
   for(const x of arr){
     if(selected.length>=RULE.showEach)break;
     const key=x.sym+"_"+dir;
     if(used.has(key))continue;
-    x.listMode=`STRATEJİ BACKTEST BAĞLI EN İYİ 5 ${dir}`;
+    x.listMode=`S9 CHOCH BİLİMSEL ATR PLAN — İLK 10 ${dir}`;
     selected.push(x);
     used.add(key);
   }
@@ -610,41 +655,34 @@ function btFailReasons(x){
 
 function renderSummary(){
   const long=pool.filter(x=>x.dir==="LONG"),short=pool.filter(x=>x.dir==="SHORT");
-  const eligLong=long.filter(x=>x.btOk),eligShort=short.filter(x=>x.btOk);const stratLong=long.filter(x=>x.strategyOk),stratShort=short.filter(x=>x.strategyOk),microLong=long.filter(x=>x.microOk||x.riskOk),microShort=short.filter(x=>x.microOk||x.riskOk);
   const topLong=selectTopByDir("LONG"),topShort=selectTopByDir("SHORT");
-  scan.passedTech=pool.length;scan.btPassed=eligLong.length+eligShort.length;
-  $("summary").innerHTML=`<div class="dash"><div><b>${SYMBOLS.length}</b><span>coin evreni</span></div><div><b>${scan.done}/${scan.total}</b><span>sembol/TF analiz</span></div><div><b>${scan.dirChecks}</b><span>yön kontrolü</span></div><div><b>${long.length}</b><span>LONG teknik havuz</span></div><div><b>${short.length}</b><span>SHORT teknik havuz</span></div><div><b>${eligLong.length}+${eligShort.length}</b><span>final uygun</span></div><div><b>${microLong.length}+${microShort.length}</b><span>mikro/risk</span></div><div><b>${topLong.length}+${topShort.length}</b><span>final 10+10</span></div><div><b>${scan.rest}</b><span>REST set</span></div><div><b>${scan.json}</b><span>JSON set</span></div><div><b>${scan.candles}</b><span>toplam mum</span></div><div><b>${scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec}</b><span>coin veri yaşı sn</span></div><div><b>${scan.stale}</b><span>canlı alınamadı</span></div></div><div class="note"><b>v17.8 sadece trend kırılım + CHOCH:</b> Canlı teknik aday önce strateji ailesine bağlanır. Final 10+10 listesine yalnızca aynı strateji fonksiyonuyla backtesti güçlü olanlar veya aynı strateji mikro BT olumlu + lokal aynalı BT pozitif olanlar girer. Strateji uygunluk: işlem≥${STRATEGY_GATE.minCount}, win≥${STRATEGY_GATE.minWin}%, PF≥${STRATEGY_GATE.minPf}, hızlı stop≤${STRATEGY_GATE.maxFast}%, MFE/MAE≥${STRATEGY_GATE.minMfeMae}, strateji sağlık≥${STRATEGY_GATE.minHealth}. Lokal aynalı BT ayrıca denetim için gösterilir; final kapısını tek başına açmaz.</div>`
+  scan.passedTech=pool.length;scan.btPassed=topLong.length+topShort.length;
+  $("summary").innerHTML=`<div class="dash"><div><b>${SYMBOLS.length}</b><span>coin evreni</span></div><div><b>${scan.done}/${scan.total}</b><span>sembol/TF analiz</span></div><div><b>${scan.dirChecks}</b><span>yön kontrolü</span></div><div><b>${long.length}</b><span>LONG S9 havuz</span></div><div><b>${short.length}</b><span>SHORT S9 havuz</span></div><div><b>${topLong.length}+${topShort.length}</b><span>gösterilen ilk 10+10</span></div><div><b>${scan.rest}</b><span>REST set</span></div><div><b>${scan.json}</b><span>JSON set</span></div><div><b>${scan.candles}</b><span>toplam mum</span></div><div><b>${scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec}</b><span>coin veri yaşı sn</span></div><div><b>${scan.stale}</b><span>canlı alınamadı</span></div></div><div class="note"><b>v18.0 sadece S9 CHOCH bilimsel ATR plan:</b> Teknik strateji yalnızca S9 Trend Kırılımı + CHOCH. Giriş/stop/TP v18.0 bilimsel ATR/R planıyla hesaplanır: stop ATR tabanlı ve yüzde üst sınır kontrollü, TP1/TP2/TP3 1R/2R/3R, backtest aynı planla çalışır. Ekranda sadece ilk 10 LONG ve ilk 10 SHORT görünür.</div>`
 }
 function card(x,i){
   const cls=x.dir==="SHORT"?"short":"long";
   const sc=Math.round(x.rankScore);
-  return `<div class="candidate ${cls}" onclick="selectCandidate('${x.key}')"><div class="top"><div><div class="sym">${i+1}) ${x.sym} / ${x.tf}</div><div class="model">${x.dir} — ${x.model.replace(/^LONG — |^SHORT — /,'')}</div></div><div class="score ${x.dir.toLowerCase()}">${sc}<br><span style="font-size:16px">BT</span></div></div><div class="line">Liste modu: ${x.listMode||"STRATEJİ BT"} | Yön: ${x.dir} | Teknik geçiş: ${x.layerHits}/14 | Sınıf: ${x.quality}<br>Strateji: ${x.strategy?.id||"-"} / ${x.strategy?.name||"-"} | Strateji uygun: ${x.strategyOk?"EVET":"HAYIR"} | Risk kontrollü: ${x.riskOk?"EVET":"HAYIR"} | Strateji mikro BT: ${x.microOk?"OLUMLU":"-"} | Lokal destek: ${x.localSupportOk?"EVET":"HAYIR"}<br>Teknik bağlam: Teknik ${Math.round(x.tech)} / İcra ${Math.round(x.exec)} / Strateji sağlık ${Math.round(x.strategyHealth||0)} / Final uygun: ${x.btOk?"EVET":"HAYIR"} / Sebep: ${x.btOk?"uygun":btFailReasons(x)} / Veri ${x.dataScore}<br>Trade kapısı: ${x.tradeOk?"EVET":"HAYIR"} | Maliyet ${pct(x.tradeCostPct,2)} | MaliyetR ${fmt(x.tradeCostR,2)} | ATR% ${pct(x.atrPct||0,2)}<br>Bağlam: Trend ${Math.round(x.context?.trendCtx??0)} / Yapı-Lokasyon ${Math.round(x.context?.structureCtx??0)} / Tetik ${Math.round(x.context?.triggerCtx??0)} / CHOCH ${Math.round(x.scores?.choch??0)} / İcra ${Math.round(x.context?.executionCtx??0)}<br>Giriş ${dual(x.entry)}<br>Stop ${dual(x.stop)} | stopATR ${fmt(x.stopAtr,2)} | Stop ${pct(x.stopPct,2)} | TP2 alanı ${fmt(x.tp2Area,2)}R<br>TP1 ${dual(x.t1)} (${pct(x.tp1Pct||0,2)}) | TP2 ${dual(x.t2)} (${pct(x.tp2Pct||0,2)}) | TP3 ${dual(x.t3)} (${pct(x.tp3Pct||0,2)})<br><b>Strateji BT:</b> İşlem ${x.strategyBt.count} | Win ${pct(x.strategyBt.win,1)} | PF ${x.strategyBt.pf>=20?'20+':fmt(x.strategyBt.pf,2)} | Hızlı stop ${pct(x.strategyBt.fast,1)} | Net ${fmt(x.strategyBt.net,2)}R | MFE/MAE ${fmt(x.strategyBt.avgMfe,2)}R/${fmt(x.strategyBt.avgMae,2)}R<br><b>Lokal aynalı BT:</b> İşlem ${x.bt.count} | Win ${pct(x.bt.win,1)} | PF ${x.bt.pf>=20?'20+':fmt(x.bt.pf,2)} | Hızlı stop ${pct(x.bt.fast,1)} | Net ${fmt(x.bt.net,2)}R | MFE/MAE ${fmt(x.bt.avgMfe,2)}R/${fmt(x.bt.avgMae,2)}R<br>Veri: ${x.ageSec} sn | Kaynak: ${x.source}</div><div><span class="pill ${x.dir==='LONG'?'green':'red'}">${x.dir} TEKNİK ADAY</span><span class="pill blue">${VERSION}</span><span class="pill amber">AYNALI BACKTEST</span><span class="pill amber">${x.quality}</span></div></div>`
+  return `<div class="candidate ${cls}" onclick="selectCandidate('${x.key}')"><div class="top"><div><div class="sym">${i+1}) ${x.sym} / ${x.tf}</div><div class="model">${x.dir} — ${x.model.replace(/^LONG — |^SHORT — /,'')}</div></div><div class="score ${x.dir.toLowerCase()}">${sc}<br><span style="font-size:16px">BT</span></div></div><div class="line">Liste modu: ${x.listMode||"STRATEJİ BT"} | Yön: ${x.dir} | S9 şart: ${x.layerHits?"GEÇTİ":"GEÇMEDİ"} | Sınıf: ${x.quality}<br>Strateji: ${x.strategy?.id||"-"} / ${x.strategy?.name||"-"} | Strateji uygun: ${x.strategyOk?"EVET":"HAYIR"} | Risk kontrollü: ${x.riskOk?"EVET":"HAYIR"} | Strateji mikro BT: ${x.microOk?"OLUMLU":"-"} | Lokal destek: ${x.localSupportOk?"EVET":"HAYIR"}<br>Teknik bağlam: Teknik ${Math.round(x.tech)} / İcra ${Math.round(x.exec)} / Strateji sağlık ${Math.round(x.strategyHealth||0)} / Final uygun: ${x.btOk?"EVET":"HAYIR"} / Sebep: ${x.btOk?"uygun":btFailReasons(x)} / Veri ${x.dataScore}<br>Trade kapısı: ${x.tradeOk?"EVET":"HAYIR"} | Maliyet ${pct(x.tradeCostPct,2)} | MaliyetR ${fmt(x.tradeCostR,2)} | ATR% ${pct(x.atrPct||0,2)}<br>Bağlam: Trend ${Math.round(x.context?.trendCtx??0)} / Yapı-Lokasyon ${Math.round(x.context?.structureCtx??0)} / Tetik ${Math.round(x.context?.triggerCtx??0)} / CHOCH ${Math.round(x.scores?.choch??0)} / İcra ${Math.round(x.context?.executionCtx??0)}<br>Giriş ${dual(x.entry)}<br>Stop ${dual(x.stop)} | stopATR ${fmt(x.stopAtr,2)} | Stop ${pct(x.stopPct,2)} | TP2 alanı ${fmt(x.tp2Area,2)}R | Plan: ${x.planNote||"ATR plan"}<br>TP1 ${dual(x.t1)} (${pct(x.tp1Pct||0,2)}) | TP2 ${dual(x.t2)} (${pct(x.tp2Pct||0,2)}) | TP3 ${dual(x.t3)} (${pct(x.tp3Pct||0,2)})<br><b>Strateji BT:</b> İşlem ${x.strategyBt.count} | Win ${pct(x.strategyBt.win,1)} | PF ${x.strategyBt.pf>=20?'20+':fmt(x.strategyBt.pf,2)} | Hızlı stop ${pct(x.strategyBt.fast,1)} | Net ${fmt(x.strategyBt.net,2)}R | MFE/MAE ${fmt(x.strategyBt.avgMfe,2)}R/${fmt(x.strategyBt.avgMae,2)}R<br><b>Lokal aynalı BT:</b> İşlem ${x.bt.count} | Win ${pct(x.bt.win,1)} | PF ${x.bt.pf>=20?'20+':fmt(x.bt.pf,2)} | Hızlı stop ${pct(x.bt.fast,1)} | Net ${fmt(x.bt.net,2)}R | MFE/MAE ${fmt(x.bt.avgMfe,2)}R/${fmt(x.bt.avgMae,2)}R<br>Veri: ${x.ageSec} sn | Kaynak: ${x.source}</div><div><span class="pill ${x.dir==='LONG'?'green':'red'}">${x.dir} TEKNİK ADAY</span><span class="pill blue">${VERSION}</span><span class="pill amber">AYNALI BACKTEST</span><span class="pill amber">${x.quality}</span></div></div>`
 }
 function renderList(){
   renderSummary();
   pool.forEach((x,idx)=>x.key=x.key||`${x.sym}_${x.tf}_${x.dir}_${idx}`);
   const topLong=selectTopByDir("LONG");
   const topShort=selectTopByDir("SHORT");
-  const longPool=pool.filter(x=>x.dir==="LONG").sort((a,b)=>b.rankScore-a.rankScore);
-  const shortPool=pool.filter(x=>x.dir==="SHORT").sort((a,b)=>b.rankScore-a.rankScore);
-  longPool.forEach(x=>{if(!x.btOk)x.listMode="TEKNİK HAVUZ İZLEME / BT UYGUN DEĞİL"});
-  shortPool.forEach(x=>{if(!x.btOk)x.listMode="TEKNİK HAVUZ İZLEME / BT UYGUN DEĞİL"});
   const map=new Map(pool.map(x=>[x.key,x]));
   window.__candMap=map;
-  const longHtml=topLong.length?topLong.map((x,i)=>card(x,i)).join(''):'<p>LONG tarafında strateji BT/mikro BT final adayı yok.</p>';
-  const shortHtml=topShort.length?topShort.map((x,i)=>card(x,i)).join(''):'<p>SHORT tarafında strateji BT/mikro BT final adayı yok.</p>';
-  const longPoolHtml=longPool.length?longPool.map((x,i)=>card(x,i)).join(''):'<p>LONG teknik havuz boş.</p>';
-  const shortPoolHtml=shortPool.length?shortPool.map((x,i)=>card(x,i)).join(''):'<p>SHORT teknik havuz boş.</p>';
-  $("list").innerHTML=`<div class="listSection long"><h3>Ana Kadro + Risk Kontrollü — En İyi 10 LONG</h3><p>Önce ana kadro, yetmezse risk kontrollü agresif LONG adayları kalite sırasıyla girer.</p>${longHtml}</div><div class="listSection short"><h3>Ana Kadro + Risk Kontrollü — En İyi 10 SHORT</h3><p>Önce ana kadro, yetmezse risk kontrollü agresif SHORT adayları kalite sırasıyla girer.</p>${shortHtml}</div><div class="listSection long"><h3>Teknik Havuz LONG — Backtest Denetimi</h3><p>Teknik kapıdan geçen tüm LONG adayları burada görünür. Final listeye girmeyenlerin sebebi kartta Final uygun: HAYIR satırında, strateji BT ve lokal BT ölçülerinde görülür.</p>${longPoolHtml}</div><div class="listSection short"><h3>Teknik Havuz SHORT — Backtest Denetimi</h3><p>Teknik kapıdan geçen tüm SHORT adayları burada görünür. Bu bölüm işlem listesi değil, teknik havuzun strateji backtest denetimidir.</p>${shortPoolHtml}</div>`;
-  const first=topLong[0]||topShort[0]||longPool[0]||shortPool[0];
+  const longHtml=topLong.length?topLong.map((x,i)=>card(x,i)).join(''):'<p>LONG tarafında Trend Kırılım + CHOCH adayı yok.</p>';
+  const shortHtml=topShort.length?topShort.map((x,i)=>card(x,i)).join(''):'<p>SHORT tarafında Trend Kırılım + CHOCH adayı yok.</p>';
+  $("list").innerHTML=`<div class="listSection long"><h3>İlk 10 LONG — Trend Kırılım + Bullish CHOCH</h3><p>Sadece düşen trend kırılımı + bullish karakter değişimi stratejisinden geçen LONG adaylar, backtest/strateji sırasıyla gösterilir.</p>${longHtml}</div><div class="listSection short"><h3>İlk 10 SHORT — Trend Kırılım + Bearish CHOCH</h3><p>Sadece yükselen trend kırılımı + bearish karakter değişimi stratejisinden geçen SHORT adaylar, backtest/strateji sırasıyla gösterilir.</p>${shortHtml}</div>`;
+  const first=topLong[0]||topShort[0];
   if(first&&!selected)selectCandidate(first.key,true)
 }
 
-function selectCandidate(key,silent=false){const x=window.__candMap&&window.__candMap.get(key);if(!x)return;selected=x;$("decision").className="decision "+(x.dir==="LONG"?"long":"short");$("decision").textContent=`${x.sym} ${x.dir} / ${x.tf} — ${x.listMode}`;function m(k,v){return `<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`}$("metrics").innerHTML=m("Sınıf",x.quality)+m("Strateji",x.strategy?.id||"-")+m("Endeks",Math.round(x.btRank))+m("Katman",`${x.layerHits}/14`)+m("Giriş",dual(x.entry))+m("Stop",dual(x.stop))+m("stopATR",fmt(x.stopAtr,2))+m("Stop %",pct(x.stopPct,2))+m("TP1",dual(x.t1))+m("TP2",dual(x.t2))+m("TP3",dual(x.t3))+m("TP1 %",pct(x.tp1Pct||0,2))+m("TP2 %",pct(x.tp2Pct||0,2))+m("Trade",x.tradeOk?"EVET":"HAYIR")+m("MaliyetR",fmt(x.tradeCostR||0,2))+m("Str Win",pct(x.strategyBt.win,1))+m("Str PF",x.strategyBt.pf>=20?"20+":fmt(x.strategyBt.pf,2))+m("Lokal İşlem",x.bt.count);const qty=RULE.spotTry/(x.entry*(fx.rate||1));const riskTry=Math.abs(x.entry-x.stop)*qty*(fx.rate||1);$("tryPlan").innerHTML=`<b>${x.dir} teknik plan</b><br>${x.btOk?"Ana kadro veya risk kontrollü strateji adayıdır; trade edilebilirlik kapısını geçmiştir.":"Teknik havuz adaydır; ana kadro/risk kontrollü strateji veya trade edilebilirlik kapısını geçmediği için işlem listesi adayı değildir. Sebep: "+btFailReasons(x)} 10.000 TL varsayımıyla yaklaşık miktar: ${fmt(qty,2)} ${base(x.sym)}. Tahmini risk: ${fmt(riskTry,2)} TL. TP1/TP2/TP3 fiyatları yukarıda.`;$("reasons").innerHTML=Object.entries(x.scores).map(([k,v])=>`<span class="pill ${v>=65?'green':v>=50?'amber':'gray'}">${k}: ${Math.round(v)}</span>`).join('');renderChart(x);renderBt(x);if(!silent)document.getElementById('planBox').scrollIntoView({behavior:'smooth',block:'start'})}
+function selectCandidate(key,silent=false){const x=window.__candMap&&window.__candMap.get(key);if(!x)return;selected=x;$("decision").className="decision "+(x.dir==="LONG"?"long":"short");$("decision").textContent=`${x.sym} ${x.dir} / ${x.tf} — ${x.listMode}`;function m(k,v){return `<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`}$("metrics").innerHTML=m("Sınıf",x.quality)+m("Strateji",x.strategy?.id||"-")+m("Endeks",Math.round(x.btRank))+m("S9",x.layerHits?"GEÇTİ":"GEÇMEDİ")+m("Giriş",dual(x.entry))+m("Stop",dual(x.stop))+m("stopATR",fmt(x.stopAtr,2))+m("Stop %",pct(x.stopPct,2))+m("TP1",dual(x.t1))+m("TP2",dual(x.t2))+m("TP3",dual(x.t3))+m("TP1 %",pct(x.tp1Pct||0,2))+m("TP2 %",pct(x.tp2Pct||0,2))+m("Plan",x.planNote||"ATR")+m("Trade",x.tradeOk?"EVET":"HAYIR")+m("MaliyetR",fmt(x.tradeCostR||0,2))+m("Str Win",pct(x.strategyBt.win,1))+m("Str PF",x.strategyBt.pf>=20?"20+":fmt(x.strategyBt.pf,2))+m("Lokal İşlem",x.bt.count);const qty=RULE.spotTry/(x.entry*(fx.rate||1));const riskTry=Math.abs(x.entry-x.stop)*qty*(fx.rate||1);$("tryPlan").innerHTML=`<b>${x.dir} teknik plan</b><br>${x.btOk?"S9 trend kırılım + CHOCH adayıdır; giriş/stop/TP planı v18.0 ATR/R modeliyle hesaplanmıştır.":"S9 adayıdır; işlem planı denetlenmelidir. Uyarı: "+btFailReasons(x)} 10.000 TL varsayımıyla yaklaşık miktar: ${fmt(qty,2)} ${base(x.sym)}. Tahmini risk: ${fmt(riskTry,2)} TL. TP1/TP2/TP3 fiyatları yukarıda.`;$("reasons").innerHTML=Object.entries(x.scores).map(([k,v])=>`<span class="pill ${v>=65?'green':v>=50?'amber':'gray'}">${k}: ${Math.round(v)}</span>`).join('');renderChart(x);renderBt(x);if(!silent)document.getElementById('planBox').scrollIntoView({behavior:'smooth',block:'start'})}
 function renderBt(x){
   const mfeMaeS=x.strategyBt.avgMae>0?x.strategyBt.avgMfe/x.strategyBt.avgMae:x.strategyBt.avgMfe;
   const mfeMaeL=x.bt.avgMae>0?x.bt.avgMfe/x.bt.avgMae:x.bt.avgMfe;
-  $("bt").innerHTML=`<h3>Strateji Ailesi Backtesti</h3><div class="grid"><div class="metric"><div class="k">Strateji</div><div class="v">${x.strategy?.id||"-"}</div></div><div class="metric"><div class="k">İşlem</div><div class="v">${x.strategyBt.count}</div></div><div class="metric"><div class="k">Win</div><div class="v">${pct(x.strategyBt.win,1)}</div></div><div class="metric"><div class="k">PF</div><div class="v">${x.strategyBt.pf>=20?'20+':fmt(x.strategyBt.pf,2)}</div></div><div class="metric"><div class="k">Net R</div><div class="v">${fmt(x.strategyBt.net,2)}</div></div><div class="metric"><div class="k">MFE/MAE</div><div class="v">${fmt(mfeMaeS,2)}</div></div></div><h3>Lokal Aynalı Backtest</h3><div class="grid"><div class="metric"><div class="k">İşlem</div><div class="v">${x.bt.count}</div></div><div class="metric"><div class="k">Win</div><div class="v">${pct(x.bt.win,1)}</div></div><div class="metric"><div class="k">PF</div><div class="v">${x.bt.pf>=20?'20+':fmt(x.bt.pf,2)}</div></div><div class="metric"><div class="k">Net R</div><div class="v">${fmt(x.bt.net,2)}</div></div><div class="metric"><div class="k">MFE/MAE</div><div class="v">${fmt(mfeMaeL,2)}</div></div><div class="metric"><div class="k">Hızlı stop</div><div class="v">${pct(x.bt.fast,1)}</div></div></div><div class="note">v17.6’da final karar strateji merkezlidir: ana kadro için strateji BT güçlü olur; mikro/risk adayında lokal aynalı BT negatifse final veto uygulanır. Backtest sonuçları komisyon/spread/kayma maliyetini R cinsinden düşerek hesaplanır; düşük stop yüzünden şişen R sonuçları veto edilir.</div>`
+  $("bt").innerHTML=`<h3>Strateji Ailesi Backtesti</h3><div class="grid"><div class="metric"><div class="k">Strateji</div><div class="v">${x.strategy?.id||"-"}</div></div><div class="metric"><div class="k">İşlem</div><div class="v">${x.strategyBt.count}</div></div><div class="metric"><div class="k">Win</div><div class="v">${pct(x.strategyBt.win,1)}</div></div><div class="metric"><div class="k">PF</div><div class="v">${x.strategyBt.pf>=20?'20+':fmt(x.strategyBt.pf,2)}</div></div><div class="metric"><div class="k">Net R</div><div class="v">${fmt(x.strategyBt.net,2)}</div></div><div class="metric"><div class="k">MFE/MAE</div><div class="v">${fmt(mfeMaeS,2)}</div></div></div><h3>Lokal Aynalı Backtest</h3><div class="grid"><div class="metric"><div class="k">İşlem</div><div class="v">${x.bt.count}</div></div><div class="metric"><div class="k">Win</div><div class="v">${pct(x.bt.win,1)}</div></div><div class="metric"><div class="k">PF</div><div class="v">${x.bt.pf>=20?'20+':fmt(x.bt.pf,2)}</div></div><div class="metric"><div class="k">Net R</div><div class="v">${fmt(x.bt.net,2)}</div></div><div class="metric"><div class="k">MFE/MAE</div><div class="v">${fmt(mfeMaeL,2)}</div></div><div class="metric"><div class="k">Hızlı stop</div><div class="v">${pct(x.bt.fast,1)}</div></div></div><div class="note">v18.0’da ekran sadece S9 CHOCH bilimsel ATR plan gösterir: ana kadro için strateji BT güçlü olur; mikro/risk adayında lokal aynalı BT negatifse final veto uygulanır. Backtest sonuçları komisyon/spread/kayma maliyetini R cinsinden düşerek hesaplanır; düşük stop yüzünden şişen R sonuçları veto edilir.</div>`
 }
 function renderChart(x){const raw=market.data&&market.data[x.sym]&&market.data[x.sym][x.tf];const c=raw?raw.slice(-80):[];const canvas=$("chart"),ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);if(!c.length)return;const vals=c.flatMap(z=>[z.high,z.low,x.entry,x.stop,x.t1,x.t2,x.t3]);const mn=Math.min(...vals),mx=Math.max(...vals),pad=(mx-mn)*.08||1;const y=v=>h-20-(v-(mn-pad))/(mx-mn+pad*2)*(h-40),xpos=i=>20+i*(w-40)/(c.length-1);ctx.lineWidth=3;ctx.strokeStyle="#89aaff";ctx.beginPath();c.forEach((z,i)=>{const xx=xpos(i),yy=y(z.close);if(i)ctx.lineTo(xx,yy);else ctx.moveTo(xx,yy)});ctx.stroke();function line(v,col,txt){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(20,y(v));ctx.lineTo(w-20,y(v));ctx.stroke();ctx.fillStyle=col;ctx.font="18px Arial";ctx.fillText(txt,24,y(v)-5)}line(x.entry,"#ffd166","Giriş");line(x.stop,"#ff6b8a","Stop");line(x.t1,"#7cff9f","TP1");line(x.t2,"#7cff9f","TP2");line(x.t3,"#7cff9f","TP3")}
 async function oneClickScan(){pool=[];selected=null;scan={done:0,total:0,dirChecks:0,passedTech:0,btPassed:0,out:0,json:0,rest:0,stale:0,invalid:0,candles:0,restCandles:0,jsonCandles:0,validSets:0,latestCoinAgeSec:null,lastCoinSource:"-"};$("mainBtn").disabled=true;setMeta("Veri bağlantısı kuruluyor...");setBar(0);await loadMarket();await loadFx();await getUniverse();scan.total=SYMBOLS.length*TFS.length;setDataBox();for(const sym of SYMBOLS){for(const tf of TFS){const raw=await getCandles(sym,tf);scan.done++;setBar(scan.done/scan.total*100);if(raw&&raw.length>=220){for(const dir of ["LONG","SHORT"]){scan.dirChecks++;const c=analyzeLast(sym,tf,raw,dir);if(c)pool.push(c);else scan.out++}}else{scan.dirChecks+=2;scan.out+=2}setMeta(`Tarama ${scan.done}/${scan.total} | ${sym} ${tf} | Set ${scan.validSets} | Mum ${scan.candles} | Kaynak ${scan.lastCoinSource} | Yaş ${scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec} sn | Teknik havuz ${pool.length}`);setDataBox();if(scan.done%8===0){renderList();await new Promise(r=>setTimeout(r,0))}}}pool=dedup(pool).sort((a,b)=>b.rankScore-a.rankScore);renderList();setDataBox();setMeta(`Tarama bitti: ${scan.done}/${scan.total} sembol/TF | Geçerli set ${scan.validSets} | Mum ${scan.candles} | REST ${scan.rest} | JSON ${scan.json} | Yön kontrolü ${scan.dirChecks} | Teknik havuz ${pool.length}`);$("mainBtn").disabled=false}
