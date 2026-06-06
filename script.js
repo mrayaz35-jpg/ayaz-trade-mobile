@@ -1,4 +1,4 @@
-const VERSION="v18.1 S9 saf trend kırılım + CHOCH aynalı ATR plan";
+const VERSION="v18.2 S9 saf trend kırılım + CHOCH sağlam veri";
 const TFS=["15m","30m","1h","2h","4h"];
 const TFMS={"15m":900000,"30m":1800000,"1h":3600000,"2h":7200000,"4h":14400000};
 const NEXT_TF={"15m":"1h","30m":"2h","1h":"4h","2h":"4h","4h":"4h"};
@@ -7,7 +7,8 @@ const UNIVERSE_LIMIT=150;
 const EXCLUDED_BASES=new Set(["USDC","FDUSD","TUSD","BUSD","DAI","USDP","EUR","TRY","BRL","GBP","UAH","AEUR","EURI","PAX","USTC"]);
 const BAD_SUFFIX=["UP","DOWN","BULL","BEAR","3L","3S","5L","5S"];
 const RULE={
-  maxAgeMs:300000,
+  maxAgeMs:900000,
+  restTimeoutMs:4500,
   limit:700,
   spotTry:10000,
   // v16.10: SIRA KİLİTLİDİR. Önce SADECE objektif teknik kapı çalışır ve teknik havuz oluşur.
@@ -140,7 +141,7 @@ function money(n){return fmt(n,2)+"$"+(fx.rate?" / "+fmt(n*fx.rate,2)+" TL":"")}
 function setMeta(t){$("meta").textContent=t}
 function setBar(p){$("bar").style.width=clamp(p,0,100)+"%"}
 function cachedCandleCount(){return Object.values(market.data||{}).reduce((s,v)=>s+TFS.reduce((a,tf)=>a+((v&&v[tf]&&v[tf].length)||0),0),0)}
-function setDataBox(){const liveSets=scan.validSets||0;const liveCandles=scan.candles||0;const cached=cachedCandleCount();const ok=liveSets>0||cached>0;const candleText=liveCandles>0?liveCandles:cached;const ageText=scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec;const srcText=scan.lastCoinSource||"-";$("dataBox").innerHTML=`Veri: <b class="${ok?'ok':'bad'}">${ok?'BAĞLI':'BEKLEMEDE'}</b> | Coin: ${SYMBOLS.length} | Geçerli set: ${liveSets}/${scan.done||0} | Mum: ${candleText} | Coin veri yaşı: ${ageText} sn | Kaynak: ${srcText} | v18.1 S9 saf trend kırılım + CHOCH aynalı ATR plan`}
+function setDataBox(){const liveSets=scan.validSets||0;const liveCandles=scan.candles||0;const cached=cachedCandleCount();const ok=liveSets>0||cached>0;const candleText=liveCandles>0?liveCandles:cached;const ageText=scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec;const srcText=scan.lastCoinSource||"-";$("dataBox").innerHTML=`Veri: <b class="${ok?'ok':'bad'}">${ok?'BAĞLI':'BEKLEMEDE'}</b> | Coin: ${SYMBOLS.length} | Geçerli set: ${liveSets}/${scan.done||0} | Mum: ${candleText} | Coin veri yaşı: ${ageText} sn | Kaynak: ${srcText} | v18.2 S9 saf trend kırılım + CHOCH sağlam veri`}
 function setFxBox(){if(fx.rate)$("fxBox").innerHTML=`Kur: <b>1 USDT ≈ ${fmt(fx.rate,4)} TL</b> | Kaynak: ${fx.source} | Yaş: ${fx.ageSec??'-'} sn`;else $("fxBox").textContent="USDT/TRY kuru alınamadı."}
 async function jfetch(url,timeout=12000){const ctrl=new AbortController();const id=setTimeout(()=>ctrl.abort(),timeout);try{const r=await fetch(url,{cache:"no-store",signal:ctrl.signal});if(!r.ok)throw new Error(r.status);return await r.json()}finally{clearTimeout(id)}}
 async function loadMarket(){try{const j=await jfetch("data/market.json?v="+Date.now(),9000);market=j||{data:{}};if(j.symbols&&Array.isArray(j.symbols))SYMBOLS=j.symbols.map(cleanSymbol).filter(Boolean).slice(0,UNIVERSE_LIMIT);if(j.fx&&j.fx.usdtTry){fx={rate:Number(j.fx.usdtTry),source:j.fx.source||"market.json",ageSec:Math.floor((now()-Date.parse(j.fx.generatedAt||j.generatedAt||new Date()))/1000)}}sanitizeMarket();setFxBox();setDataBox();return true}catch(e){market={data:{}};setDataBox();return false}}
@@ -148,25 +149,45 @@ async function loadFx(){if(fx.rate)return;const urls=["https://data-api.binance.
 function sanitizeMarket(){const out={};for(const [s,v] of Object.entries(market.data||{})){const cs=cleanSymbol(s);if(!cs){scan.invalid++;continue}out[cs]=out[cs]||{};for(const tf of TFS){const arr=v&&v[tf];if(Array.isArray(arr)&&arr.length)out[cs][tf]=arr.map(k=>({time:+(k.time||k[0]),open:+(k.open||k[1]),high:+(k.high||k[2]),low:+(k.low||k[3]),close:+(k.close||k[4]),volume:+(k.volume||k[5]),closeTime:+(k.closeTime||k[6]||k.time||k[0]),liveTime:k.liveTime}))}}market.data=out}
 async function getCandles(sym,tf){
   sym=cleanSymbol(sym);if(!sym)return null;
-  // v16.9 CANLI VERİ KORUMA: önce Binance canlı REST denenir.
-  // JSON yalnızca REST başarısız olursa ve yaşı ≤300 sn ise yedek olarak kullanılır.
-  const urls=[
-    `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=${tf}&limit=${RULE.limit}`,
-    `https://data-api.binance.vision/api/v3/klines?symbol=${sym}&interval=${tf}&limit=${RULE.limit}`
+  // v18.2 VERİ KATMANI: REST canlı öncelikli; REST düşerse GitHub JSON yakın-canlı yedek kullanılır.
+  // Amaç: tarama "Set 0 / Mum 0"da kalmasın. Kaynak ve yaş ekranda açık yazılır.
+  const jsonFallback=()=>{
+    let arr=market.data&&market.data[sym]&&market.data[sym][tf];
+    if(arr&&arr.length>80){
+      const last=arr[arr.length-1];
+      const t=Number(last.liveTime||market.generatedAt&&Date.parse(market.generatedAt)||last.closeTime||last.time||0);
+      const age=Math.floor((now()-t)/1000);
+      if(t&&now()-t<=RULE.maxAgeMs){
+        const out=arr.slice(-RULE.limit).map(x=>({...x,source:"JSON-YEDEK"}));
+        scan.json++;scan.validSets++;scan.candles+=out.length;scan.jsonCandles+=out.length;
+        scan.latestCoinAgeSec=scan.latestCoinAgeSec===null?age:Math.max(scan.latestCoinAgeSec,age);
+        scan.lastCoinSource=scan.lastCoinSource&&scan.lastCoinSource.includes("REST")?"REST+JSON-YEDEK":"JSON-YEDEK";
+        return out;
+      }
+    }
+    return null;
+  };
+
+  const endpoints=[
+    `https://data-api.binance.vision/api/v3/klines?symbol=${sym}&interval=${tf}&limit=${RULE.limit}`,
+    `https://data-api.binance.vision/api/v3/klines?symbol=${sym}&interval=${tf}&limit=500`,
+    `https://www.binance.com/api/v3/uiKlines?symbol=${sym}&interval=${tf}&limit=500`,
+    `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=${tf}&limit=500`
   ];
-  for(const url of urls){
+  for(const url of endpoints){
     try{
       const fetchedAt=now();
-      const raw=await jfetch(url,9000);
-      const a=raw.map(k=>({time:+k[0],open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5],closeTime:+k[6],liveTime:fetchedAt,source:"REST"}));
-      if(a&&a.length){scan.rest++;scan.validSets++;scan.candles+=a.length;scan.restCandles+=a.length;scan.latestCoinAgeSec=0;scan.lastCoinSource="REST";return a}
+      const raw=await jfetch(url,RULE.restTimeoutMs||4500);
+      const a=(raw||[]).map(k=>({time:+k[0],open:+k[1],high:+k[2],low:+k[3],close:+k[4],volume:+k[5],closeTime:+k[6],liveTime:fetchedAt,source:"REST"})).filter(x=>isFinite(x.close)&&isFinite(x.high)&&isFinite(x.low));
+      if(a&&a.length>80){
+        scan.rest++;scan.validSets++;scan.candles+=a.length;scan.restCandles+=a.length;
+        scan.latestCoinAgeSec=0;scan.lastCoinSource="REST";
+        return a;
+      }
     }catch(e){}
   }
-  let arr=market.data&&market.data[sym]&&market.data[sym][tf];
-  if(arr&&arr.length>80){
-    const last=arr[arr.length-1],t=Number(last.liveTime||market.generatedAt&&Date.parse(market.generatedAt)||last.closeTime||last.time||0);
-    if(now()-t<=RULE.maxAgeMs){const age=Math.floor((now()-t)/1000);const out=arr.slice(-RULE.limit).map(x=>({...x,source:"JSON"}));scan.json++;scan.validSets++;scan.candles+=out.length;scan.jsonCandles+=out.length;scan.latestCoinAgeSec=scan.latestCoinAgeSec===null?age:Math.max(scan.latestCoinAgeSec,age);scan.lastCoinSource=scan.lastCoinSource==="REST"?"REST+JSON":"JSON";return out}
-  }
+  const fb=jsonFallback();
+  if(fb)return fb;
   scan.stale++;return null;
 }
 async function getUniverse(){try{const [ex,ticks]=await Promise.all([jfetch("https://data-api.binance.vision/api/v3/exchangeInfo",10000),jfetch("https://data-api.binance.vision/api/v3/ticker/24hr",10000)]);const allowed=new Set((ex.symbols||[]).filter(x=>x.status==="TRADING"&&x.quoteAsset==="USDT"&&x.isSpotTradingAllowed!==false).map(x=>x.symbol));const arr=(ticks||[]).filter(t=>{const s=cleanSymbol(t.symbol);if(!s||!allowed.has(s))return false;return Number(t.quoteVolume||0)>150000&&Number(t.lastPrice||0)>0&&Number(t.count||0)>50}).sort((a,b)=>Number(b.quoteVolume||0)-Number(a.quoteVolume||0)).slice(0,UNIVERSE_LIMIT).map(t=>cleanSymbol(t.symbol));if(arr.length>=80)SYMBOLS=arr}catch(e){}SYMBOLS=[...new Set(SYMBOLS.map(cleanSymbol).filter(Boolean))].slice(0,UNIVERSE_LIMIT)}
@@ -668,7 +689,7 @@ function renderSummary(){
   const long=pool.filter(x=>x.dir==="LONG"),short=pool.filter(x=>x.dir==="SHORT");
   const topLong=selectTopByDir("LONG"),topShort=selectTopByDir("SHORT");
   scan.passedTech=pool.length;scan.btPassed=topLong.length+topShort.length;
-  $("summary").innerHTML=`<div class="dash"><div><b>${SYMBOLS.length}</b><span>coin evreni</span></div><div><b>${scan.done}/${scan.total}</b><span>sembol/TF analiz</span></div><div><b>${scan.dirChecks}</b><span>yön kontrolü</span></div><div><b>${long.length}</b><span>LONG S9 havuz</span></div><div><b>${short.length}</b><span>SHORT S9 havuz</span></div><div><b>${topLong.length}+${topShort.length}</b><span>gösterilen ilk 10+10</span></div><div><b>${scan.rest}</b><span>REST set</span></div><div><b>${scan.json}</b><span>JSON set</span></div><div><b>${scan.candles}</b><span>toplam mum</span></div><div><b>${scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec}</b><span>coin veri yaşı sn</span></div><div><b>${scan.stale}</b><span>canlı alınamadı</span></div></div><div class="note"><b>v18.1 sadece S9 CHOCH bilimsel ATR plan:</b> Teknik strateji yalnızca S9 Trend Kırılımı + CHOCH. Giriş/stop/TP v18.1 bilimsel ATR/R planıyla hesaplanır: stop ATR tabanlı ve yüzde üst sınır kontrollü, TP1/TP2/TP3 1R/2R/3R, backtest aynı planla çalışır. Ekranda sadece ilk 10 LONG ve ilk 10 SHORT görünür.</div>`
+  $("summary").innerHTML=`<div class="dash"><div><b>${SYMBOLS.length}</b><span>coin evreni</span></div><div><b>${scan.done}/${scan.total}</b><span>sembol/TF analiz</span></div><div><b>${scan.dirChecks}</b><span>yön kontrolü</span></div><div><b>${long.length}</b><span>LONG S9 havuz</span></div><div><b>${short.length}</b><span>SHORT S9 havuz</span></div><div><b>${topLong.length}+${topShort.length}</b><span>gösterilen ilk 10+10</span></div><div><b>${scan.rest}</b><span>REST set</span></div><div><b>${scan.json}</b><span>JSON set</span></div><div><b>${scan.candles}</b><span>toplam mum</span></div><div><b>${scan.latestCoinAgeSec===null?"-":scan.latestCoinAgeSec}</b><span>coin veri yaşı sn</span></div><div><b>${scan.stale}</b><span>canlı alınamadı</span></div></div><div class="note"><b>v18.2 sadece S9 CHOCH sağlam veri + ATR plan:</b> Teknik strateji yalnızca S9 Trend Kırılımı + CHOCH. Giriş/stop/TP v18.2 bilimsel ATR/R planıyla hesaplanır: stop ATR tabanlı ve yüzde üst sınır kontrollü, TP1/TP2/TP3 1R/2R/3R, backtest aynı planla çalışır. Ekranda sadece ilk 10 LONG ve ilk 10 SHORT görünür.</div>`
 }
 function card(x,i){
   const cls=x.dir==="SHORT"?"short":"long";
