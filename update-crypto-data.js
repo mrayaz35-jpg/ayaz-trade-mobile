@@ -1,3 +1,4 @@
+// v18.4 cache-kirici veri workflow
 const fs=require('fs');
 const https=require('https');
 const TFS=['15m','30m','1h','2h','4h'];
