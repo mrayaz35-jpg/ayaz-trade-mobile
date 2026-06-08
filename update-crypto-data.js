@@ -1,4 +1,4 @@
-// v20.0: GitHub Actions yedek veri üretimi için sade tutucu dosya.
+// v20.1 CACHE KIRICI: GitHub Actions yedek veri üretimi için sade tutucu dosya.
 // Canlı tarama tarayıcıdan Binance/Yahoo üzerinden yapılır.
 const fs=require('fs');
 fs.mkdirSync('data',{recursive:true});
