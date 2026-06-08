@@ -1,4 +1,4 @@
-// v20.3 — BIST canlı veri köprüsü
+// v20.4 — BIST canlı veri köprüsü
 // GitHub Actions tarafında çalışır. Tarayıcıda CORS yüzünden BIST verisi gelmezse
 // uygulama kendi origin'indeki data/bist-market.json dosyasını kullanır.
 const fs = require('fs');
@@ -18,7 +18,7 @@ async function jfetch(url, timeout = 18000) {
       signal: ac.signal,
       headers: {
         'accept': 'application/json,text/plain,*/*',
-        'user-agent': 'Mozilla/5.0 AyazTradeBot/20.3'
+        'user-agent': 'Mozilla/5.0 AyazTradeBot/20.4'
       }
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -80,7 +80,7 @@ async function fetchBistSymbol(code) {
   const sym = `${code}.IS`;
   let c15 = await fetchYahoo(sym, '15m', '60d');
   await sleep(150);
-  let c1h = await fetchYahoo(sym, '60m', '730d');
+  let c1h = await fetchYahoo(sym, '60m', '2y');
   if (!c1h.length && c15.length) c1h = aggregate(c15, TFMS['1h']);
   const sets = {
     '15m': c15,
@@ -96,7 +96,7 @@ async function fetchBistSymbol(code) {
 async function main() {
   fs.mkdirSync('data', { recursive: true });
   const generatedAt = new Date().toISOString();
-  const out = { version: 'v20.3-bist-livebridge', generatedAt, symbols: BIST100, data: {}, stats: { ok: 0, fail: 0 } };
+  const out = { version: 'v20.4-bist-livebridge', generatedAt, symbols: BIST100, data: {}, stats: { ok: 0, fail: 0 } };
 
   for (let i = 0; i < BIST100.length; i++) {
     const code = BIST100[i];
