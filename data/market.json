@@ -1,6 +1,1 @@
-{
-  "generatedAt": "2026-06-08T12:32:29.557Z",
-  "symbols": [],
-  "data": {},
-  "note": "v20 canlı tarayıcı veri motoru kullanır."
-}
+{"generatedAt":"2026-06-08T15:00:34.622Z","note":"Kripto canlı tarayıcıdan; BIST data/bist-market.json köprüsünden gelir.","bistStats":{"ok":97,"fail":3}}
