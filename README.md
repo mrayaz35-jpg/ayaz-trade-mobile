@@ -10,3 +10,7 @@ V29'da yapılan ana revize:
 - Minimum backtest işlem eşiği TF'ye göre dengelendi.
 - Skor ve izleme yoktur; yalnızca trade edilebilir ilk 10 LONG + ilk 10 SHORT gösterilir.
 - Canlıda hangi strateji geçiyorsa backtestte de aynı strateji, aynı giriş-stop-hedef mantığıyla test edilir.
+
+
+## v29 index fix
+Bu paket index.html içinde v29 JavaScript motorunu çağırır. Eski v28 script referansı temizlenmiştir.
