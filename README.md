@@ -1,3 +1,13 @@
-# Ayaz Trade v32.0 — Kapsamlı Trade Plan + Structural Stop + Same-BT Motoru
+# Ayaz Trade v34.0 — Scientific ATR Stop + Target Motoru
 
-Bu sürüm v31 üzerindeki tekil stop düzeltmesini genişleterek fotoğrafta görülen tüm teknik sorunlara müdahale eder: strateji aileleri ayrılır, retest yoksa retest dili kullanılmaz, stop destek/direnç doğru tarafında olmak zorundadır, TP/R yeni stopa göre yeniden hesaplanır, aynı strateji backtest aynı giriş-stop-hedef planıyla çalışır. Skor ve izleme yoktur; sadece trade edilebilir ilk 10 LONG ve ilk 10 SHORT gösterilir.
+Bu sürüm v33 sonrası stop ve hedef hesaplamasını bilimsel/teknik formüle bağlar.
+
+Ana değişiklikler:
+- ATR, Wilder/RMA True Range 14 ile hesaplanır.
+- Stop, yapısal invalidasyon seviyesi + ATR tampon üzerinden hesaplanır.
+- Stop yapay şekilde genişletilmez; risk ATR veya yüzde eşiğinin altında kalırsa aday elenir.
+- LONG stop destek/demand/tetik mum low altında; SHORT stop direnç/supply/tetik mum high üstünde olmak zorundadır.
+- TP1/TP2/TP3 gerçek swing, destek/direnç ve likidite alanlarına göre hesaplanır.
+- En yakın gerçek hedef 1R vermiyorsa hedef uydurulmaz; aday elenir.
+- Backtest canlıdaki aynı strateji, aynı entry, aynı stop ve aynı hedef mantığını test eder.
+- Skor ve izleme yoktur; yalnızca trade edilebilir ilk 10 LONG + ilk 10 SHORT listelenir.
