@@ -1,29 +1,25 @@
-# Ayaz Trade v23.0 — Kripto Bağlam Motoru Skorsuz
+# Ayaz Trade v24.0 — Trade Edilebilir 10/10 Skorsuz
 
-Bu paket, v22 teknik kapı sürümünden sonra skor/puan mantığı kaldırılarak hazırlanmıştır.
+Bu sürümde izleme listesi yoktur. Sistem yalnızca **trade edilebilir ilk 10 LONG** ve **trade edilebilir ilk 10 SHORT** adayını gösterir.
 
-## Ana değişiklik
-- Sayısal skor, rankScore ve puan kutusu kaldırıldı.
-- Adaylar “kaç puan aldı” diye değil, geçtiği net teknik bağlama göre listelenir.
-- Motor sırası: trend → üst zaman bağlamı → BOS/CHOCH → destek/direnç → trend çizgisi → mum formasyonu → likidite sweep/reclaim → EMA/RSI/MACD/ADX/DI/hacim → backtest sağlığı.
+## Ana mantık
 
-## Strateji bağlamları
-- Trend devam LONG/SHORT
-- Destek/direnç pullback LONG/SHORT
-- Bullish/Bearish CHOCH dönüş
-- Trend çizgisi kırılımı
-- Likidite reclaim/sweep
-- Range kırılımı
+- Skor/puan yoktur.
+- Mevcut grafikte hangi strateji geçiyorsa, backtest aynı strateji adını ve aynı teknik kapıyı geçmiş mumlarda arar.
+- Bağlam tek başına yeterli değildir; strateji + canlı teknik kalite + aynı-strateji backtest sağlığı birlikte geçmelidir.
 
-## Sıralama mantığı
-Sıralama puanla yapılmaz. Öncelik sırası objektif şartlarla belirlenir:
-1. Bağlam durumu: TAM BAĞLAM / UYGUN BAĞLAM
-2. Strateji türü
-3. Backtest işlem sayısı
-4. Profit factor
-5. Net R
-6. Win oranı
-7. TP2 oranı
-8. Daha düşük stop yüzdesi ve daha taze veri
+## Trade edilebilir kapı
 
-Bu uygulama eğitim/test amaçlıdır; gerçek emir göndermez.
+Aday listeye girmek için:
+
+- Üst zaman dilimi bağlamı geçmeli.
+- BOS/CHOCH veya yapı kırılımı olmalı.
+- Destek/direnç, trend çizgisi, mum veya likidite bağı kurulmalı.
+- EMA/RSI/MACD/ADX/DI/hacim kuralları yeterli olmalı.
+- Aynı stratejinin backtestinde yeterli işlem, win, PF, Net R, TP2 ve hızlı stop şartları geçmeli.
+
+## Link
+
+GitHub Pages repo adı `ayaz-trade-mobile` ise uygulama linki:
+
+https://mrayaz35-jpg.github.io/ayaz-trade-mobile/
