@@ -1,24 +1,12 @@
-# Ayaz Trade v28.0 — Closed Candle + Wilder + Structural Stop Motoru
+# Ayaz Trade v29.0 — Dengeli Closed Candle + Wilder Trade Plan Motoru
 
-Bu sürüm v27 sonrası çekirdek teknik hesap motorunu revize eder.
+Bu sürüm V28'in teknik doğruluk çekirdeğini korur: sadece kapanmış mum, Wilder ATR/RSI/ADX-DI, yapısal stop, Kırılım-Retest ve Kırılım-Onay ayrımı.
 
-## Ana değişiklikler
+V29'da yapılan ana revize:
 
-- Sadece kapanmış mumla analiz yapılır; Binance'ın açık son mumu sinyal ve backtest dışında bırakılır.
-- ATR, RSI ve DMI/ADX hesapları TradingView'e daha yakın Wilder/RMA mantığına çekildi.
-- Stop en uzak dip/tepe yerine en yakın mantıklı yapısal invalidasyon seviyesi + 0.20 ATR tamponla hesaplanır.
-- Kırılım-Retest ve Kırılım-Onay ayrıldı.
-- Backtest, canlıda geçen stratejinin aynısını aynı giriş-stop-hedef planıyla test eder.
-- Skor ve izleme yoktur; yalnızca trade edilebilir ilk 10 LONG + ilk 10 SHORT görünür.
-
-## Dosyalar
-
-- `index.html`
-- `script-v28-0-crypto400-closed-wilder-engine.js`
-- `update-crypto-data.js`
-
-## Yayın
-
-GitHub Pages repo köküne bu dosyaları yükleyin. Uygulama linki aynı kalır:
-
-`https://mrayaz35-jpg.github.io/ayaz-trade-mobile/`
+- Örneklem aşırı daralmasın diye backtest kapısı dengelendi.
+- Hacim/gövde kapısı korunur ama sadece ham volume oranına takılıp iyi gövdeli kırılımı boğmaz.
+- TP2 alan eşiği 1.25R seviyesine dengelendi.
+- Minimum backtest işlem eşiği TF'ye göre dengelendi.
+- Skor ve izleme yoktur; yalnızca trade edilebilir ilk 10 LONG + ilk 10 SHORT gösterilir.
+- Canlıda hangi strateji geçiyorsa backtestte de aynı strateji, aynı giriş-stop-hedef mantığıyla test edilir.
