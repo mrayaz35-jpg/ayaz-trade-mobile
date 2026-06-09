@@ -1,11 +1,7 @@
-# Ayaz Trade v36 — Simetrik Scientific ATR Stop/Target Motoru
+# Ayaz Trade v37.0 — Balanced BT + Data Age + Symmetric Scientific Motor
 
-- LONG ve SHORT aynı kalite standardıyla çalışır.
-- Kapalı mum standardı korunur.
-- ATR/RSI/ADX-DI Wilder/RMA mantığı korunur.
-- Stop yapısal invalidasyon dışına ATR tamponla konur.
-- TP1/TP2 gerçek destek-direnç/swing/likidite alanıyla R kontrolünden geçer.
-- Ara TF tersliği tek başına eleme sebebi değildir; ana TF yönü ve lokasyon birlikte okunur.
-- Yetersiz mum kırılım-retest stratejisine sızmaz.
-- Trend Devam, yapısal teyit yoksa daha güçlü lokasyon + hacim + hedef alanı ister.
-- Skor yok, izleme yok: sadece trade edilebilir ilk 10 LONG ve ilk 10 SHORT.
+- LONG/SHORT standardı simetrik korunur.
+- Kapalı mum, Wilder ATR/RSI/ADX ve scientific stop/target motoru korunur.
+- V36’daki BT=0 sorununu çözmek için backtest kapısı canlı final kadar boğulmaz; aynı strateji/aynı aile planı test edilir.
+- Bayat sembol/TF verileri geçerli sete alınmaz; ekrandaki yaş artık stale ayrımı yapar.
+- Skor ve izleme yoktur; yalnızca trade edilebilir ilk 10 LONG + ilk 10 SHORT gösterilir.
