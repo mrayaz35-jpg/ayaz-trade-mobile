@@ -1,7 +1,7 @@
-# Ayaz Trade v37.0 — Balanced BT + Data Age + Symmetric Scientific Motor
+# Ayaz Trade v39.0 — Strateji Modülleri + Profesyonel Bağlam Motoru
 
-- LONG/SHORT standardı simetrik korunur.
-- Kapalı mum, Wilder ATR/RSI/ADX ve scientific stop/target motoru korunur.
-- V36’daki BT=0 sorununu çözmek için backtest kapısı canlı final kadar boğulmaz; aynı strateji/aynı aile planı test edilir.
-- Bayat sembol/TF verileri geçerli sete alınmaz; ekrandaki yaş artık stale ayrımı yapar.
-- Skor ve izleme yoktur; yalnızca trade edilebilir ilk 10 LONG + ilk 10 SHORT gösterilir.
+- Tek bir strateji yerine 8 strateji modülü birlikte çalışır.
+- Trend/MTF, BOS/CHOCH, destek-direnç/çizgi/dip-tepe, EMA/RSI/MACD/ADX-DI, mum+hacim, likidite/SMC, ATR stop-hedef ve aynı-strateji backtest ayrı ayrı gösterilir.
+- Kartlarda “Strateji Modülleri”, “Geçti” ve “Geçmedi/Zayıf” alanları görünür.
+- Aynı strateji canlıda neyse backtestte aynı strateji ailesi test edilir.
+- LONG/SHORT standardı simetriktir. Skor/izleme yoktur; trade edilebilir ilk 10 LONG + ilk 10 SHORT gösterilir.
