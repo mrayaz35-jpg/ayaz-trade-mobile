@@ -1,25 +1,29 @@
-# Ayaz Trade v24.0 — Trade Edilebilir 10/10 Skorsuz
+# Ayaz Trade v25.0 — Profesyonel Trade Plan 10/10
 
-Bu sürümde izleme listesi yoktur. Sistem yalnızca **trade edilebilir ilk 10 LONG** ve **trade edilebilir ilk 10 SHORT** adayını gösterir.
+Bu sürümde skor ve izleme yoktur. Sistem yalnızca trade edilebilir ilk 10 LONG ve ilk 10 SHORT adayını gösterir.
 
 ## Ana mantık
 
-- Skor/puan yoktur.
-- Mevcut grafikte hangi strateji geçiyorsa, backtest aynı strateji adını ve aynı teknik kapıyı geçmiş mumlarda arar.
-- Bağlam tek başına yeterli değildir; strateji + canlı teknik kalite + aynı-strateji backtest sağlığı birlikte geçmelidir.
+Canlı analizde ne aranıyorsa, backtestte geçmiş mumlarda aynı strateji ve aynı işlem planı aranır.
 
-## Trade edilebilir kapı
+## Strateji aileleri
 
-Aday listeye girmek için:
+- Trend Devam LONG / SHORT
+- Kırılım-Retest LONG / SHORT
+- CHOCH / Karakter Değişimi LONG / SHORT
+- EMA Pullback LONG / SHORT
+- Likidite Reclaim / Sweep
 
-- Üst zaman dilimi bağlamı geçmeli.
-- BOS/CHOCH veya yapı kırılımı olmalı.
-- Destek/direnç, trend çizgisi, mum veya likidite bağı kurulmalı.
-- EMA/RSI/MACD/ADX/DI/hacim kuralları yeterli olmalı.
-- Aynı stratejinin backtestinde yeterli işlem, win, PF, Net R, TP2 ve hızlı stop şartları geçmeli.
+## Her adayda oluşması gereken zincir
 
-## Link
+1. Ana trend ve üst zaman dilimi bağlamı
+2. Destek/direnç, trend çizgisi, EMA bandı veya likidite lokasyonu
+3. Mum, retest, sweep/reclaim veya mikro kırılım tetikleyicisi
+4. Giriş kuralı
+5. Yapısal stop + ATR tampon
+6. TP1/TP2/TP3 hedef alanı
+7. Aynı stratejinin geçmişte aynı kuralla backtest edilmesi
 
-GitHub Pages repo adı `ayaz-trade-mobile` ise uygulama linki:
+## Backtest kapısı
 
-https://mrayaz35-jpg.github.io/ayaz-trade-mobile/
+Backtest farklı bir strateji çalıştırmaz. Canlıda örneğin “Kırılım-Retest LONG” geçtiyse, geçmişte de yalnızca “Kırılım-Retest LONG” koşulları aranır. Giriş, stop ve hedef mantığı aynı kalır.
