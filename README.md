@@ -1,13 +1,11 @@
-# Ayaz Trade v34.0 — Scientific ATR Stop + Target Motoru
+# Ayaz Trade v36 — Simetrik Scientific ATR Stop/Target Motoru
 
-Bu sürüm v33 sonrası stop ve hedef hesaplamasını bilimsel/teknik formüle bağlar.
-
-Ana değişiklikler:
-- ATR, Wilder/RMA True Range 14 ile hesaplanır.
-- Stop, yapısal invalidasyon seviyesi + ATR tampon üzerinden hesaplanır.
-- Stop yapay şekilde genişletilmez; risk ATR veya yüzde eşiğinin altında kalırsa aday elenir.
-- LONG stop destek/demand/tetik mum low altında; SHORT stop direnç/supply/tetik mum high üstünde olmak zorundadır.
-- TP1/TP2/TP3 gerçek swing, destek/direnç ve likidite alanlarına göre hesaplanır.
-- En yakın gerçek hedef 1R vermiyorsa hedef uydurulmaz; aday elenir.
-- Backtest canlıdaki aynı strateji, aynı entry, aynı stop ve aynı hedef mantığını test eder.
-- Skor ve izleme yoktur; yalnızca trade edilebilir ilk 10 LONG + ilk 10 SHORT listelenir.
+- LONG ve SHORT aynı kalite standardıyla çalışır.
+- Kapalı mum standardı korunur.
+- ATR/RSI/ADX-DI Wilder/RMA mantığı korunur.
+- Stop yapısal invalidasyon dışına ATR tamponla konur.
+- TP1/TP2 gerçek destek-direnç/swing/likidite alanıyla R kontrolünden geçer.
+- Ara TF tersliği tek başına eleme sebebi değildir; ana TF yönü ve lokasyon birlikte okunur.
+- Yetersiz mum kırılım-retest stratejisine sızmaz.
+- Trend Devam, yapısal teyit yoksa daha güçlü lokasyon + hacim + hedef alanı ister.
+- Skor yok, izleme yok: sadece trade edilebilir ilk 10 LONG ve ilk 10 SHORT.
