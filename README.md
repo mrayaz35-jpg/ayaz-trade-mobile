@@ -1,29 +1,24 @@
-# Ayaz Trade v25.0 — Profesyonel Trade Plan 10/10
+# Ayaz Trade v28.0 — Closed Candle + Wilder + Structural Stop Motoru
 
-Bu sürümde skor ve izleme yoktur. Sistem yalnızca trade edilebilir ilk 10 LONG ve ilk 10 SHORT adayını gösterir.
+Bu sürüm v27 sonrası çekirdek teknik hesap motorunu revize eder.
 
-## Ana mantık
+## Ana değişiklikler
 
-Canlı analizde ne aranıyorsa, backtestte geçmiş mumlarda aynı strateji ve aynı işlem planı aranır.
+- Sadece kapanmış mumla analiz yapılır; Binance'ın açık son mumu sinyal ve backtest dışında bırakılır.
+- ATR, RSI ve DMI/ADX hesapları TradingView'e daha yakın Wilder/RMA mantığına çekildi.
+- Stop en uzak dip/tepe yerine en yakın mantıklı yapısal invalidasyon seviyesi + 0.20 ATR tamponla hesaplanır.
+- Kırılım-Retest ve Kırılım-Onay ayrıldı.
+- Backtest, canlıda geçen stratejinin aynısını aynı giriş-stop-hedef planıyla test eder.
+- Skor ve izleme yoktur; yalnızca trade edilebilir ilk 10 LONG + ilk 10 SHORT görünür.
 
-## Strateji aileleri
+## Dosyalar
 
-- Trend Devam LONG / SHORT
-- Kırılım-Retest LONG / SHORT
-- CHOCH / Karakter Değişimi LONG / SHORT
-- EMA Pullback LONG / SHORT
-- Likidite Reclaim / Sweep
+- `index.html`
+- `script-v28-0-crypto400-closed-wilder-engine.js`
+- `update-crypto-data.js`
 
-## Her adayda oluşması gereken zincir
+## Yayın
 
-1. Ana trend ve üst zaman dilimi bağlamı
-2. Destek/direnç, trend çizgisi, EMA bandı veya likidite lokasyonu
-3. Mum, retest, sweep/reclaim veya mikro kırılım tetikleyicisi
-4. Giriş kuralı
-5. Yapısal stop + ATR tampon
-6. TP1/TP2/TP3 hedef alanı
-7. Aynı stratejinin geçmişte aynı kuralla backtest edilmesi
+GitHub Pages repo köküne bu dosyaları yükleyin. Uygulama linki aynı kalır:
 
-## Backtest kapısı
-
-Backtest farklı bir strateji çalıştırmaz. Canlıda örneğin “Kırılım-Retest LONG” geçtiyse, geçmişte de yalnızca “Kırılım-Retest LONG” koşulları aranır. Giriş, stop ve hedef mantığı aynı kalır.
+`https://mrayaz35-jpg.github.io/ayaz-trade-mobile/`
