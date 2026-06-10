@@ -1,45 +1,35 @@
-# Ayaz Trade — TAM REVİZE Binance Fix
+# Ayaz Trade — Sade Profesyonel Plan
 
-Bu paket `Load failed` hatası için tamamen revize edildi.
+Bu sürümde ekranda hikâye yoktur.
 
-## Düzeltmeler
+Gösterilen alanlar:
+- Coin
+- Time frame
+- Yön
+- Giriş
+- Stop
+- TP1
+- TP2
+- TP3
+- USDT ve TL karşılıkları
 
-- `App.jsx` içinde Binance tek endpoint değil, çoklu endpoint yedekli çalışır:
-  - data-api.binance.vision
-  - api1.binance.com
-  - api2.binance.com
-  - api3.binance.com
-  - api.binance.com
+Şartları geçmeyen coinler gösterilmez.
 
-- `update-crypto-data.js` ES Module uyumludur.
-- `require()` yoktur.
-- `import fs from "fs"` kullanır.
+## Hesaplama
 
-## Strateji
+Entry:
+- Long: sinyal mumunun high seviyesi + küçük ATR tamponu
+- Short: sinyal mumunun low seviyesi - küçük ATR tamponu
+- Binance tick size'a göre yuvarlanır.
 
-LONG:
-- EMA9 > EMA21 > EMA50 > EMA200
-- RSI > 55
-- MACD çizgisi signal üstünde
-- MACD histogram pozitif
-- Hacim 20 mum ortalamasının üstünde
+Stop:
+- Long: ATR stop ile son 20 mum swing dip yapısal stop karşılaştırılır; daha güvenli stop alınır.
+- Short: ATR stop ile son 20 mum swing tepe yapısal stop karşılaştırılır; daha güvenli stop alınır.
+- Binance tick size'a göre yuvarlanır.
 
-SHORT:
-- EMA9 < EMA21 < EMA50 < EMA200
-- RSI < 45
-- MACD çizgisi signal altında
-- MACD histogram negatif
-- Hacim 20 mum ortalamasının üstünde
+Hedef:
+- TP1 = 2R
+- TP2 = 3R
+- TP3 = 5R
 
-## Hedefler
-
-- ATR(14)
-- Stop = ATR x 1.5
-- TP1 = Risk x 2
-- TP2 = Risk x 3
-- TP3 = Risk x 5
-
-## Not
-
-Güven skoru yoktur. Sadece şartları tam geçen coinler listelenir.
-Gerçek emir açmaz.
+Canlı USD/TRY ile TL çevrilir.

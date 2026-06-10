@@ -1,7 +1,3 @@
-// Ayaz Trade — MACD RSI MA ATR
-// ES Module uyumlu GitHub Actions dosyası.
-// package.json içinde "type": "module" olduğu için require() kullanılmaz.
-
 import fs from "fs";
 import path from "path";
 
@@ -34,30 +30,25 @@ async function main() {
     const j = await tryFetchJson("https://open.er-api.com/v6/latest/USD");
     usdtry = j && j.rates ? j.rates.TRY : null;
     source = "open.er-api.com";
-  } catch (e) {
+  } catch {
     try {
       const j = await tryFetchJson("https://api.frankfurter.app/latest?from=USD&to=TRY");
       usdtry = j && j.rates ? j.rates.TRY : null;
       source = "frankfurter.app";
-    } catch (e2) {
+    } catch {
       source = "fx-error";
     }
   }
 
   const market = {
-    app: "Ayaz Trade MACD RSI MA ATR",
+    app: "Ayaz Trade Sade Plan",
     generatedAt,
     usdtry,
     source,
-    note: "Canlı kripto tarama App.jsx içinde çoklu Binance endpoint yedekleriyle yapılır.",
+    note: "Ana tarama App.jsx içinde canlı Binance verisiyle yapılır.",
   };
 
-  fs.writeFileSync(
-    path.join("data", "market.json"),
-    JSON.stringify(market, null, 2),
-    "utf8"
-  );
-
+  fs.writeFileSync(path.join("data", "market.json"), JSON.stringify(market, null, 2), "utf8");
   console.log("data/market.json updated:", generatedAt);
 }
 
