@@ -1,1 +1,7 @@
-{"generatedAt":"2026-06-10T07:28:49.752Z","note":"Kripto canlı tarayıcıdan; BIST data/bist-market.json köprüsünden gelir.","bistStats":{"ok":97,"fail":3}}
+{
+  "app": "Ayaz Trade MACD RSI MA ATR",
+  "generatedAt": "2026-06-10T10:36:02.405Z",
+  "usdtry": 46.126087,
+  "source": "open.er-api.com",
+  "note": "Canlı kripto tarama App.jsx içinde Binance API ile yapılır. Bu dosya GitHub Actions için ES Module uyumludur."
+}
