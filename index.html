@@ -1,12 +1,1 @@
-<!doctype html>
-<html lang="tr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MAD RSI MA Scanner</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/App.jsx"></script>
-  </body>
-</html>
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MACD RSI MA Crypto Scanner</title><link rel="stylesheet" href="style.css"></head><body><main class="wrap"><header class="top"><div><h1>MACD RSI MA Crypto Scanner</h1><p>Binance canlı mum verisi + canlı USD/TRY ile Long/Short tarama</p></div><div class="rate"><span>Canlı USD/TRY</span><b id="usdtry">Yükleniyor...</b></div></header><section class="panel"><div class="inputs"><label>Maksimum coin <input id="limit" type="number" value="120" min="10" max="450"></label><label>Min 24s hacim USDT <input id="minVolume" type="number" value="10000000" min="0"></label><label>Mum sayısı <input id="candleLimit" type="number" value="300" min="100" max="1000"></label></div><div class="timeframes"><label><input class="tf" type="checkbox" value="15m" checked>15m</label><label><input class="tf" type="checkbox" value="30m" checked>30m</label><label><input class="tf" type="checkbox" value="1h" checked>1h</label><label><input class="tf" type="checkbox" value="2h">2h</label><label><input class="tf" type="checkbox" value="4h" checked>4h</label><label><input class="tf" type="checkbox" value="1d">Günlük</label></div><button id="scanBtn">TARAMAYI BAŞLAT</button><button id="stopBtn" class="ghost">DURDUR</button><button id="clearBtn" class="ghost">TEMİZLE</button><p id="status">Hazır.</p></section><section class="card"><h2>LONG</h2><div class="tableWrap"><table><thead><tr><th>Coin</th><th>TF</th><th>Entry USDT</th><th>Entry TL</th><th>Stop USDT</th><th>Stop TL</th><th>TP1 USDT</th><th>TP1 TL</th><th>TP2 USDT</th><th>TP2 TL</th><th>TP3 USDT</th><th>TP3 TL</th><th>Neden</th></tr></thead><tbody id="longBody"></tbody></table></div></section><section class="card"><h2>SHORT</h2><div class="tableWrap"><table><thead><tr><th>Coin</th><th>TF</th><th>Entry USDT</th><th>Entry TL</th><th>Stop USDT</th><th>Stop TL</th><th>TP1 USDT</th><th>TP1 TL</th><th>TP2 USDT</th><th>TP2 TL</th><th>TP3 USDT</th><th>TP3 TL</th><th>Neden</th></tr></thead><tbody id="shortBody"></tbody></table></div></section></main><script src="app.js"></script></body></html>
