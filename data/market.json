@@ -1,7 +1,7 @@
 {
-  "app": "Ayaz Trade MACD RSI MA ATR",
-  "generatedAt": "2026-06-10T11:15:46.570Z",
+  "app": "Ayaz Trade Sade Plan",
+  "generatedAt": "2026-06-10T11:42:53.563Z",
   "usdtry": 46.126087,
   "source": "open.er-api.com",
-  "note": "Canlı kripto tarama App.jsx içinde çoklu Binance endpoint yedekleriyle yapılır."
+  "note": "Ana tarama App.jsx içinde canlı Binance verisiyle yapılır."
 }
