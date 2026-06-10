@@ -1,19 +1,19 @@
-# Ayaz Trade — MACD RSI MA ATR
+# Ayaz Trade — TAM REVİZE Binance Fix
 
-Bu revize pakette `update-crypto-data.js` ES Module uyumludur.
+Bu paket `Load failed` hatası için tamamen revize edildi.
 
-## Hata düzeltmesi
+## Düzeltmeler
 
-Repo `package.json` içinde `"type": "module"` olduğu için CommonJS `require()` hata veriyordu.
+- `App.jsx` içinde Binance tek endpoint değil, çoklu endpoint yedekli çalışır:
+  - data-api.binance.vision
+  - api1.binance.com
+  - api2.binance.com
+  - api3.binance.com
+  - api.binance.com
 
-Bu paket içinde:
-
-```js
-import fs from "fs";
-import path from "path";
-```
-
-kullanıldı.
+- `update-crypto-data.js` ES Module uyumludur.
+- `require()` yoktur.
+- `import fs from "fs"` kullanır.
 
 ## Strateji
 
@@ -31,4 +31,15 @@ SHORT:
 - MACD histogram negatif
 - Hacim 20 mum ortalamasının üstünde
 
-Güven skoru yoktur.
+## Hedefler
+
+- ATR(14)
+- Stop = ATR x 1.5
+- TP1 = Risk x 2
+- TP2 = Risk x 3
+- TP3 = Risk x 5
+
+## Not
+
+Güven skoru yoktur. Sadece şartları tam geçen coinler listelenir.
+Gerçek emir açmaz.
