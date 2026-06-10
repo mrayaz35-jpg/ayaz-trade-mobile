@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-const APP_VERSION = "KESIN-YENI-SADE-PLAN-V4";
+const APP_VERSION = "TEMIZ-KURULUM-V6-500-MUM";
 
 const BINANCE_BASES = [
   "https://data-api.binance.vision",
@@ -13,13 +13,14 @@ const BINANCE_BASES = [
 const TF_LIST = ["15m", "30m", "1h", "2h", "4h", "1d"];
 const SYMBOL_META = new Map();
 
+const DEFAULT_COIN_LIMIT = 400;
+const DEFAULT_MIN_VOLUME_USDT = 1000000;
+const DEFAULT_CANDLE_LIMIT = 500;
+
 const RULE = {
   atrPeriod: 14,
   rsiPeriod: 14,
   volumePeriod: 20,
-  defaultCoinLimit: 400,
-  defaultMinVolumeUsdt: 1000000,
-  defaultCandleLimit: 500,
   entryBufferAtr: 0.05,
   atrStop: 1.5,
   atrBuffer: 0.25,
@@ -51,7 +52,6 @@ function sleep(ms) {
 async function fetchJson(url, timeout = 20000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
-
   try {
     const res = await fetch(url, {
       method: "GET",
@@ -119,13 +119,15 @@ async function getSymbols(maxCount, minVolumeUsdt) {
     .filter((t) => active.has(t.symbol))
     .filter((t) => Number(t.quoteVolume) >= Number(minVolumeUsdt || 0))
     .sort((a, b) => Number(b.quoteVolume) - Number(a.quoteVolume))
-    .slice(0, Number(maxCount || RULE.defaultCoinLimit))
+    .slice(0, Number(maxCount || DEFAULT_COIN_LIMIT))
     .map((t) => t.symbol);
 }
 
 async function getKlines(symbol, interval, limit) {
+  const safeLimit = Math.max(DEFAULT_CANDLE_LIMIT, Number(limit || DEFAULT_CANDLE_LIMIT));
+
   const raw = await binanceGet(
-    `/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
+    `/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${safeLimit}`,
     20000
   );
 
@@ -182,11 +184,14 @@ function rsi(closes, period = 14) {
 function macd(closes, fast = 12, slow = 26, signalPeriod = 9) {
   const fastEma = ema(closes, fast);
   const slowEma = ema(closes, slow);
+
   const line = closes.map((_, i) =>
     fastEma[i] !== null && slowEma[i] !== null ? fastEma[i] - slowEma[i] : null
   );
+
   const signal = ema(line.map((v) => v ?? 0), signalPeriod);
   const hist = line.map((v, i) => (v !== null && signal[i] !== null ? v - signal[i] : null));
+
   return { line, signal, hist };
 }
 
@@ -380,9 +385,9 @@ function SignalCard({ signal }) {
 
 export default function App() {
   const [usdtry, setUsdtry] = useState(0);
-  const [limit, setLimit] = useState(RULE.defaultCoinLimit);
-  const [minVolume, setMinVolume] = useState(RULE.defaultMinVolumeUsdt);
-  const [candleLimit, setCandleLimit] = useState(RULE.defaultCandleLimit);
+  const [limit, setLimit] = useState(DEFAULT_COIN_LIMIT);
+  const [minVolume, setMinVolume] = useState(DEFAULT_MIN_VOLUME_USDT);
+  const [candleLimit, setCandleLimit] = useState(DEFAULT_CANDLE_LIMIT);
   const [selectedTfs, setSelectedTfs] = useState([...TF_LIST]);
   const [status, setStatus] = useState("Hazır.");
   const [running, setRunning] = useState(false);
@@ -448,6 +453,9 @@ export default function App() {
       return;
     }
 
+    const safeCandleLimit = Math.max(DEFAULT_CANDLE_LIMIT, Number(candleLimit || DEFAULT_CANDLE_LIMIT));
+    setCandleLimit(safeCandleLimit);
+
     const scanTotal = symbols.length * selectedTfs.length;
     setTotal(scanTotal);
 
@@ -466,7 +474,7 @@ export default function App() {
         setStatus(`${symbol} ${tf} taranıyor... ${localDone}/${scanTotal}`);
 
         try {
-          const candles = await getKlines(symbol, tf, Number(candleLimit));
+          const candles = await getKlines(symbol, tf, safeCandleLimit);
           const result = analyzeSymbol(symbol, tf, candles, fx);
 
           if (result) {
@@ -498,7 +506,10 @@ export default function App() {
     setTotal(0);
     setFinalLong(0);
     setFinalShort(0);
-    setStatus("Temizlendi.");
+    setLimit(DEFAULT_COIN_LIMIT);
+    setMinVolume(DEFAULT_MIN_VOLUME_USDT);
+    setCandleLimit(DEFAULT_CANDLE_LIMIT);
+    setStatus("Temizlendi. Mum sayısı 500.");
   }
 
   return (
@@ -547,8 +558,8 @@ export default function App() {
       `}</style>
 
       <div className="hero">
-        <h1>Ayaz Trade — Yeni Plan V4</h1>
-        <p>Sadece giriş, stop ve hedef planı.</p>
+        <h1>Ayaz Trade — Temiz V6</h1>
+        <p>Yeni kurulum. Varsayılan mum sayısı 500. Eski arayüz kodu yok.</p>
       </div>
 
       <div className="card">
@@ -563,7 +574,7 @@ export default function App() {
           </div>
           <div>
             <label>Mum sayısı</label>
-            <input type="number" value={candleLimit} min="220" max="1000" onChange={(e) => setCandleLimit(e.target.value)} />
+            <input type="number" value={candleLimit} min="500" max="1000" onChange={(e) => setCandleLimit(Math.max(500, Number(e.target.value || 500)))} />
           </div>
         </div>
 

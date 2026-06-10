@@ -1,5 +1,6 @@
 {
-  "app": "Ayaz Trade Yeni Plan V4",
-  "version": "KESIN-YENI-SADE-PLAN-V4",
+  "app": "Ayaz Trade Temiz V6",
+  "version": "TEMIZ-KURULUM-V6-500-MUM",
+  "defaultCandleLimit": 500,
   "generatedAt": null
 }

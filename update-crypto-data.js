@@ -6,10 +6,11 @@ async function main() {
   const generatedAt = new Date().toISOString();
 
   const market = {
-    app: "Ayaz Trade Yeni Plan V4",
-    version: "KESIN-YENI-SADE-PLAN-V4",
+    app: "Ayaz Trade Temiz V6",
+    version: "TEMIZ-KURULUM-V6-500-MUM",
+    defaultCandleLimit: 500,
     generatedAt,
-    note: "App.jsx tamamen yeni sade plan sürümüdür."
+    note: "Eski arayüz kodu yoktur. App.jsx temiz kurulmuştur."
   };
 
   fs.writeFileSync(path.join("data", "market.json"), JSON.stringify(market, null, 2), "utf8");

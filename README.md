@@ -1,15 +1,24 @@
-# Ayaz Trade Yeni Plan V4
+# Ayaz Trade Temiz V6
 
-Bu ZIP eski arayüzü kaldıracak şekilde hazırlanmıştır.
+Bu paket eski dosyanın üstünden revize edilmemiştir. Temiz kurulum olarak hazırlanmıştır.
 
-Ekranda görünmesi gereken başlık:
+## Kesin görülecek başlık
 
-Ayaz Trade — Yeni Plan V4
+Ayaz Trade — Temiz V6
 
-Ekranda sadece:
+## Varsayılan
+
+- Maksimum coin: 400
+- Minimum hacim: 1.000.000 USDT
+- Mum sayısı: 500
+- Time frame: 15m, 30m, 1h, 2h, 4h, 1d
+
+## Ekran
+
+Sadece şunlar görünür:
 
 - Coin
-- Time frame
+- TF
 - LONG / SHORT
 - Giriş USDT / TL
 - Stop USDT / TL
@@ -17,4 +26,4 @@ Ekranda sadece:
 - TP2 USDT / TL
 - TP3 USDT / TL
 
-bulunur.
+Eski açıklama, RSI/ATR etiketi, "şartları geçti" yazıları yoktur.
