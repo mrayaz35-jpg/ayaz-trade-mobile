@@ -1,14 +1,52 @@
-# MACD RSI MA Crypto Scanner
+# Ayaz Trade — MACD RSI MA ATR
 
-ZIP açılınca sadece 4 dosya çıkar:
+React tabanlı kripto tarayıcı.
 
-- index.html
-- style.css
-- app.js
-- README.md
+## İçerik
 
-Klasör içinde klasör yoktur.
+- `App.jsx`
+- `update-crypto-data.js`
+- `.github/workflows/update-market.yml`
+- `data/market.json`
+- `README.md`
 
-GitHub reposunun ana dizinine bu 4 dosyayı yükle. GitHub Pages için Settings > Pages > Deploy from branch > main > /root > Save.
+## Strateji
 
-Özellikler: Binance canlı mum verisi, canlı USD/TRY, 15m/30m/1h/2h/4h/1d, MACD + RSI + EMA + ATR + hacim, Entry/Stop/TP hedefleri USDT ve TL.
+### LONG
+- EMA9 > EMA21
+- EMA21 > EMA50
+- EMA50 > EMA200
+- RSI > 55
+- MACD çizgisi signal üstünde
+- MACD histogram pozitif
+- Son hacim 20 mum ortalamasının üstünde
+
+### SHORT
+- EMA9 < EMA21
+- EMA21 < EMA50
+- EMA50 < EMA200
+- RSI < 45
+- MACD çizgisi signal altında
+- MACD histogram negatif
+- Son hacim 20 mum ortalamasının üstünde
+
+## ATR Hedefler
+
+LONG:
+- Entry = son kapanış
+- Stop = Entry - ATR x 1.5
+- TP1 = Entry + Risk x 2
+- TP2 = Entry + Risk x 3
+- TP3 = Entry + Risk x 5
+
+SHORT:
+- Entry = son kapanış
+- Stop = Entry + ATR x 1.5
+- TP1 = Entry - Risk x 2
+- TP2 = Entry - Risk x 3
+- TP3 = Entry - Risk x 5
+
+## Not
+
+Güven skoru yoktur. Sadece şartları tam geçen coinler gösterilir.
+Uygulama gerçek emir açmaz.

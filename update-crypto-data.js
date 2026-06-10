@@ -1,28 +1,45 @@
 // Ayaz Trade — MACD RSI MA ATR
-// GitHub Actions için yardımcı dosya.
-// Ana uygulama taramayı tarayıcıda canlı Binance verisiyle yapar.
-const fs = require('fs');
+// GitHub Actions yardımcı dosyası.
+// Ana tarama App.jsx içinde Binance canlı mum verisiyle yapılır.
 
-async function main(){
-  fs.mkdirSync('data', {recursive:true});
+const fs = require("fs");
+const path = require("path");
+
+async function main() {
+  fs.mkdirSync("data", { recursive: true });
+
   const generatedAt = new Date().toISOString();
-  let usdtry = null;
 
-  try{
-    const r = await fetch('https://open.er-api.com/v6/latest/USD');
+  let usdtry = null;
+  let source = "none";
+
+  try {
+    const r = await fetch("https://open.er-api.com/v6/latest/USD");
     const j = await r.json();
     usdtry = j && j.rates ? j.rates.TRY : null;
-  }catch(e){}
+    source = "open.er-api.com";
+  } catch (e) {
+    source = "error";
+  }
 
-  const out = {
-    app: 'Ayaz Trade MACD RSI MA ATR',
+  const market = {
+    app: "Ayaz Trade MACD RSI MA ATR",
     generatedAt,
     usdtry,
-    note: 'Tarama canlı Binance mum verisi ile index.html üzerinden yapılır.'
+    source,
+    note: "Canlı kripto tarama App.jsx içinde Binance API ile yapılır. Bu dosya GitHub Actions formatını ve data klasörünü güncel tutar.",
   };
 
-  fs.writeFileSync('market.json', JSON.stringify(out,null,2));
-  console.log('market.json updated', generatedAt);
+  fs.writeFileSync(
+    path.join("data", "market.json"),
+    JSON.stringify(market, null, 2),
+    "utf8"
+  );
+
+  console.log("data/market.json updated:", generatedAt);
 }
 
-main().catch(e=>{console.error(e); process.exit(1);});
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
