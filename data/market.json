@@ -1,7 +1,6 @@
 {
-  "app": "Ayaz Trade Sade Plan",
-  "generatedAt": "2026-06-10T11:42:53.563Z",
-  "usdtry": 46.126087,
-  "source": "open.er-api.com",
-  "note": "Ana tarama App.jsx içinde canlı Binance verisiyle yapılır."
+  "app": "Ayaz Trade Yeni Plan V4",
+  "version": "KESIN-YENI-SADE-PLAN-V4",
+  "generatedAt": "2026-06-10T12:08:30.504Z",
+  "note": "App.jsx tamamen yeni sade plan sürümüdür."
 }
