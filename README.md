@@ -1,35 +1,20 @@
-# Ayaz Trade — Sade Profesyonel Plan
+# Ayaz Trade Yeni Plan V4
 
-Bu sürümde ekranda hikâye yoktur.
+Bu ZIP eski arayüzü kaldıracak şekilde hazırlanmıştır.
 
-Gösterilen alanlar:
+Ekranda görünmesi gereken başlık:
+
+Ayaz Trade — Yeni Plan V4
+
+Ekranda sadece:
+
 - Coin
 - Time frame
-- Yön
-- Giriş
-- Stop
-- TP1
-- TP2
-- TP3
-- USDT ve TL karşılıkları
+- LONG / SHORT
+- Giriş USDT / TL
+- Stop USDT / TL
+- TP1 USDT / TL
+- TP2 USDT / TL
+- TP3 USDT / TL
 
-Şartları geçmeyen coinler gösterilmez.
-
-## Hesaplama
-
-Entry:
-- Long: sinyal mumunun high seviyesi + küçük ATR tamponu
-- Short: sinyal mumunun low seviyesi - küçük ATR tamponu
-- Binance tick size'a göre yuvarlanır.
-
-Stop:
-- Long: ATR stop ile son 20 mum swing dip yapısal stop karşılaştırılır; daha güvenli stop alınır.
-- Short: ATR stop ile son 20 mum swing tepe yapısal stop karşılaştırılır; daha güvenli stop alınır.
-- Binance tick size'a göre yuvarlanır.
-
-Hedef:
-- TP1 = 2R
-- TP2 = 3R
-- TP3 = 5R
-
-Canlı USD/TRY ile TL çevrilir.
+bulunur.
