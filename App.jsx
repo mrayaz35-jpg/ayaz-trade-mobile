@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-const APP_VERSION = "V7-500-SABIT-CANLI";
+const APP_VERSION = "V8-CANLI-KANIT-PRO-PLAN";
 const FIXED_CANDLE_LIMIT = 500;
 const DEFAULT_COIN_LIMIT = 400;
 const DEFAULT_MIN_VOLUME_USDT = 1000000;
@@ -17,13 +17,14 @@ const TF_LIST = ["15m", "30m", "1h", "2h", "4h", "1d"];
 const SYMBOL_META = new Map();
 
 const RULE = {
-  atrPeriod: 14,
   rsiPeriod: 14,
+  atrPeriod: 14,
   volumePeriod: 20,
+  swingLookback: 20,
+  targetLookback: 80,
   entryBufferAtr: 0.05,
   atrStop: 1.5,
   atrBuffer: 0.25,
-  swingLookback: 20,
   tp1R: 2,
   tp2R: 3,
   tp3R: 5,
@@ -42,6 +43,11 @@ function priceFmt(n) {
   if (x >= 1) return x.toLocaleString("tr-TR", { maximumFractionDigits: 4 });
   if (x >= 0.01) return x.toLocaleString("tr-TR", { maximumFractionDigits: 6 });
   return x.toLocaleString("tr-TR", { maximumFractionDigits: 8 });
+}
+
+function dt(ms) {
+  if (!ms) return "-";
+  return new Date(ms).toLocaleString("tr-TR");
 }
 
 function nowText() {
@@ -74,7 +80,8 @@ async function binanceGet(path, timeout = 20000) {
   let lastError = null;
   for (const base of BINANCE_BASES) {
     try {
-      return await fetchJson(base + path, timeout);
+      const data = await fetchJson(base + path, timeout);
+      return { data, base };
     } catch (err) {
       lastError = err;
     }
@@ -99,11 +106,11 @@ async function getUsdTry() {
 }
 
 async function getSymbols(maxCount, minVolumeUsdt) {
-  const [exchangeInfo, tickers] = await Promise.all([
-    binanceGet("/api/v3/exchangeInfo", 25000),
-    binanceGet("/api/v3/ticker/24hr", 25000),
-  ]);
+  const ex = await binanceGet("/api/v3/exchangeInfo", 25000);
+  const tk = await binanceGet("/api/v3/ticker/24hr", 25000);
 
+  const exchangeInfo = ex.data;
+  const tickers = tk.data;
   SYMBOL_META.clear();
 
   const active = new Set(
@@ -127,28 +134,32 @@ async function getSymbols(maxCount, minVolumeUsdt) {
     symbols: filtered.slice(0, Number(maxCount || DEFAULT_COIN_LIMIT)).map((t) => t.symbol),
     allActiveCount: active.size,
     filteredCount: filtered.length,
+    endpoint: ex.base,
   };
 }
 
 async function getKlines(symbol, interval) {
-  const raw = await binanceGet(
+  const res = await binanceGet(
     `/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${FIXED_CANDLE_LIMIT}`,
     20000
   );
 
-  return raw.map((k) => ({
+  const candles = res.data.map((k) => ({
     time: Number(k[0]),
+    closeTime: Number(k[6]),
     open: Number(k[1]),
     high: Number(k[2]),
     low: Number(k[3]),
     close: Number(k[4]),
     volume: Number(k[5]),
   }));
+
+  return { candles, endpoint: res.base };
 }
 
 async function getBtcPrice() {
-  const data = await binanceGet("/api/v3/ticker/price?symbol=BTCUSDT", 12000);
-  return Number(data?.price || 0);
+  const res = await binanceGet("/api/v3/ticker/price?symbol=BTCUSDT", 12000);
+  return { price: Number(res.data?.price || 0), endpoint: res.base };
 }
 
 function ema(values, period) {
@@ -167,35 +178,46 @@ function ema(values, period) {
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
   if (closes.length <= period) return out;
-  let gains = 0, losses = 0;
+
+  let gains = 0;
+  let losses = 0;
+
   for (let i = 1; i <= period; i++) {
-    const diff = closes[i] - closes[i - 1];
-    if (diff >= 0) gains += diff; else losses -= diff;
+    const d = closes[i] - closes[i - 1];
+    if (d >= 0) gains += d;
+    else losses -= d;
   }
-  let avgGain = gains / period, avgLoss = losses / period;
+
+  let avgGain = gains / period;
+  let avgLoss = losses / period;
   out[period] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+
   for (let i = period + 1; i < closes.length; i++) {
-    const diff = closes[i] - closes[i - 1];
-    avgGain = (avgGain * (period - 1) + Math.max(diff, 0)) / period;
-    avgLoss = (avgLoss * (period - 1) + Math.max(-diff, 0)) / period;
+    const d = closes[i] - closes[i - 1];
+    avgGain = (avgGain * (period - 1) + Math.max(d, 0)) / period;
+    avgLoss = (avgLoss * (period - 1) + Math.max(-d, 0)) / period;
     out[i] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
   }
+
   return out;
 }
 
 function macd(closes, fast = 12, slow = 26, signalPeriod = 9) {
-  const fastEma = ema(closes, fast), slowEma = ema(closes, slow);
-  const line = closes.map((_, i) => fastEma[i] !== null && slowEma[i] !== null ? fastEma[i] - slowEma[i] : null);
+  const fastEma = ema(closes, fast);
+  const slowEma = ema(closes, slow);
+  const line = closes.map((_, i) =>
+    fastEma[i] !== null && slowEma[i] !== null ? fastEma[i] - slowEma[i] : null
+  );
   const signal = ema(line.map((v) => v ?? 0), signalPeriod);
-  const hist = line.map((v, i) => v !== null && signal[i] !== null ? v - signal[i] : null);
+  const hist = line.map((v, i) => (v !== null && signal[i] !== null ? v - signal[i] : null));
   return { line, signal, hist };
 }
 
 function atr(candles, period = 14) {
   const tr = candles.map((c, i) => {
     if (i === 0) return c.high - c.low;
-    const prevClose = candles[i - 1].close;
-    return Math.max(c.high - c.low, Math.abs(c.high - prevClose), Math.abs(c.low - prevClose));
+    const pc = candles[i - 1].close;
+    return Math.max(c.high - c.low, Math.abs(c.high - pc), Math.abs(c.low - pc));
   });
   return ema(tr, period);
 }
@@ -239,6 +261,16 @@ function highestHigh(candles, lookback) {
   return Math.max(...candles.slice(-lookback).map((c) => c.high));
 }
 
+function nearResistance(candles, entry) {
+  const arr = candles.slice(-RULE.targetLookback, -1).map((c) => c.high).filter((x) => x > entry);
+  return arr.length ? Math.min(...arr) : null;
+}
+
+function nearSupport(candles, entry) {
+  const arr = candles.slice(-RULE.targetLookback, -1).map((c) => c.low).filter((x) => x < entry);
+  return arr.length ? Math.max(...arr) : null;
+}
+
 function buildTradePlan({ symbol, side, closePrice, atrNow, candles }) {
   const last = candles[candles.length - 1];
   const tick = getTickSize(symbol, closePrice);
@@ -253,11 +285,17 @@ function buildTradePlan({ symbol, side, closePrice, atrNow, candles }) {
     const stop = roundToTick(Math.min(entry - atrNow * RULE.atrStop, swingLow - atrNow * RULE.atrBuffer), tick, "down");
     const risk = entry - stop;
     if (risk <= 0) return null;
+
+    const rr1 = roundToTick(entry + risk * RULE.tp1R, tick, "up");
+    const rr2 = roundToTick(entry + risk * RULE.tp2R, tick, "up");
+    const rr3 = roundToTick(entry + risk * RULE.tp3R, tick, "up");
+    const structure = nearResistance(candles, entry);
+
     return {
       entry, stop,
-      tp1: roundToTick(entry + risk * RULE.tp1R, tick, "up"),
-      tp2: roundToTick(entry + risk * RULE.tp2R, tick, "up"),
-      tp3: roundToTick(entry + risk * RULE.tp3R, tick, "up"),
+      tp1: structure && structure > entry ? roundToTick(Math.max(structure, rr1), tick, "up") : rr1,
+      tp2: rr2,
+      tp3: rr3,
     };
   }
 
@@ -266,26 +304,57 @@ function buildTradePlan({ symbol, side, closePrice, atrNow, candles }) {
     const stop = roundToTick(Math.max(entry + atrNow * RULE.atrStop, swingHigh + atrNow * RULE.atrBuffer), tick, "up");
     const risk = stop - entry;
     if (risk <= 0) return null;
-    const tp1 = roundToTick(entry - risk * RULE.tp1R, tick, "down");
-    const tp2 = roundToTick(entry - risk * RULE.tp2R, tick, "down");
-    const tp3 = roundToTick(entry - risk * RULE.tp3R, tick, "down");
-    if (tp1 <= 0 || tp2 <= 0 || tp3 <= 0) return null;
-    return { entry, stop, tp1, tp2, tp3 };
+
+    const rr1 = roundToTick(entry - risk * RULE.tp1R, tick, "down");
+    const rr2 = roundToTick(entry - risk * RULE.tp2R, tick, "down");
+    const rr3 = roundToTick(entry - risk * RULE.tp3R, tick, "down");
+    const structure = nearSupport(candles, entry);
+
+    const tp1 = structure && structure < entry ? roundToTick(Math.min(structure, rr1), tick, "down") : rr1;
+    if (tp1 <= 0 || rr2 <= 0 || rr3 <= 0) return null;
+    return { entry, stop, tp1, tp2: rr2, tp3: rr3 };
   }
+
   return null;
 }
 
 function analyzeSymbol(symbol, tf, candles, usdtry) {
   if (!candles || candles.length < 220 || !usdtry) return null;
-  const closes = candles.map((c) => c.close), volumes = candles.map((c) => c.volume), i = candles.length - 1;
-  const e9 = ema(closes, 9), e21 = ema(closes, 21), e50 = ema(closes, 50), e200 = ema(closes, 200);
-  const rs = rsi(closes, RULE.rsiPeriod), m = macd(closes), at = atr(candles, RULE.atrPeriod);
-  const closePrice = closes[i], atrNow = at[i], rsiNow = rs[i];
+
+  const closes = candles.map((c) => c.close);
+  const volumes = candles.map((c) => c.volume);
+  const i = candles.length - 1;
+
+  const e9 = ema(closes, 9);
+  const e21 = ema(closes, 21);
+  const e50 = ema(closes, 50);
+  const e200 = ema(closes, 200);
+  const rs = rsi(closes, RULE.rsiPeriod);
+  const m = macd(closes);
+  const at = atr(candles, RULE.atrPeriod);
+
+  const closePrice = closes[i];
+  const atrNow = at[i];
+  const rsiNow = rs[i];
+
   if (!atrNow || !rsiNow || !closePrice) return null;
 
   const volumeOk = volumes[i] > avgLast(volumes, RULE.volumePeriod);
-  const longOk = e9[i] > e21[i] && e21[i] > e50[i] && e50[i] > e200[i] && rsiNow > 55 && m.line[i] > m.signal[i] && m.hist[i] > 0 && volumeOk;
-  const shortOk = e9[i] < e21[i] && e21[i] < e50[i] && e50[i] < e200[i] && rsiNow < 45 && m.line[i] < m.signal[i] && m.hist[i] < 0 && volumeOk;
+
+  const longOk =
+    e9[i] > e21[i] && e21[i] > e50[i] && e50[i] > e200[i] &&
+    rsiNow > 55 &&
+    m.line[i] > m.signal[i] &&
+    m.hist[i] > 0 &&
+    volumeOk;
+
+  const shortOk =
+    e9[i] < e21[i] && e21[i] < e50[i] && e50[i] < e200[i] &&
+    rsiNow < 45 &&
+    m.line[i] < m.signal[i] &&
+    m.hist[i] < 0 &&
+    volumeOk;
+
   if (!longOk && !shortOk) return null;
 
   const side = longOk ? "LONG" : "SHORT";
@@ -330,7 +399,19 @@ export default function App() {
   const [signals, setSignals] = useState([]);
   const [finalLong, setFinalLong] = useState(0);
   const [finalShort, setFinalShort] = useState(0);
-  const [live, setLive] = useState({ time: "-", btc: "-", active: "-", filtered: "-", fxSource: "-" });
+  const [live, setLive] = useState({
+    time: "-",
+    btc: "-",
+    endpoint: "-",
+    active: "-",
+    filtered: "-",
+    lastSymbol: "-",
+    lastTf: "-",
+    requestedCandles: FIXED_CANDLE_LIMIT,
+    receivedCandles: "-",
+    lastCandle: "-",
+    fxSource: "-",
+  });
   const stopRef = useRef(false);
 
   const longSignals = useMemo(() => signals.filter((s) => s.side === "LONG"), [signals]);
@@ -340,8 +421,13 @@ export default function App() {
     const fx = await getUsdTry();
     setUsdtry(fx.rate || 0);
     let btc = "-";
-    try { btc = priceFmt(await getBtcPrice()); } catch {}
-    setLive((p) => ({ ...p, time: nowText(), btc, fxSource: fx.source || "-" }));
+    let endpoint = "-";
+    try {
+      const b = await getBtcPrice();
+      btc = priceFmt(b.price);
+      endpoint = b.endpoint;
+    } catch {}
+    setLive((p) => ({ ...p, time: nowText(), btc, endpoint, fxSource: fx.source || "-" }));
   }
 
   useEffect(() => {
@@ -366,26 +452,39 @@ export default function App() {
     if (!fx.rate) { setStatus("USD/TRY alınamadı."); setRunning(false); return; }
     if (!selectedTfs.length) { setStatus("Time frame seç."); setRunning(false); return; }
 
-    let symbolPack;
+    let pack;
     try {
-      symbolPack = await getSymbols(Number(limit), Number(minVolume));
-      setLive((p) => ({ ...p, time: nowText(), active: symbolPack.allActiveCount, filtered: symbolPack.filteredCount, fxSource: fx.source || "-" }));
+      pack = await getSymbols(Number(limit), Number(minVolume));
+      setLive((p) => ({ ...p, time: nowText(), active: pack.allActiveCount, filtered: pack.filteredCount, endpoint: pack.endpoint, fxSource: fx.source || "-" }));
     } catch (err) {
       setStatus("Sembol alınamadı: " + (err?.message || "Load failed"));
       setRunning(false); return;
     }
 
-    const symbols = symbolPack.symbols;
+    const symbols = pack.symbols;
     const scanTotal = symbols.length * selectedTfs.length;
     setTotal(scanTotal);
+
     let localDone = 0, localLong = 0, localShort = 0;
 
     for (const symbol of symbols) {
       for (const tf of selectedTfs) {
         if (stopRef.current) { setStatus(`Durduruldu. ${localDone}/${scanTotal}`); setRunning(false); return; }
         setStatus(`${symbol} ${tf} taranıyor... ${localDone}/${scanTotal}`);
+
         try {
-          const candles = await getKlines(symbol, tf);
+          const { candles, endpoint } = await getKlines(symbol, tf);
+          setLive((p) => ({
+            ...p,
+            time: nowText(),
+            endpoint,
+            lastSymbol: symbol,
+            lastTf: tf,
+            requestedCandles: FIXED_CANDLE_LIMIT,
+            receivedCandles: candles.length,
+            lastCandle: dt(candles[candles.length - 1]?.closeTime),
+          }));
+
           const result = analyzeSymbol(symbol, tf, candles, fx.rate);
           if (result) {
             if (result.side === "LONG") localLong++;
@@ -393,6 +492,7 @@ export default function App() {
             setSignals((prev) => [...prev, result]);
           }
         } catch {}
+
         localDone++;
         setDone(localDone);
         await sleep(90);
@@ -420,7 +520,7 @@ export default function App() {
         .formgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px} label{display:block;color:var(--muted);font-size:13px;font-weight:850;margin-bottom:6px} input,.fixedBox{width:100%;background:#0a1127;color:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;font-size:16px;font-weight:850}.fixedBox{font-weight:950}
         .tfbar{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.tfbtn{background:#0a1127;border:1px solid var(--line);border-radius:999px;padding:10px 13px;font-weight:950;color:#dce5ff;cursor:pointer}.tfbtn.active{background:#17386f;border-color:#65a0ff}
         .btn{width:100%;border:1px solid #65a0ff;background:var(--blue);color:#fff;border-radius:18px;padding:16px 14px;font-size:20px;font-weight:950;cursor:pointer}.btn.secondary{background:#223052;border-color:#405582;margin-top:10px}.btn:disabled{opacity:.55}
-        .livegrid,.dash{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:8px 0 14px}.livegrid div,.dash div{background:#0a1127;border:1px solid var(--line);border-radius:15px;padding:10px;text-align:center}.livegrid b,.dash b{display:block;font-size:20px}.livegrid span,.dash span{display:block;color:var(--muted);font-size:12px;font-weight:850;margin-top:4px}
+        .livegrid,.dash{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:8px 0 14px}.livegrid div,.dash div{background:#0a1127;border:1px solid var(--line);border-radius:15px;padding:10px;text-align:center}.livegrid b,.dash b{display:block;font-size:18px;word-break:break-word}.livegrid span,.dash span{display:block;color:var(--muted);font-size:12px;font-weight:850;margin-top:4px}
         .status{margin-top:12px;background:#101936;border:1px solid var(--line);border-radius:15px;padding:12px;font-size:15px;font-weight:900;color:#dce5ff}.progress{height:12px;background:#0b1228;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:14px 0}.bar{height:100%;background:#2f7df6}
         .section.long h2{color:#76ffa8}.section.short h2{color:#ff95a6}.candidate{border:2px solid #0f944e;border-radius:20px;background:#0b1228;padding:15px;margin:12px 0}.candidate.short{border-color:#7d1d31}.topline{display:flex;justify-content:space-between;align-items:center;gap:10px}.symbol{font-size:26px;font-weight:950}.subtf{font-size:16px;color:var(--muted);font-weight:900}.side{font-size:22px;font-weight:950;border-radius:16px;padding:10px 13px;min-width:85px;text-align:center}.side.long{background:#06451f;color:#76ffa8}.side.short{background:#551121;color:#ff95a6}
         .plan{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:12px}.plan div{background:#0a1127;border:1px solid var(--line);border-radius:15px;padding:12px}.plan span{display:block;color:var(--muted);font-size:13px;font-weight:900}.plan b{display:block;font-size:20px;font-weight:950;margin-top:5px}.plan em{display:block;font-style:normal;color:#dce5ff;font-weight:850;font-size:13px;margin-top:4px}.empty{color:var(--muted);font-weight:750}
@@ -428,25 +528,29 @@ export default function App() {
       `}</style>
 
       <div className="hero">
-        <h1>Ayaz Trade — V7 Canlı</h1>
-        <p>500 mum sabit. Canlı veri ekranı açık.</p>
+        <h1>Ayaz Trade — V8 Canlı Kanıt</h1>
+        <p>500 mum sabit. Gelen mum sayısı ve son mum zamanı ekranda görünür.</p>
       </div>
 
       <div className="card">
-        <h2>Canlı Veri Kontrol</h2>
+        <h2>Canlı Veri Kanıtı</h2>
         <div className="livegrid">
           <div><b>{APP_VERSION}</b><span>Sürüm</span></div>
-          <div><b>{FIXED_CANDLE_LIMIT}</b><span>Mum Sabit</span></div>
-          <div><b>{usdtry ? money(usdtry) : "-"}</b><span>USD/TRY</span></div>
-          <div><b>{live.btc}</b><span>BTCUSDT</span></div>
-          <div><b>{live.time}</b><span>Son Kontrol</span></div>
+          <div><b>{FIXED_CANDLE_LIMIT}</b><span>İstenen Mum</span></div>
+          <div><b>{live.receivedCandles}</b><span>Gelen Mum</span></div>
+          <div><b>{live.lastCandle}</b><span>Son Mum</span></div>
         </div>
         <div className="livegrid">
-          <div><b>{live.active}</b><span>Binance Aktif USDT</span></div>
+          <div><b>{usdtry ? money(usdtry) : "-"}</b><span>USD/TRY</span></div>
+          <div><b>{live.btc}</b><span>BTCUSDT</span></div>
+          <div><b>{live.lastSymbol} {live.lastTf}</b><span>Son Kontrol</span></div>
+          <div><b>{live.time}</b><span>Kontrol Saati</span></div>
+        </div>
+        <div className="livegrid">
+          <div><b>{live.active}</b><span>Aktif USDT</span></div>
           <div><b>{live.filtered}</b><span>Hacimden Sonra</span></div>
           <div><b>{live.fxSource}</b><span>Kur Kaynağı</span></div>
-          <div><b>{DEFAULT_MIN_VOLUME_USDT.toLocaleString("tr-TR")}</b><span>Varsayılan Hacim</span></div>
-          <div><b>{DEFAULT_COIN_LIMIT}</b><span>Coin Limit</span></div>
+          <div><b>{live.endpoint}</b><span>Binance Endpoint</span></div>
         </div>
       </div>
 
@@ -468,7 +572,6 @@ export default function App() {
       </div>
 
       <div className="dash">
-        <div><b>{usdtry ? money(usdtry) : "-"}</b><span>USD/TRY</span></div>
         <div><b>{done}</b><span>Kontrol</span></div>
         <div><b>{total}</b><span>Toplam</span></div>
         <div><b>{running ? longSignals.length : finalLong}</b><span>Long</span></div>

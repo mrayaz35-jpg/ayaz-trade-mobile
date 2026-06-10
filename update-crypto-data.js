@@ -4,8 +4,8 @@ import path from "path";
 async function main() {
   fs.mkdirSync("data", { recursive: true });
   const market = {
-    app: "Ayaz Trade V7 Canli",
-    version: "V7-500-MUM-SABIT",
+    app: "Ayaz Trade V8 Canli Kanit",
+    version: "V8-CANLI-KANIT-PRO-PLAN",
     fixedCandleLimit: 500,
     generatedAt: new Date().toISOString()
   };
