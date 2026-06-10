@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-const APP_VERSION = "TEMIZ-KURULUM-V6-500-MUM";
+const APP_VERSION = "V7-500-SABIT-CANLI";
+const FIXED_CANDLE_LIMIT = 500;
+const DEFAULT_COIN_LIMIT = 400;
+const DEFAULT_MIN_VOLUME_USDT = 1000000;
 
 const BINANCE_BASES = [
   "https://data-api.binance.vision",
@@ -12,10 +15,6 @@ const BINANCE_BASES = [
 
 const TF_LIST = ["15m", "30m", "1h", "2h", "4h", "1d"];
 const SYMBOL_META = new Map();
-
-const DEFAULT_COIN_LIMIT = 400;
-const DEFAULT_MIN_VOLUME_USDT = 1000000;
-const DEFAULT_CANDLE_LIMIT = 500;
 
 const RULE = {
   atrPeriod: 14,
@@ -43,6 +42,10 @@ function priceFmt(n) {
   if (x >= 1) return x.toLocaleString("tr-TR", { maximumFractionDigits: 4 });
   if (x >= 0.01) return x.toLocaleString("tr-TR", { maximumFractionDigits: 6 });
   return x.toLocaleString("tr-TR", { maximumFractionDigits: 8 });
+}
+
+function nowText() {
+  return new Date().toLocaleString("tr-TR");
 }
 
 function sleep(ms) {
@@ -83,16 +86,16 @@ async function getUsdTry() {
   try {
     const data = await fetchJson("https://open.er-api.com/v6/latest/USD", 12000);
     const rate = Number(data?.rates?.TRY || 0);
-    if (rate > 0) return rate;
+    if (rate > 0) return { rate, source: "open.er-api" };
   } catch {}
 
   try {
     const data = await fetchJson("https://api.frankfurter.app/latest?from=USD&to=TRY", 12000);
     const rate = Number(data?.rates?.TRY || 0);
-    if (rate > 0) return rate;
+    if (rate > 0) return { rate, source: "frankfurter" };
   } catch {}
 
-  return 0;
+  return { rate: 0, source: "alınamadı" };
 }
 
 async function getSymbols(maxCount, minVolumeUsdt) {
@@ -115,19 +118,21 @@ async function getSymbols(maxCount, minVolumeUsdt) {
       })
   );
 
-  return tickers
+  const filtered = tickers
     .filter((t) => active.has(t.symbol))
     .filter((t) => Number(t.quoteVolume) >= Number(minVolumeUsdt || 0))
-    .sort((a, b) => Number(b.quoteVolume) - Number(a.quoteVolume))
-    .slice(0, Number(maxCount || DEFAULT_COIN_LIMIT))
-    .map((t) => t.symbol);
+    .sort((a, b) => Number(b.quoteVolume) - Number(a.quoteVolume));
+
+  return {
+    symbols: filtered.slice(0, Number(maxCount || DEFAULT_COIN_LIMIT)).map((t) => t.symbol),
+    allActiveCount: active.size,
+    filteredCount: filtered.length,
+  };
 }
 
-async function getKlines(symbol, interval, limit) {
-  const safeLimit = Math.max(DEFAULT_CANDLE_LIMIT, Number(limit || DEFAULT_CANDLE_LIMIT));
-
+async function getKlines(symbol, interval) {
   const raw = await binanceGet(
-    `/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${safeLimit}`,
+    `/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${FIXED_CANDLE_LIMIT}`,
     20000
   );
 
@@ -139,6 +144,11 @@ async function getKlines(symbol, interval, limit) {
     close: Number(k[4]),
     volume: Number(k[5]),
   }));
+}
+
+async function getBtcPrice() {
+  const data = await binanceGet("/api/v3/ticker/price?symbol=BTCUSDT", 12000);
+  return Number(data?.price || 0);
 }
 
 function ema(values, period) {
@@ -157,41 +167,27 @@ function ema(values, period) {
 function rsi(closes, period = 14) {
   const out = Array(closes.length).fill(null);
   if (closes.length <= period) return out;
-
-  let gains = 0;
-  let losses = 0;
-
+  let gains = 0, losses = 0;
   for (let i = 1; i <= period; i++) {
     const diff = closes[i] - closes[i - 1];
-    if (diff >= 0) gains += diff;
-    else losses -= diff;
+    if (diff >= 0) gains += diff; else losses -= diff;
   }
-
-  let avgGain = gains / period;
-  let avgLoss = losses / period;
+  let avgGain = gains / period, avgLoss = losses / period;
   out[period] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
-
   for (let i = period + 1; i < closes.length; i++) {
     const diff = closes[i] - closes[i - 1];
     avgGain = (avgGain * (period - 1) + Math.max(diff, 0)) / period;
     avgLoss = (avgLoss * (period - 1) + Math.max(-diff, 0)) / period;
     out[i] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
   }
-
   return out;
 }
 
 function macd(closes, fast = 12, slow = 26, signalPeriod = 9) {
-  const fastEma = ema(closes, fast);
-  const slowEma = ema(closes, slow);
-
-  const line = closes.map((_, i) =>
-    fastEma[i] !== null && slowEma[i] !== null ? fastEma[i] - slowEma[i] : null
-  );
-
+  const fastEma = ema(closes, fast), slowEma = ema(closes, slow);
+  const line = closes.map((_, i) => fastEma[i] !== null && slowEma[i] !== null ? fastEma[i] - slowEma[i] : null);
   const signal = ema(line.map((v) => v ?? 0), signalPeriod);
-  const hist = line.map((v, i) => (v !== null && signal[i] !== null ? v - signal[i] : null));
-
+  const hist = line.map((v, i) => v !== null && signal[i] !== null ? v - signal[i] : null);
   return { line, signal, hist };
 }
 
@@ -199,11 +195,7 @@ function atr(candles, period = 14) {
   const tr = candles.map((c, i) => {
     if (i === 0) return c.high - c.low;
     const prevClose = candles[i - 1].close;
-    return Math.max(
-      c.high - c.low,
-      Math.abs(c.high - prevClose),
-      Math.abs(c.low - prevClose)
-    );
+    return Math.max(c.high - c.low, Math.abs(c.high - prevClose), Math.abs(c.low - prevClose));
   });
   return ema(tr, period);
 }
@@ -240,13 +232,11 @@ function roundToTick(price, tick, side = "nearest") {
 }
 
 function lowestLow(candles, lookback) {
-  const part = candles.slice(-lookback);
-  return Math.min(...part.map((c) => c.low));
+  return Math.min(...candles.slice(-lookback).map((c) => c.low));
 }
 
 function highestHigh(candles, lookback) {
-  const part = candles.slice(-lookback);
-  return Math.max(...part.map((c) => c.high));
+  return Math.max(...candles.slice(-lookback).map((c) => c.high));
 }
 
 function buildTradePlan({ symbol, side, closePrice, atrNow, candles }) {
@@ -254,22 +244,17 @@ function buildTradePlan({ symbol, side, closePrice, atrNow, candles }) {
   const tick = getTickSize(symbol, closePrice);
   const entryBuffer = Math.max(tick, atrNow * RULE.entryBufferAtr);
 
-  const entry =
-    side === "LONG"
-      ? roundToTick(Math.max(closePrice, last.high + entryBuffer), tick, "up")
-      : roundToTick(Math.min(closePrice, last.low - entryBuffer), tick, "down");
+  const entry = side === "LONG"
+    ? roundToTick(Math.max(closePrice, last.high + entryBuffer), tick, "up")
+    : roundToTick(Math.min(closePrice, last.low - entryBuffer), tick, "down");
 
   if (side === "LONG") {
     const swingLow = lowestLow(candles, RULE.swingLookback);
-    const atrStop = entry - atrNow * RULE.atrStop;
-    const structureStop = swingLow - atrNow * RULE.atrBuffer;
-    const stop = roundToTick(Math.min(atrStop, structureStop), tick, "down");
+    const stop = roundToTick(Math.min(entry - atrNow * RULE.atrStop, swingLow - atrNow * RULE.atrBuffer), tick, "down");
     const risk = entry - stop;
     if (risk <= 0) return null;
-
     return {
-      entry,
-      stop,
+      entry, stop,
       tp1: roundToTick(entry + risk * RULE.tp1R, tick, "up"),
       tp2: roundToTick(entry + risk * RULE.tp2R, tick, "up"),
       tp3: roundToTick(entry + risk * RULE.tp3R, tick, "up"),
@@ -278,64 +263,29 @@ function buildTradePlan({ symbol, side, closePrice, atrNow, candles }) {
 
   if (side === "SHORT") {
     const swingHigh = highestHigh(candles, RULE.swingLookback);
-    const atrStop = entry + atrNow * RULE.atrStop;
-    const structureStop = swingHigh + atrNow * RULE.atrBuffer;
-    const stop = roundToTick(Math.max(atrStop, structureStop), tick, "up");
+    const stop = roundToTick(Math.max(entry + atrNow * RULE.atrStop, swingHigh + atrNow * RULE.atrBuffer), tick, "up");
     const risk = stop - entry;
     if (risk <= 0) return null;
-
     const tp1 = roundToTick(entry - risk * RULE.tp1R, tick, "down");
     const tp2 = roundToTick(entry - risk * RULE.tp2R, tick, "down");
     const tp3 = roundToTick(entry - risk * RULE.tp3R, tick, "down");
     if (tp1 <= 0 || tp2 <= 0 || tp3 <= 0) return null;
-
     return { entry, stop, tp1, tp2, tp3 };
   }
-
   return null;
 }
 
 function analyzeSymbol(symbol, tf, candles, usdtry) {
   if (!candles || candles.length < 220 || !usdtry) return null;
-
-  const closes = candles.map((c) => c.close);
-  const volumes = candles.map((c) => c.volume);
-  const i = candles.length - 1;
-
-  const ema9 = ema(closes, 9);
-  const ema21 = ema(closes, 21);
-  const ema50 = ema(closes, 50);
-  const ema200 = ema(closes, 200);
-  const rsi14 = rsi(closes, RULE.rsiPeriod);
-  const macdData = macd(closes);
-  const atr14 = atr(candles, RULE.atrPeriod);
-
-  const closePrice = closes[i];
-  const atrNow = atr14[i];
-  const rsiNow = rsi14[i];
-
+  const closes = candles.map((c) => c.close), volumes = candles.map((c) => c.volume), i = candles.length - 1;
+  const e9 = ema(closes, 9), e21 = ema(closes, 21), e50 = ema(closes, 50), e200 = ema(closes, 200);
+  const rs = rsi(closes, RULE.rsiPeriod), m = macd(closes), at = atr(candles, RULE.atrPeriod);
+  const closePrice = closes[i], atrNow = at[i], rsiNow = rs[i];
   if (!atrNow || !rsiNow || !closePrice) return null;
 
   const volumeOk = volumes[i] > avgLast(volumes, RULE.volumePeriod);
-
-  const longOk =
-    ema9[i] > ema21[i] &&
-    ema21[i] > ema50[i] &&
-    ema50[i] > ema200[i] &&
-    rsiNow > 55 &&
-    macdData.line[i] > macdData.signal[i] &&
-    macdData.hist[i] > 0 &&
-    volumeOk;
-
-  const shortOk =
-    ema9[i] < ema21[i] &&
-    ema21[i] < ema50[i] &&
-    ema50[i] < ema200[i] &&
-    rsiNow < 45 &&
-    macdData.line[i] < macdData.signal[i] &&
-    macdData.hist[i] < 0 &&
-    volumeOk;
-
+  const longOk = e9[i] > e21[i] && e21[i] > e50[i] && e50[i] > e200[i] && rsiNow > 55 && m.line[i] > m.signal[i] && m.hist[i] > 0 && volumeOk;
+  const shortOk = e9[i] < e21[i] && e21[i] < e50[i] && e50[i] < e200[i] && rsiNow < 45 && m.line[i] < m.signal[i] && m.hist[i] < 0 && volumeOk;
   if (!longOk && !shortOk) return null;
 
   const side = longOk ? "LONG" : "SHORT";
@@ -343,35 +293,20 @@ function analyzeSymbol(symbol, tf, candles, usdtry) {
   if (!plan) return null;
 
   return {
-    symbol,
-    tf,
-    side,
-    entry: plan.entry,
-    stop: plan.stop,
-    tp1: plan.tp1,
-    tp2: plan.tp2,
-    tp3: plan.tp3,
-    entryTl: plan.entry * usdtry,
-    stopTl: plan.stop * usdtry,
-    tp1Tl: plan.tp1 * usdtry,
-    tp2Tl: plan.tp2 * usdtry,
-    tp3Tl: plan.tp3 * usdtry,
+    symbol, tf, side,
+    entry: plan.entry, stop: plan.stop, tp1: plan.tp1, tp2: plan.tp2, tp3: plan.tp3,
+    entryTl: plan.entry * usdtry, stopTl: plan.stop * usdtry, tp1Tl: plan.tp1 * usdtry, tp2Tl: plan.tp2 * usdtry, tp3Tl: plan.tp3 * usdtry,
   };
 }
 
 function SignalCard({ signal }) {
   const isLong = signal.side === "LONG";
-
   return (
     <div className={`candidate ${isLong ? "long" : "short"}`}>
       <div className="topline">
-        <div>
-          <div className="symbol">{signal.symbol}</div>
-          <div className="subtf">{signal.tf}</div>
-        </div>
+        <div><div className="symbol">{signal.symbol}</div><div className="subtf">{signal.tf}</div></div>
         <div className={`side ${isLong ? "long" : "short"}`}>{signal.side}</div>
       </div>
-
       <div className="plan">
         <div><span>Giriş</span><b>{priceFmt(signal.entry)}</b><em>{money(signal.entryTl)} TL</em></div>
         <div><span>Stop</span><b>{priceFmt(signal.stop)}</b><em>{money(signal.stopTl)} TL</em></div>
@@ -387,7 +322,6 @@ export default function App() {
   const [usdtry, setUsdtry] = useState(0);
   const [limit, setLimit] = useState(DEFAULT_COIN_LIMIT);
   const [minVolume, setMinVolume] = useState(DEFAULT_MIN_VOLUME_USDT);
-  const [candleLimit, setCandleLimit] = useState(DEFAULT_CANDLE_LIMIT);
   const [selectedTfs, setSelectedTfs] = useState([...TF_LIST]);
   const [status, setStatus] = useState("Hazır.");
   const [running, setRunning] = useState(false);
@@ -396,18 +330,23 @@ export default function App() {
   const [signals, setSignals] = useState([]);
   const [finalLong, setFinalLong] = useState(0);
   const [finalShort, setFinalShort] = useState(0);
+  const [live, setLive] = useState({ time: "-", btc: "-", active: "-", filtered: "-", fxSource: "-" });
   const stopRef = useRef(false);
 
   const longSignals = useMemo(() => signals.filter((s) => s.side === "LONG"), [signals]);
   const shortSignals = useMemo(() => signals.filter((s) => s.side === "SHORT"), [signals]);
 
-  async function refreshFx() {
-    setUsdtry(await getUsdTry());
+  async function refreshLivePanel() {
+    const fx = await getUsdTry();
+    setUsdtry(fx.rate || 0);
+    let btc = "-";
+    try { btc = priceFmt(await getBtcPrice()); } catch {}
+    setLive((p) => ({ ...p, time: nowText(), btc, fxSource: fx.source || "-" }));
   }
 
   useEffect(() => {
-    refreshFx();
-    const timer = setInterval(refreshFx, 60000);
+    refreshLivePanel();
+    const timer = setInterval(refreshLivePanel, 60000);
     return () => clearInterval(timer);
   }, []);
 
@@ -417,188 +356,114 @@ export default function App() {
 
   async function scan() {
     if (running) return;
-
     stopRef.current = false;
     setRunning(true);
-    setDone(0);
-    setTotal(0);
-    setSignals([]);
-    setFinalLong(0);
-    setFinalShort(0);
+    setDone(0); setTotal(0); setSignals([]); setFinalLong(0); setFinalShort(0);
 
-    setStatus("Kur alınıyor...");
+    setStatus("Canlı kur ve semboller alınıyor...");
     const fx = await getUsdTry();
-    setUsdtry(fx);
+    setUsdtry(fx.rate || 0);
+    if (!fx.rate) { setStatus("USD/TRY alınamadı."); setRunning(false); return; }
+    if (!selectedTfs.length) { setStatus("Time frame seç."); setRunning(false); return; }
 
-    if (!fx) {
-      setStatus("USD/TRY alınamadı.");
-      setRunning(false);
-      return;
-    }
-
-    if (!selectedTfs.length) {
-      setStatus("Time frame seç.");
-      setRunning(false);
-      return;
-    }
-
-    let symbols = [];
-
+    let symbolPack;
     try {
-      setStatus("Semboller alınıyor...");
-      symbols = await getSymbols(Number(limit), Number(minVolume));
+      symbolPack = await getSymbols(Number(limit), Number(minVolume));
+      setLive((p) => ({ ...p, time: nowText(), active: symbolPack.allActiveCount, filtered: symbolPack.filteredCount, fxSource: fx.source || "-" }));
     } catch (err) {
       setStatus("Sembol alınamadı: " + (err?.message || "Load failed"));
-      setRunning(false);
-      return;
+      setRunning(false); return;
     }
 
-    const safeCandleLimit = Math.max(DEFAULT_CANDLE_LIMIT, Number(candleLimit || DEFAULT_CANDLE_LIMIT));
-    setCandleLimit(safeCandleLimit);
-
+    const symbols = symbolPack.symbols;
     const scanTotal = symbols.length * selectedTfs.length;
     setTotal(scanTotal);
-
-    let localDone = 0;
-    let localLong = 0;
-    let localShort = 0;
+    let localDone = 0, localLong = 0, localShort = 0;
 
     for (const symbol of symbols) {
       for (const tf of selectedTfs) {
-        if (stopRef.current) {
-          setStatus(`Durduruldu. ${localDone}/${scanTotal}`);
-          setRunning(false);
-          return;
-        }
-
+        if (stopRef.current) { setStatus(`Durduruldu. ${localDone}/${scanTotal}`); setRunning(false); return; }
         setStatus(`${symbol} ${tf} taranıyor... ${localDone}/${scanTotal}`);
-
         try {
-          const candles = await getKlines(symbol, tf, safeCandleLimit);
-          const result = analyzeSymbol(symbol, tf, candles, fx);
-
+          const candles = await getKlines(symbol, tf);
+          const result = analyzeSymbol(symbol, tf, candles, fx.rate);
           if (result) {
-            if (result.side === "LONG") localLong += 1;
-            if (result.side === "SHORT") localShort += 1;
+            if (result.side === "LONG") localLong++;
+            if (result.side === "SHORT") localShort++;
             setSignals((prev) => [...prev, result]);
           }
         } catch {}
-
-        localDone += 1;
+        localDone++;
         setDone(localDone);
         await sleep(90);
       }
     }
 
-    setFinalLong(localLong);
-    setFinalShort(localShort);
+    setFinalLong(localLong); setFinalShort(localShort);
     setStatus(`Tarama bitti. Long: ${localLong}, Short: ${localShort}`);
     setRunning(false);
   }
 
-  function stop() {
-    stopRef.current = true;
-  }
-
+  function stop() { stopRef.current = true; }
   function clear() {
-    setSignals([]);
-    setDone(0);
-    setTotal(0);
-    setFinalLong(0);
-    setFinalShort(0);
-    setLimit(DEFAULT_COIN_LIMIT);
-    setMinVolume(DEFAULT_MIN_VOLUME_USDT);
-    setCandleLimit(DEFAULT_CANDLE_LIMIT);
-    setStatus("Temizlendi. Mum sayısı 500.");
+    setSignals([]); setDone(0); setTotal(0); setFinalLong(0); setFinalShort(0);
+    setLimit(DEFAULT_COIN_LIMIT); setMinVolume(DEFAULT_MIN_VOLUME_USDT);
+    setStatus("Temizlendi.");
   }
 
   return (
     <div className="page" data-version={APP_VERSION}>
       <style>{`
         :root{--bg:#070c1d;--card:#101832;--card2:#0b1228;--line:#293762;--text:#f4f7ff;--muted:#aeb9dc;--blue:#2f7df6}
-        *{box-sizing:border-box}
-        body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
-        .page{max-width:1120px;margin:0 auto;padding:18px 12px 80px}
-        .hero,.card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:22px;padding:16px;margin:12px 0}
-        .hero{border:2px solid #f2ca61}
-        .hero h1{font-size:30px;line-height:1.05;margin:0 0 8px;font-weight:950}
-        .hero p{margin:0;color:var(--muted);font-weight:800;font-size:15px}
-        .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-        .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-        label{display:block;color:var(--muted);font-size:13px;font-weight:850;margin-bottom:6px}
-        input{width:100%;background:#0a1127;color:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;font-size:16px;font-weight:850}
-        .tfbar{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
-        .tfbtn{background:#0a1127;border:1px solid var(--line);border-radius:999px;padding:10px 13px;font-weight:950;color:#dce5ff;cursor:pointer}
-        .tfbtn.active{background:#17386f;border-color:#65a0ff}
-        .btn{width:100%;border:1px solid #65a0ff;background:var(--blue);color:#fff;border-radius:18px;padding:16px 14px;font-size:20px;font-weight:950;cursor:pointer}
-        .btn.secondary{background:#223052;border-color:#405582;margin-top:10px}
-        .btn:disabled{opacity:.55}
-        .dash{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:8px 0 14px}
-        .dash div{background:#0a1127;border:1px solid var(--line);border-radius:15px;padding:10px;text-align:center}
-        .dash b{display:block;font-size:20px}
-        .dash span{display:block;color:var(--muted);font-size:12px;font-weight:850;margin-top:4px}
-        .status{margin-top:12px;background:#101936;border:1px solid var(--line);border-radius:15px;padding:12px;font-size:15px;font-weight:900;color:#dce5ff}
-        .progress{height:12px;background:#0b1228;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:14px 0}
-        .bar{height:100%;background:#2f7df6}
-        .section.long h2{color:#76ffa8}.section.short h2{color:#ff95a6}
-        .candidate{border:2px solid #0f944e;border-radius:20px;background:#0b1228;padding:15px;margin:12px 0}
-        .candidate.short{border-color:#7d1d31}
-        .topline{display:flex;justify-content:space-between;align-items:center;gap:10px}
-        .symbol{font-size:26px;font-weight:950}
-        .subtf{font-size:16px;color:var(--muted);font-weight:900}
-        .side{font-size:22px;font-weight:950;border-radius:16px;padding:10px 13px;min-width:85px;text-align:center}
-        .side.long{background:#06451f;color:#76ffa8}.side.short{background:#551121;color:#ff95a6}
-        .plan{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:12px}
-        .plan div{background:#0a1127;border:1px solid var(--line);border-radius:15px;padding:12px}
-        .plan span{display:block;color:var(--muted);font-size:13px;font-weight:900}
-        .plan b{display:block;font-size:20px;font-weight:950;margin-top:5px}
-        .plan em{display:block;font-style:normal;color:#dce5ff;font-weight:850;font-size:13px;margin-top:4px}
-        .empty{color:var(--muted);font-weight:750}
-        @media(max-width:760px){.grid2,.grid3,.dash,.plan{grid-template-columns:1fr}.page{padding:12px 10px 70px}.hero h1{font-size:27px}.symbol{font-size:25px}.side{font-size:20px}}
+        *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+        .page{max-width:1120px;margin:0 auto;padding:18px 12px 80px}.hero,.card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid var(--line);border-radius:22px;padding:16px;margin:12px 0}.hero{border:2px solid #f2ca61}.hero h1{font-size:30px;line-height:1.05;margin:0 0 8px;font-weight:950}.hero p{margin:0;color:var(--muted);font-weight:800;font-size:15px}
+        .formgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px} label{display:block;color:var(--muted);font-size:13px;font-weight:850;margin-bottom:6px} input,.fixedBox{width:100%;background:#0a1127;color:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;font-size:16px;font-weight:850}.fixedBox{font-weight:950}
+        .tfbar{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.tfbtn{background:#0a1127;border:1px solid var(--line);border-radius:999px;padding:10px 13px;font-weight:950;color:#dce5ff;cursor:pointer}.tfbtn.active{background:#17386f;border-color:#65a0ff}
+        .btn{width:100%;border:1px solid #65a0ff;background:var(--blue);color:#fff;border-radius:18px;padding:16px 14px;font-size:20px;font-weight:950;cursor:pointer}.btn.secondary{background:#223052;border-color:#405582;margin-top:10px}.btn:disabled{opacity:.55}
+        .livegrid,.dash{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:8px 0 14px}.livegrid div,.dash div{background:#0a1127;border:1px solid var(--line);border-radius:15px;padding:10px;text-align:center}.livegrid b,.dash b{display:block;font-size:20px}.livegrid span,.dash span{display:block;color:var(--muted);font-size:12px;font-weight:850;margin-top:4px}
+        .status{margin-top:12px;background:#101936;border:1px solid var(--line);border-radius:15px;padding:12px;font-size:15px;font-weight:900;color:#dce5ff}.progress{height:12px;background:#0b1228;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:14px 0}.bar{height:100%;background:#2f7df6}
+        .section.long h2{color:#76ffa8}.section.short h2{color:#ff95a6}.candidate{border:2px solid #0f944e;border-radius:20px;background:#0b1228;padding:15px;margin:12px 0}.candidate.short{border-color:#7d1d31}.topline{display:flex;justify-content:space-between;align-items:center;gap:10px}.symbol{font-size:26px;font-weight:950}.subtf{font-size:16px;color:var(--muted);font-weight:900}.side{font-size:22px;font-weight:950;border-radius:16px;padding:10px 13px;min-width:85px;text-align:center}.side.long{background:#06451f;color:#76ffa8}.side.short{background:#551121;color:#ff95a6}
+        .plan{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:12px}.plan div{background:#0a1127;border:1px solid var(--line);border-radius:15px;padding:12px}.plan span{display:block;color:var(--muted);font-size:13px;font-weight:900}.plan b{display:block;font-size:20px;font-weight:950;margin-top:5px}.plan em{display:block;font-style:normal;color:#dce5ff;font-weight:850;font-size:13px;margin-top:4px}.empty{color:var(--muted);font-weight:750}
+        @media(max-width:760px){.formgrid,.grid2,.dash,.livegrid,.plan{grid-template-columns:1fr}.page{padding:12px 10px 70px}.hero h1{font-size:27px}.symbol{font-size:25px}.side{font-size:20px}}
       `}</style>
 
       <div className="hero">
-        <h1>Ayaz Trade — Temiz V6</h1>
-        <p>Yeni kurulum. Varsayılan mum sayısı 500. Eski arayüz kodu yok.</p>
+        <h1>Ayaz Trade — V7 Canlı</h1>
+        <p>500 mum sabit. Canlı veri ekranı açık.</p>
       </div>
 
       <div className="card">
-        <div className="grid3">
-          <div>
-            <label>Maksimum coin</label>
-            <input type="number" value={limit} min="10" max="450" onChange={(e) => setLimit(e.target.value)} />
-          </div>
-          <div>
-            <label>Minimum 24s hacim USDT</label>
-            <input type="number" value={minVolume} min="0" onChange={(e) => setMinVolume(e.target.value)} />
-          </div>
-          <div>
-            <label>Mum sayısı</label>
-            <input type="number" value={candleLimit} min="500" max="1000" onChange={(e) => setCandleLimit(Math.max(500, Number(e.target.value || 500)))} />
-          </div>
+        <h2>Canlı Veri Kontrol</h2>
+        <div className="livegrid">
+          <div><b>{APP_VERSION}</b><span>Sürüm</span></div>
+          <div><b>{FIXED_CANDLE_LIMIT}</b><span>Mum Sabit</span></div>
+          <div><b>{usdtry ? money(usdtry) : "-"}</b><span>USD/TRY</span></div>
+          <div><b>{live.btc}</b><span>BTCUSDT</span></div>
+          <div><b>{live.time}</b><span>Son Kontrol</span></div>
+        </div>
+        <div className="livegrid">
+          <div><b>{live.active}</b><span>Binance Aktif USDT</span></div>
+          <div><b>{live.filtered}</b><span>Hacimden Sonra</span></div>
+          <div><b>{live.fxSource}</b><span>Kur Kaynağı</span></div>
+          <div><b>{DEFAULT_MIN_VOLUME_USDT.toLocaleString("tr-TR")}</b><span>Varsayılan Hacim</span></div>
+          <div><b>{DEFAULT_COIN_LIMIT}</b><span>Coin Limit</span></div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="formgrid">
+          <div><label>Maksimum coin</label><input type="number" value={limit} min="10" max="450" onChange={(e) => setLimit(e.target.value)} /></div>
+          <div><label>Minimum 24s hacim USDT</label><input type="number" value={minVolume} min="0" onChange={(e) => setMinVolume(e.target.value)} /></div>
+          <div><label>Mum sayısı</label><div className="fixedBox">500 SABİT</div></div>
         </div>
 
         <div className="tfbar">
-          {TF_LIST.map((tf) => (
-            <button key={tf} className={`tfbtn ${selectedTfs.includes(tf) ? "active" : ""}`} onClick={() => toggleTf(tf)} type="button">
-              {tf === "1d" ? "Günlük" : tf}
-            </button>
-          ))}
+          {TF_LIST.map((tf) => <button key={tf} className={`tfbtn ${selectedTfs.includes(tf) ? "active" : ""}`} onClick={() => toggleTf(tf)} type="button">{tf === "1d" ? "Günlük" : tf}</button>)}
         </div>
 
-        <button className="btn" onClick={scan} disabled={running}>
-          {running ? "TARANIYOR..." : "TARAMAYI BAŞLAT"}
-        </button>
-
-        <div className="grid2">
-          <button className="btn secondary" onClick={stop} type="button">DURDUR</button>
-          <button className="btn secondary" onClick={clear} type="button">TEMİZLE</button>
-        </div>
-
-        <div className="progress">
-          <div className="bar" style={{ width: total ? `${Math.min(100, (done / total) * 100)}%` : "0%" }} />
-        </div>
-
+        <button className="btn" onClick={scan} disabled={running}>{running ? "TARANIYOR..." : "TARAMAYI BAŞLAT"}</button>
+        <div className="grid2"><button className="btn secondary" onClick={stop} type="button">DURDUR</button><button className="btn secondary" onClick={clear} type="button">TEMİZLE</button></div>
+        <div className="progress"><div className="bar" style={{ width: total ? `${Math.min(100, (done / total) * 100)}%` : "0%" }} /></div>
         <div className="status">{status}</div>
       </div>
 
@@ -610,15 +475,8 @@ export default function App() {
         <div><b>{running ? shortSignals.length : finalShort}</b><span>Short</span></div>
       </div>
 
-      <div className="card section long">
-        <h2>LONG</h2>
-        {longSignals.length ? longSignals.map((signal, index) => <SignalCard key={`${signal.symbol}-${signal.tf}-${index}`} signal={signal} />) : <p className="empty">Long yok.</p>}
-      </div>
-
-      <div className="card section short">
-        <h2>SHORT</h2>
-        {shortSignals.length ? shortSignals.map((signal, index) => <SignalCard key={`${signal.symbol}-${signal.tf}-${index}`} signal={signal} />) : <p className="empty">Short yok.</p>}
-      </div>
+      <div className="card section long"><h2>LONG</h2>{longSignals.length ? longSignals.map((signal, index) => <SignalCard key={`${signal.symbol}-${signal.tf}-${index}`} signal={signal} />) : <p className="empty">Long yok.</p>}</div>
+      <div className="card section short"><h2>SHORT</h2>{shortSignals.length ? shortSignals.map((signal, index) => <SignalCard key={`${signal.symbol}-${signal.tf}-${index}`} signal={signal} />) : <p className="empty">Short yok.</p>}</div>
     </div>
   );
 }

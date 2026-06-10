@@ -1,6 +1,5 @@
 {
-  "app": "Ayaz Trade Temiz V6",
-  "version": "TEMIZ-KURULUM-V6-500-MUM",
-  "defaultCandleLimit": 500,
-  "generatedAt": null
+  "app": "Ayaz Trade V7 Canli",
+  "version": "V7-500-MUM-SABIT",
+  "fixedCandleLimit": 500
 }
