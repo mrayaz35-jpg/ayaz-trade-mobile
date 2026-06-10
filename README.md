@@ -1,6 +1,6 @@
-# Ayaz Trade v43.0 — Live Scan + Professional Quality Gate
+# Ayaz Trade v44.0 — Professional Balanced Trade Engine
 
-- V41 çalışan canlı Binance tarama motoru korunur.
-- V42 kalite kapısı mantığı canlı taramaya bağlanır.
-- Demo/fallback değil, gerçek oneClickCryptoScan akışı çalışır.
-- Açılış: https://mrayaz35-jpg.github.io/ayaz-trade-mobile/?v=43-final-1
+- Güçlü teknik + backtest veri yok ayrımı eklendi.
+- Kötü backtest PF<1 / NetR negatif adayları aşağı iter.
+- LONG/SHORT listesi trade yoksa adaptif/teyit adaylarla dengeli tamamlanır.
+- Hacim kritik zayıf ve yapı eksik adaylar dürüst etiketlenir.
