@@ -1,15 +1,14 @@
 // Ayaz Trade — MACD RSI MA ATR
-// GitHub Actions yardımcı dosyası.
-// Ana tarama App.jsx içinde Binance canlı mum verisiyle yapılır.
+// ES Module uyumlu GitHub Actions yardımcı dosyası.
+// package.json içinde "type": "module" olduğu için require() kullanılmaz.
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
 
 async function main() {
   fs.mkdirSync("data", { recursive: true });
 
   const generatedAt = new Date().toISOString();
-
   let usdtry = null;
   let source = "none";
 
@@ -27,7 +26,7 @@ async function main() {
     generatedAt,
     usdtry,
     source,
-    note: "Canlı kripto tarama App.jsx içinde Binance API ile yapılır. Bu dosya GitHub Actions formatını ve data klasörünü güncel tutar.",
+    note: "Canlı kripto tarama App.jsx içinde Binance API ile yapılır. Bu dosya GitHub Actions için ES Module uyumludur.",
   };
 
   fs.writeFileSync(
