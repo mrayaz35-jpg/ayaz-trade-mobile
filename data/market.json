@@ -1,6 +1,7 @@
 {
-  "app": "Ayaz Trade Yeni Plan V4",
-  "version": "KESIN-YENI-SADE-PLAN-V4",
-  "generatedAt": "2026-06-10T12:08:30.504Z",
-  "note": "App.jsx tamamen yeni sade plan sürümüdür."
+  "app": "Ayaz Trade Temiz V6",
+  "version": "TEMIZ-KURULUM-V6-500-MUM",
+  "defaultCandleLimit": 500,
+  "generatedAt": "2026-06-10T12:25:53.674Z",
+  "note": "Eski arayüz kodu yoktur. App.jsx temiz kurulmuştur."
 }
