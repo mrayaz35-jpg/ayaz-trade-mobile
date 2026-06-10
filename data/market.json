@@ -1,7 +1,6 @@
 {
-  "app": "Ayaz Trade Temiz V6",
-  "version": "TEMIZ-KURULUM-V6-500-MUM",
-  "defaultCandleLimit": 500,
-  "generatedAt": "2026-06-10T12:25:53.674Z",
-  "note": "Eski arayüz kodu yoktur. App.jsx temiz kurulmuştur."
+  "app": "Ayaz Trade V7 Canli",
+  "version": "V7-500-MUM-SABIT",
+  "fixedCandleLimit": 500,
+  "generatedAt": "2026-06-10T12:37:09.814Z"
 }
