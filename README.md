@@ -1,28 +1,28 @@
-# Ayaz Trade V8 Canlı Kanıt
+# Ayaz Trade Ultra v2026-clean
 
-Bu sürümde canlı veri kanıt paneli vardır.
+Temiz React/Vite long-short analiz paneli.
 
-Ekranda:
-- Sürüm
-- İstenen mum: 500
-- Gelen mum
-- Son mum zamanı
-- USD/TRY
-- BTCUSDT canlı fiyat
-- Binance endpoint
-- Aktif USDT sayısı
-- Hacim filtresi sonrası sayı
+## Telefonda / Bilgisayarda açma
+1. GitHub'a yeni repo olarak yükle.
+2. Vercel, Netlify veya GitHub Codespaces ile aç.
+3. Komutlar:
 
-görünür.
+```bash
+npm install
+npm run dev
+```
 
-İşlem kartlarında sadece:
-- Coin
-- TF
-- Long/Short
-- Giriş
-- Stop
-- TP1
-- TP2
-- TP3
+## Özellikler
+- Long / Short / No Trade sinyali
+- EMA21 / EMA50 trend filtresi
+- Momentum filtresi
+- ATR tabanlı giriş, stop, hedef
+- Paper / Backtest / Live Readonly mod seçimi
+- Eski dosya karmaşası yok, tek temiz sürüm
 
-bulunur.
+## Sonraki geliştirme
+- Binance API readonly veri çekme
+- Freqtrade config üretici
+- Backtest sonuç ekranı
+- Telegram alarm botu
+- FreqAI model çıktı paneli
