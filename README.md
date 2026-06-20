@@ -1,28 +1,50 @@
-# Ayaz Trade Ultra v2026-clean
+# Serpaidias AI Trading Bot V2
 
-Temiz React/Vite long-short analiz paneli.
+Binance Futures için Freqtrade tabanlı long/short trading bot proje iskeleti.
 
-## Telefonda / Bilgisayarda açma
-1. GitHub'a yeni repo olarak yükle.
-2. Vercel, Netlify veya GitHub Codespaces ile aç.
-3. Komutlar:
+## Ana amaç
+Bu proje, GitHub'daki güçlü açık kaynak ekosistemi kullanarak profesyonel bir kripto trading bot altyapısı kurmak için hazırlandı.
 
-```bash
-npm install
-npm run dev
+## Kullanılan ana repolar / teknolojiler
+- Freqtrade: ana bot motoru.
+- CCXT: borsa bağlantısı; Freqtrade içinde kullanılır.
+- smart-money-concepts: Smart Money Concepts fikirleri için dış paket alternatifi.
+- pandas-ta-classic / TA-Lib: teknik analiz indikatörleri.
+- Qlib / FinRL: ileri AI model geliştirme referansı.
+
+## İçerik
+```text
+user_data/strategies/SerpaidiasHybridLongShortV2.py
+user_data/configs/config_binance_futures_dry.json
+user_data/configs/config_binance_futures_live_TEMPLATE.json
+serpaidias_core/
+scripts/
+docs/
+docker-compose.yml
+Makefile
+.env.example
 ```
 
-## Özellikler
-- Long / Short / No Trade sinyali
-- EMA21 / EMA50 trend filtresi
-- Momentum filtresi
-- ATR tabanlı giriş, stop, hedef
-- Paper / Backtest / Live Readonly mod seçimi
-- Eski dosya karmaşası yok, tek temiz sürüm
+## Hızlı kullanım
 
-## Sonraki geliştirme
-- Binance API readonly veri çekme
-- Freqtrade config üretici
-- Backtest sonuç ekranı
-- Telegram alarm botu
-- FreqAI model çıktı paneli
+```bash
+cp .env.example .env
+./scripts/02_download_data.sh
+./scripts/03_backtest.sh
+./scripts/04_dry_run.sh
+```
+
+Docker kullanacaksan:
+
+```bash
+docker compose up -d
+```
+
+WebUI:
+
+```text
+http://127.0.0.1:8080
+```
+
+## Uyarı
+Bu proje yatırım tavsiyesi değildir. Strateji kâr garantisi vermez. Önce backtest, sonra dry-run, sonra küçük sermaye testi yapılmalıdır.
