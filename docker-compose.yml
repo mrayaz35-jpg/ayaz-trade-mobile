@@ -2,17 +2,15 @@ services:
   freqtrade:
     image: freqtradeorg/freqtrade:stable_freqai
     restart: unless-stopped
-    container_name: serpaidias-freqtrade
+    container_name: serpaidias-pro-freqtrade
     volumes:
       - ./user_data:/freqtrade/user_data
       - ./serpaidias_core:/freqtrade/serpaidias_core
     ports:
       - "127.0.0.1:8080:8080"
-    env_file:
-      - .env
     command: >
       trade
       --logfile /freqtrade/user_data/logs/freqtrade.log
       --db-url sqlite:////freqtrade/user_data/tradesv3.sqlite
       --config /freqtrade/user_data/configs/config_binance_futures_dry.json
-      --strategy SerpaidiasHybridLongShortV2
+      --strategy SerpaidiasHybridLongShortV3
